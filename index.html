@@ -1,0 +1,1981 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="crimson" data-mode="light">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>TK Dashboard — Timekeeping System</title>
+<style>
+:root{--radius:16px;--radius-sm:10px;--sidebar-w:240px;
+ --font:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+ --transition:.22s cubic-bezier(.4,0,.2,1);--grid-density:8px;}
+[data-theme="ocean"]{--accent:#2f8fff;--accent2:#00d4ff;}
+[data-theme="royal"]{--accent:#3a56ff;--accent2:#6b8cff;}
+[data-theme="emerald"]{--accent:#10b981;--accent2:#34e0a1;}
+[data-theme="forest"]{--accent:#2f9e44;--accent2:#94d82d;}
+[data-theme="purple"]{--accent:#8b5cf6;--accent2:#c084fc;}
+[data-theme="crimson"]{--accent:#ef4444;--accent2:#ff7a7a;}
+[data-theme="amber"]{--accent:#f59e0b;--accent2:#fcd34d;}
+[data-theme="rose"]{--accent:#f43f8e;--accent2:#fda4d0;}
+[data-theme="teal"]{--accent:#14b8a6;--accent2:#5eead4;}
+[data-theme="sunset"]{--accent:#ff6b6b;--accent2:#ffd166;}
+[data-mode="dark"]{--bg:#0b1020;--bg2:#0e1428;--panel:rgba(255,255,255,.045);--panel-solid:#141b30;
+ --border:rgba(255,255,255,.09);--text:#eaf0ff;--muted:#9aa6c4;--muted2:#6b7796;--glass:rgba(20,27,48,.6);
+ --shadow:0 10px 40px rgba(0,0,0,.45);--grid-head:#18233f;--row-alt:rgba(255,255,255,.025);--hover:rgba(255,255,255,.06);}
+[data-mode="light"]{--bg:#eef2fb;--bg2:#e6ecf8;--panel:rgba(255,255,255,.75);--panel-solid:#ffffff;
+ --border:rgba(15,30,70,.12);--text:#0e1730;--muted:#5a6b8c;--muted2:#8391ad;--glass:rgba(255,255,255,.7);
+ --shadow:0 10px 30px rgba(30,50,110,.12);--grid-head:#eef2fb;--row-alt:rgba(20,40,90,.03);--hover:rgba(20,40,90,.05);}
+[data-mode="oled"]{--bg:#000;--bg2:#000;--panel:rgba(255,255,255,.04);--panel-solid:#0a0a0a;
+ --border:rgba(255,255,255,.1);--text:#f2f2f2;--muted:#9aa;--muted2:#667;--glass:rgba(8,8,8,.7);
+ --shadow:0 10px 40px rgba(0,0,0,.7);--grid-head:#0d0d0d;--row-alt:rgba(255,255,255,.02);--hover:rgba(255,255,255,.06);}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{font-family:var(--font);color:var(--text);overflow:hidden;
+ background:radial-gradient(1200px 600px at 10% -10%,color-mix(in srgb,var(--accent) 22%,transparent),transparent 60%),
+ radial-gradient(1000px 500px at 110% 10%,color-mix(in srgb,var(--accent2) 16%,transparent),transparent 55%),
+ linear-gradient(160deg,var(--bg),var(--bg2));transition:background var(--transition);}
+button,input,select,textarea{font-family:inherit;color:inherit}
+::-webkit-scrollbar{width:10px;height:10px}
+::-webkit-scrollbar-thumb{background:color-mix(in srgb,var(--accent) 40%,transparent);border-radius:20px}
+.app{display:grid;grid-template-columns:var(--sidebar-w) 1fr;height:100vh}
+.sidebar{background:var(--glass);backdrop-filter:blur(22px) saturate(160%);border-right:1px solid var(--border);
+ display:flex;flex-direction:column;padding:18px 12px;gap:4px;overflow-y:auto}
+.brand{display:flex;align-items:center;gap:11px;padding:6px 10px 16px}
+.brand .logo{width:38px;height:38px;border-radius:11px;flex:0 0 auto;background:linear-gradient(135deg,var(--accent),var(--accent2));
+ display:grid;place-items:center;font-weight:800;color:#fff;font-size:18px;box-shadow:0 6px 18px color-mix(in srgb,var(--accent) 45%,transparent)}
+.brand b{font-size:15px;letter-spacing:.2px;line-height:1.1}.brand small{color:var(--muted);font-size:11px}
+.nav-group{color:var(--muted2);font-size:10.5px;text-transform:uppercase;letter-spacing:1.4px;padding:12px 12px 5px}
+.nav a{display:flex;align-items:center;gap:11px;padding:9px 12px;border-radius:11px;color:var(--muted);cursor:pointer;
+ font-size:13.5px;font-weight:500;text-decoration:none;transition:var(--transition);position:relative}
+.nav a .ic{width:18px;text-align:center;font-size:15px;opacity:.9}
+.nav a:hover{background:var(--hover);color:var(--text)}
+.nav a.active{background:linear-gradient(135deg,color-mix(in srgb,var(--accent) 28%,transparent),color-mix(in srgb,var(--accent2) 18%,transparent));
+ color:var(--text);box-shadow:inset 0 0 0 1px var(--border)}
+.nav a.active::before{content:"";position:absolute;left:-12px;top:20%;height:60%;width:4px;border-radius:4px;background:linear-gradient(var(--accent),var(--accent2))}
+.main{display:flex;flex-direction:column;min-width:0;overflow:hidden}
+.topbar{display:flex;align-items:center;gap:14px;padding:14px 22px;border-bottom:1px solid var(--border);background:var(--glass);backdrop-filter:blur(14px)}
+.topbar h1{font-size:17px;font-weight:700}.topbar .sub{color:var(--muted);font-size:12px;margin-top:1px}
+.btn{border:1px solid var(--border);background:var(--panel);color:var(--text);padding:9px 15px;border-radius:11px;cursor:pointer;
+ font-size:13px;font-weight:600;display:inline-flex;align-items:center;gap:8px;transition:var(--transition);white-space:nowrap}
+.btn:hover{background:var(--hover);transform:translateY(-1px)}
+.btn.primary{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;border:none;box-shadow:0 6px 18px color-mix(in srgb,var(--accent) 40%,transparent)}
+.btn.ghost{background:transparent}.btn.sm{padding:6px 10px;font-size:12px;border-radius:9px}
+.btn.danger{color:#fff;background:linear-gradient(135deg,#ef4444,#f87171);border:none}
+.btn.success{color:#fff;background:linear-gradient(135deg,#10b981,#34d399);border:none}
+.content{padding:22px;overflow-y:auto;flex:1}
+.view{display:none;animation:fade .3s ease}.view.active{display:block}
+@keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:15px;margin-bottom:18px}
+.card{background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);padding:17px 18px;backdrop-filter:blur(14px);
+ box-shadow:var(--shadow);transition:var(--transition);position:relative;overflow:hidden}
+.card:hover{transform:translateY(-3px);border-color:color-mix(in srgb,var(--accent) 40%,var(--border))}
+.card .k{color:var(--muted);font-size:12px;font-weight:600;display:flex;align-items:center;gap:8px}
+.card .v{font-size:22px;font-weight:800;margin-top:9px;letter-spacing:-.3px}
+.card .d{font-size:11.5px;color:var(--muted2);margin-top:6px}
+.card .chip{position:absolute;top:14px;right:14px;font-size:18px;opacity:.4}
+.panel{background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);padding:18px;backdrop-filter:blur(14px);box-shadow:var(--shadow);margin-top:16px}
+.panel h3{font-size:14px;margin-bottom:4px;display:flex;align-items:center;gap:9px}
+.panel .hint{color:var(--muted);font-size:12px;margin-bottom:12px}
+.row{display:flex;gap:12px;flex-wrap:wrap;align-items:center}.spacer{flex:1}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media(max-width:1100px){.grid2{grid-template-columns:1fr}}
+.tablewrap{overflow:auto;border:1px solid var(--border);border-radius:var(--radius);background:var(--panel-solid)}
+table{border-collapse:collapse;width:100%;font-size:12.5px;white-space:nowrap}
+thead th{position:sticky;top:0;background:var(--grid-head);text-align:left;padding:calc(var(--grid-density)) 12px;font-weight:700;color:var(--muted);
+ border-bottom:1px solid var(--border);z-index:2}
+tbody td{padding:calc(var(--grid-density)) 12px;border-bottom:1px solid var(--border)}
+tbody tr:nth-child(even){background:var(--row-alt)}tbody tr:hover{background:var(--hover)}
+tbody tr.clickable{cursor:pointer}
+.clock{margin-left:auto;display:flex;flex-direction:column;align-items:flex-end;line-height:1.25;user-select:none;white-space:nowrap}
+.clock .ck-time{font-weight:700;font-size:17px;color:var(--accent);letter-spacing:.5px;font-variant-numeric:tabular-nums}
+.clock .ck-date{font-size:11.5px;color:var(--muted);font-weight:500;letter-spacing:.2px}
+select.inp,input.inp,textarea.inp{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:8px 11px;font-size:12.5px;outline:none;color:var(--text)}
+input.inp:focus,select.inp:focus,textarea.inp:focus{border-color:var(--accent)}
+label.fld{display:flex;flex-direction:column;gap:5px;font-size:11.5px;color:var(--muted)}
+.swatches{display:grid;grid-template-columns:repeat(auto-fill,minmax(90px,1fr));gap:10px;margin-top:10px}
+.sw{border:1px solid var(--border);border-radius:12px;padding:10px;cursor:pointer;text-align:center;font-size:11px;transition:var(--transition)}
+.sw:hover{transform:translateY(-2px)}.sw.active{box-shadow:0 0 0 2px var(--accent)}.sw .dot{height:24px;border-radius:8px;margin-bottom:7px}
+.toggle{display:inline-flex;background:var(--panel);border:1px solid var(--border);border-radius:11px;overflow:hidden}
+.toggle button{background:none;border:none;padding:8px 14px;cursor:pointer;color:var(--muted);font-size:12.5px;font-weight:600}
+.toggle button.on{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff}
+.empty{text-align:center;color:var(--muted);padding:50px 20px}.empty .big{font-size:46px;opacity:.5;margin-bottom:12px}
+.toast{position:fixed;bottom:22px;right:22px;background:var(--panel-solid);border:1px solid var(--border);border-radius:12px;padding:13px 17px;box-shadow:var(--shadow);font-size:13px;z-index:120;opacity:0;transform:translateY(10px);transition:var(--transition)}
+.toast.show{opacity:1;transform:none}
+.pill{display:inline-flex;align-items:center;gap:6px;background:var(--panel);border:1px solid var(--border);border-radius:20px;padding:4px 10px;font-size:12px;margin:3px}
+.pill button{background:none;border:none;color:var(--muted);cursor:pointer;font-size:13px}
+.tag{padding:2px 9px;border-radius:20px;font-size:10.5px;font-weight:700;display:inline-block}
+.tag.submitted{background:rgba(16,185,129,.18);color:#34d399}
+.tag.draft{background:rgba(245,158,11,.18);color:#fcd34d}
+.tag.pending{background:rgba(99,102,241,.18);color:#818cf8}
+.tag.approved{background:rgba(16,185,129,.18);color:#34d399}
+.tag.rejected{background:rgba(239,68,68,.18);color:#f87171}
+.tag.notstarted{background:rgba(148,163,184,.18);color:#94a3b8}
+.navbadge{margin-left:auto;background:#ef4444;color:#fff;border-radius:20px;font-size:10px;font-weight:700;padding:1px 7px;min-width:16px;text-align:center}
+.avatar-photo{width:100%;height:100%;object-fit:cover;border-radius:inherit}
+/* modal */
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.55);backdrop-filter:blur(4px);display:none;align-items:center;justify-content:center;z-index:100}
+.overlay.show{display:flex}
+.modal{width:min(700px,94vw);max-height:90vh;overflow:auto;background:var(--panel-solid);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);padding:24px}
+.modal h3{font-size:16px;margin-bottom:2px}.modal .sub{color:var(--muted);font-size:12px;margin-bottom:16px}
+.formgrid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media(max-width:640px){.formgrid{grid-template-columns:1fr}}
+.formgrid label{display:flex;flex-direction:column;gap:5px;font-size:11.5px;color:var(--muted)}
+.formgrid input,.formgrid select,.formgrid textarea{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:9px 11px;font-size:13px;outline:none;color:var(--text)}
+.formgrid input:focus,.formgrid select:focus,.formgrid textarea:focus{border-color:var(--accent)}
+.modal-actions{display:flex;gap:10px;justify-content:flex-end;margin-top:18px}
+.sectionlabel{grid-column:1/-1;font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--muted2);margin-top:6px;padding-bottom:4px;border-bottom:1px solid var(--border)}
+/* login */
+.login-overlay{position:fixed;inset:0;z-index:200;display:none;align-items:center;justify-content:center;
+  background:radial-gradient(1000px 600px at 20% -10%,color-mix(in srgb,var(--accent) 30%,transparent),transparent 60%),linear-gradient(160deg,var(--bg),var(--bg2))}
+.login-overlay.show{display:flex}
+.login-card{width:min(420px,92vw);background:var(--panel-solid);border:1px solid var(--border);border-radius:20px;box-shadow:var(--shadow);padding:30px}
+.login-card .logo{width:52px;height:52px;border-radius:14px;background:linear-gradient(135deg,var(--accent),var(--accent2));display:grid;place-items:center;font-weight:800;color:#fff;font-size:24px;margin-bottom:16px}
+.login-card h2{font-size:20px;margin-bottom:3px}.login-card p{color:var(--muted);font-size:12.5px;margin-bottom:18px}
+.login-card label{display:block;font-size:11.5px;color:var(--muted);margin:12px 0 5px}
+.login-card select,.login-card input{width:100%;background:var(--panel);border:1px solid var(--border);border-radius:11px;padding:11px 13px;font-size:14px;outline:none;color:var(--text)}
+.login-card select:focus,.login-card input:focus{border-color:var(--accent)}
+.login-card .err{color:#ff8080;font-size:12px;margin-top:10px;min-height:16px}
+.login-card .note{color:var(--muted2);font-size:11.5px;margin-top:14px;line-height:1.5}
+/* collapsible sidebar */
+#collapseBtn{background:var(--panel);border:1px solid var(--border);border-radius:10px;width:34px;height:34px;cursor:pointer;font-size:16px;color:var(--muted);display:grid;place-items:center}
+#collapseBtn:hover{background:var(--hover);color:var(--text)}
+.sidebar{overflow-x:hidden}
+.mobile-backdrop{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:140}
+/* Desktop-only: ☰ shrinks the sidebar to icon-only. Scoped to >768px so it can
+   never bleed into the mobile drawer below — collapsed+mobileNavOpen used to be
+   able to combine (e.g. collapse on desktop, then resize down) and render the
+   drawer with font-size:0 labels. Keep every "collapsed" rule inside this block. */
+@media(min-width:769px){
+  body.collapsed{--sidebar-w:66px}
+  body.collapsed .brand>div:last-child{display:none}
+  body.collapsed .brand{justify-content:center}
+  body.collapsed .nav-group{font-size:0;height:8px}
+  body.collapsed .nav a{justify-content:center;font-size:0}
+  body.collapsed .nav a .ic{font-size:16px}
+  body.collapsed .nav a.active::before{display:none}
+  body.collapsed #userMenu .label,body.collapsed #userMenu .caret{display:none}
+  body.collapsed #userMenu .userchip{justify-content:center}
+}
+/* Mobile: sidebar becomes an off-canvas drawer instead of the icon-only "collapsed" mode */
+@media(max-width:768px){
+  .app{grid-template-columns:1fr}
+  .sidebar{position:fixed;inset:0 auto 0 0;width:min(80vw,260px);z-index:150;
+   transform:translateX(-100%);transition:transform var(--transition)}
+  body.mobileNavOpen .sidebar{transform:translateX(0)}
+  body.mobileNavOpen .mobile-backdrop{display:block}
+  .topbar h1{font-size:18px}
+  .clock{display:none}
+}
+/* user menu */
+#userMenu{position:relative;padding:8px 12px}
+.userchip{width:100%;display:flex;align-items:center;gap:9px;background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:7px 10px;cursor:pointer;color:var(--text);font-size:12.5px;font-weight:600}
+.userchip:hover{background:var(--hover)}
+.uava{width:26px;height:26px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;display:grid;place-items:center;font-weight:800;font-size:12px;flex:0 0 auto}
+.userpop{position:absolute;bottom:calc(100% + 6px);left:12px;right:12px;background:var(--panel-solid);border:1px solid var(--border);border-radius:12px;box-shadow:var(--shadow);padding:6px;display:none;z-index:60}
+.userpop.show{display:block}
+.userpop a{display:flex;align-items:center;gap:9px;padding:9px 11px;border-radius:9px;font-size:13px;color:var(--text);cursor:pointer;text-decoration:none}
+.userpop a:hover{background:var(--hover)}
+.userpop .sep{height:1px;background:var(--border);margin:4px 2px}
+.userpop .who{padding:8px 11px;font-size:11.5px;color:var(--muted)}
+/* TK-specific */
+.tk-table{width:100%;border-collapse:collapse;font-size:12.5px}
+.tk-table thead th{background:var(--grid-head);padding:9px 10px;text-align:center;font-weight:700;color:var(--muted);border-bottom:1px solid var(--border);white-space:nowrap}
+.tk-table thead th:first-child{text-align:left}
+.tk-table tbody td{padding:5px 6px;border-bottom:1px solid var(--border);text-align:center;vertical-align:middle}
+.tk-table tbody td:first-child{text-align:left;padding-left:10px}
+.tk-table tbody tr.weekend td:first-child,.tk-table tbody tr.weekend td:nth-child(2){opacity:.5}
+.tk-table tbody tr.weekend{background:color-mix(in srgb,var(--accent) 4%,transparent)}
+.tk-table input[type=time]{background:var(--panel);border:1px solid var(--border);border-radius:7px;padding:5px 7px;font-size:12px;color:var(--text);outline:none;width:90px}
+.tk-table input[type=time]:focus{border-color:var(--accent)}
+.submit-bar{display:flex;gap:10px;padding:14px 22px;border-top:1px solid var(--border);background:var(--glass);backdrop-filter:blur(14px)}
+.cutoff-selector{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:14px 22px;border-bottom:1px solid var(--border);background:var(--panel);backdrop-filter:blur(10px)}
+.cutoff-selector select.inp{padding:7px 10px}
+.cutoff-pill{padding:4px 14px;border-radius:20px;font-size:12px;font-weight:700;border:1px solid var(--border);background:var(--panel);cursor:pointer;transition:var(--transition)}
+.cutoff-pill.active{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;border:none;box-shadow:0 4px 12px color-mix(in srgb,var(--accent) 40%,transparent)}
+.attach-area{border:2px dashed color-mix(in srgb,var(--accent) 40%,var(--border));border-radius:12px;padding:22px;text-align:center;cursor:pointer;transition:var(--transition);background:var(--panel)}
+.attach-area:hover{border-color:var(--accent);background:var(--hover)}
+.attach-chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.email-chips{display:flex;flex-wrap:wrap;gap:6px;align-items:center;background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:6px 8px;cursor:text}
+.email-chips input{background:none;border:none;outline:none;font-size:12.5px;min-width:160px;color:var(--text)}
+.step-bar{display:flex;align-items:center;gap:0;margin-bottom:20px}
+.step{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--muted);font-weight:600}
+.step .dot{width:28px;height:28px;border-radius:50%;border:2px solid var(--border);display:grid;place-items:center;font-size:13px;font-weight:800;background:var(--panel)}
+.step.done .dot{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;border:none}
+.step.active .dot{border-color:var(--accent);color:var(--accent)}
+.step-line{flex:1;height:2px;background:var(--border);margin:0 8px}
+.step-line.done{background:linear-gradient(90deg,var(--accent),var(--accent2))}
+.badge-role{display:inline-flex;align-items:center;gap:6px;background:var(--panel);border:1px solid var(--border);border-radius:20px;padding:4px 11px;font-size:12px;font-weight:600}
+.cutoff-info-box{background:color-mix(in srgb,var(--accent) 12%,var(--panel));border:1px solid color-mix(in srgb,var(--accent) 30%,var(--border));border-radius:12px;padding:12px 15px;font-size:12.5px;margin-bottom:12px}
+.cutoff-info-box b{color:var(--accent)}
+/* chart */
+.chartbox{position:relative;height:280px}
+canvas{max-width:100%}
+/* load overlay */
+.load-overlay{position:fixed;inset:0;z-index:9999;display:none;align-items:center;justify-content:center;
+  background:radial-gradient(800px 600px at 30% 20%,color-mix(in srgb,var(--accent) 25%,transparent),transparent 60%),linear-gradient(160deg,var(--bg),var(--bg2))}
+.load-overlay.show{display:flex}
+.load-card{display:flex;flex-direction:column;align-items:center;gap:16px;padding:34px 40px}
+.load-logo{width:58px;height:58px;border-radius:16px;background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:28px;box-shadow:0 10px 30px color-mix(in srgb,var(--accent) 40%,transparent)}
+.load-spin{width:34px;height:34px;border:4px solid color-mix(in srgb,var(--accent) 25%,transparent);border-top-color:var(--accent);border-radius:50%;animation:loadspin .8s linear infinite}
+@keyframes loadspin{to{transform:rotate(360deg)}}
+.load-msg{font-size:14px;font-weight:600;color:var(--text)}
+.load-track{width:240px;height:8px;background:color-mix(in srgb,var(--accent) 15%,transparent);border-radius:999px;overflow:hidden}
+.load-bar{height:100%;width:0;background:linear-gradient(90deg,var(--accent),var(--accent2));border-radius:999px;transition:width .2s ease}
+/* empOnly / hrOnly visibility */
+body.roleEmp .hrOnly{display:none!important}
+body.roleHR .empOnly{display:none!important}
+@media print{
+  .sidebar,.topbar,.submit-bar,.toast,.overlay,.no-print{display:none!important}
+  .main,.content{overflow:visible!important;height:auto!important}
+  body,.app{background:#fff!important}
+}
+</style>
+</head>
+<body>
+
+<!-- Load overlay -->
+<div class="load-overlay show" id="loadOverlay">
+  <div class="load-card">
+    <div class="load-logo">⏱</div>
+    <div class="load-spin"></div>
+    <div class="load-msg" id="loadMsg">Loading TK Dashboard…</div>
+    <div class="load-track"><div class="load-bar" id="loadBar"></div></div>
+  </div>
+</div>
+
+<div class="app">
+  <!-- Mobile off-canvas backdrop — click to close the sidebar drawer -->
+  <div class="mobile-backdrop" id="mobileBackdrop" onclick="closeMobileNav()"></div>
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="logo">⏱</div>
+      <div><b>TK Dashboard</b><br><small>Timekeeping System</small></div>
+    </div>
+    <nav class="nav" id="nav">
+      <!-- HR nav -->
+      <div class="nav-group hrOnly">Overview</div>
+      <a data-view="hr-dashboard" class="hrOnly active"><span class="ic">▦</span> Dashboard</a>
+      <a data-view="hr-records" class="hrOnly"><span class="ic">▤</span> All Records <span class="navbadge" id="recBadge" style="display:none"></span></a>
+      <div class="nav-group hrOnly">Management</div>
+      <a data-view="hr-employees" class="hrOnly"><span class="ic">👤</span> Employees</a>
+      <a data-view="hr-reports" class="hrOnly"><span class="ic">📊</span> Reports</a>
+      <a data-view="hr-audit" class="hrOnly"><span class="ic">📜</span> Audit Log</a>
+      <!-- Employee nav -->
+      <div class="nav-group empOnly">Timekeeping</div>
+      <a data-view="emp-tk" class="empOnly active"><span class="ic">📋</span> My Timesheet</a>
+      <a data-view="emp-history" class="empOnly"><span class="ic">🕐</span> History</a>
+      <!-- Shared -->
+      <div class="nav-group">System</div>
+      <a data-view="settings"><span class="ic">⚙</span> Settings</a>
+    </nav>
+    <div style="flex:1"></div>
+    <div id="userMenu">
+      <button class="userchip" id="userChip">
+        <span class="uava" id="uAva">?</span>
+        <span class="label" id="uName">User</span>
+        <span class="caret" style="margin-left:auto;color:var(--muted)">▴</span>
+      </button>
+      <div class="userpop" id="userPop">
+        <div class="who" id="uWho">Signed in</div>
+        <a onclick="setView('settings')"><span>⚙</span> Settings</a>
+        <div class="sep"></div>
+        <a id="logoutBtn"><span>🚪</span> Sign out</a>
+      </div>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <div class="main">
+    <div class="topbar">
+      <button id="collapseBtn" title="Collapse sidebar">☰</button>
+      <div><h1 id="viewTitle">Dashboard</h1><div class="sub" id="viewSub"></div></div>
+      <div class="clock" id="clock"><div class="ck-time" id="ckTime">—</div><div class="ck-date" id="ckDate">—</div></div>
+    </div>
+
+    <div class="content" id="mainContent">
+
+      <!-- =========== HR DASHBOARD =========== -->
+      <section class="view hrOnly" id="v-hr-dashboard">
+        <div class="cards" id="hrDashCards"></div>
+        <div class="grid2">
+          <div class="panel"><h3>📅 Submissions by Cutoff</h3><div class="hint">Count of submitted timesheets per cutoff period</div><div class="chartbox"><canvas id="chartCutoff"></canvas></div></div>
+          <div class="panel"><h3>👥 Employee Status</h3><div class="hint">Active vs inactive employee breakdown</div><div class="chartbox"><canvas id="chartEmpStatus"></canvas></div></div>
+        </div>
+      </section>
+
+      <!-- =========== HR ALL RECORDS =========== -->
+      <section class="view hrOnly" id="v-hr-records">
+        <div class="panel" style="margin-top:0">
+          <div class="row" style="margin-bottom:12px">
+            <select class="inp" id="recFltMonth"><option value="">All Months</option></select>
+            <select class="inp" id="recFltCutoff"><option value="">All Cutoffs</option><option value="A">Cutoff A (25–9)</option><option value="B">Cutoff B (10–24)</option></select>
+            <select class="inp" id="recFltDept"><option value="">All Departments</option></select>
+            <input class="inp" id="recSearch" placeholder="Search employee…" style="min-width:160px"/>
+            <div class="spacer"></div>
+            <button class="btn sm primary" onclick="exportAllExcel()">⬇ Export Excel</button>
+          </div>
+          <div class="tablewrap" style="max-height:66vh">
+            <table><thead><tr>
+              <th>Employee</th><th>ID</th><th>Department</th><th>Cutoff</th><th>Period</th><th>Pay Date</th><th>Submitted</th><th>Status</th><th></th>
+            </tr></thead><tbody id="recBody"></tbody></table>
+          </div>
+          <div style="margin-top:10px;font-size:12px;color:var(--muted)" id="recInfo">0 records</div>
+        </div>
+      </section>
+
+      <!-- =========== HR EMPLOYEES =========== -->
+      <section class="view hrOnly" id="v-hr-employees">
+        <div class="panel" style="margin-top:0">
+          <div class="row" style="margin-bottom:12px">
+            <input class="inp" id="empSearch" placeholder="Search…" style="min-width:180px" oninput="renderEmployees()"/>
+            <div class="spacer"></div>
+            <button class="btn sm primary" onclick="openAddEmployee()">＋ Add Employee</button>
+          </div>
+          <div class="tablewrap" style="max-height:68vh">
+            <table><thead><tr>
+              <th>Name</th><th>Employee ID</th><th>Department</th><th>Position</th><th>Date Hired</th><th>Status</th><th></th>
+            </tr></thead><tbody id="empBody"></tbody></table>
+          </div>
+        </div>
+      </section>
+
+      <!-- =========== HR REPORTS =========== -->
+      <section class="view hrOnly" id="v-hr-reports">
+        <div class="panel" style="margin-top:0">
+          <div class="row no-print" style="margin-bottom:12px">
+            <label style="font-size:12px;color:var(--muted)">From <input class="inp" type="date" id="repFrom" onchange="renderReports()" style="padding:7px 10px"/></label>
+            <label style="font-size:12px;color:var(--muted)">To <input class="inp" type="date" id="repTo" onchange="renderReports()" style="padding:7px 10px"/></label>
+            <select class="inp" id="repDept" onchange="renderReports()"><option value="">All Departments</option></select>
+            <div class="spacer"></div>
+            <button class="btn sm" onclick="printReport()">🖨 Print</button>
+            <button class="btn sm primary" onclick="exportReportExcel()">⬇ Export Excel</button>
+          </div>
+          <div class="tablewrap" style="max-height:66vh">
+            <table><thead><tr>
+              <th>Employee</th><th>Department</th><th>Total Hours</th><th>Days Present</th><th>Days Absent</th>
+            </tr></thead><tbody id="repBody"></tbody></table>
+          </div>
+        </div>
+      </section>
+
+      <!-- =========== HR AUDIT LOG =========== -->
+      <section class="view hrOnly" id="v-hr-audit">
+        <div class="panel" style="margin-top:0">
+          <div class="row no-print" style="margin-bottom:12px">
+            <input class="inp" id="auditSearch" placeholder="Search actor or action…" style="min-width:220px" oninput="renderAudit()"/>
+            <div class="spacer"></div>
+            <span style="font-size:12px;color:var(--muted)" id="auditInfo"></span>
+          </div>
+          <div class="tablewrap" style="max-height:68vh">
+            <table><thead><tr>
+              <th>Timestamp</th><th>Actor</th><th>Action</th><th>Detail</th>
+            </tr></thead><tbody id="auditBody"></tbody></table>
+          </div>
+        </div>
+      </section>
+
+      <!-- =========== EMPLOYEE DASHBOARD (within TK view top) =========== -->
+      <!-- emp-tk is the combined timesheet view; header info shown above the selector -->
+
+      <!-- =========== EMPLOYEE TIMESHEET =========== -->
+      <section class="view empOnly" id="v-emp-tk" style="padding:0">
+        <!-- Cutoff selector bar -->
+        <div class="cutoff-selector">
+          <div style="display:flex;gap:6px">
+            <button class="cutoff-pill active" id="pillA" onclick="selectCutoff('A')">Cutoff A &nbsp;25–9</button>
+            <button class="cutoff-pill" id="pillB" onclick="selectCutoff('B')">Cutoff B &nbsp;10–24</button>
+          </div>
+          <select class="inp" id="selMonth" onchange="buildTimeTable()" style="padding:7px 10px">
+            <option value="January">January</option><option value="February">February</option>
+            <option value="March">March</option><option value="April">April</option>
+            <option value="May">May</option><option value="June">June</option>
+            <option value="July">July</option><option value="August">August</option>
+            <option value="September">September</option><option value="October">October</option>
+            <option value="November">November</option><option value="December">December</option>
+          </select>
+          <select class="inp" id="selYear" onchange="buildTimeTable()" style="padding:7px 10px"></select>
+          <div class="spacer"></div>
+          <span id="cutoffPayLabel" style="font-size:12px;color:var(--muted)"></span>
+        </div>
+
+        <!-- Content inside padding wrapper -->
+        <div style="padding:18px 22px;overflow-y:auto;flex:1" id="tkScrollArea">
+          <div class="cutoff-info-box" id="cutoffInfoBox"></div>
+
+          <!-- Remarks + Attachments -->
+          <div class="grid2" style="margin-bottom:14px">
+            <label class="fld">
+              Remarks / Notes
+              <textarea class="inp" id="tkRemarks" rows="3" placeholder="Optional remarks for this cutoff submission…" style="resize:vertical"></textarea>
+            </label>
+            <div>
+              <label class="fld" style="margin-bottom:6px">Attachments (photos/files)</label>
+              <div class="attach-area" id="attachArea" onclick="document.getElementById('attachInput').click()" ondragover="event.preventDefault()" ondrop="handleDrop(event)">
+                <div style="font-size:28px;margin-bottom:6px">📎</div>
+                <div style="font-size:13px;color:var(--muted)">Click or drag &amp; drop files here</div>
+                <div style="font-size:11px;color:var(--muted2);margin-top:4px">Photos, PDFs, or any file</div>
+              </div>
+              <input type="file" id="attachInput" multiple style="display:none" onchange="addAttachments(this.files)"/>
+              <div class="attach-chips" id="attachChips"></div>
+            </div>
+          </div>
+
+          <!-- Time table -->
+          <div class="tablewrap" id="tkTableWrap">
+            <table class="tk-table">
+              <thead><tr>
+                <th>Date</th><th>Day</th>
+                <th>Time In AM</th><th>Time Out AM</th>
+                <th>Time In PM</th><th>Time Out PM</th>
+                <th>Total Hours</th>
+              </tr></thead>
+              <tbody id="tkBody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Always-visible submit bar -->
+        <div class="submit-bar">
+          <button class="btn" onclick="downloadExcel()" style="min-width:130px">⬇ Download Excel</button>
+          <button class="btn" onclick="saveDraft()" style="min-width:130px">💾 Save Draft</button>
+          <div class="spacer"></div>
+          <button class="btn primary" onclick="submitCutoff()" style="min-width:130px">✅ Submit</button>
+        </div>
+      </section>
+
+      <!-- =========== EMPLOYEE HISTORY =========== -->
+      <section class="view empOnly" id="v-emp-history">
+        <div class="panel" style="margin-top:0">
+          <h3 style="margin-bottom:12px">🕐 My Submission History</h3>
+          <div class="tablewrap">
+            <table><thead><tr>
+              <th>Cutoff</th><th>Period</th><th>Pay Date</th><th>Submitted On</th><th>Status</th><th></th>
+            </tr></thead><tbody id="histBody"></tbody></table>
+          </div>
+          <div id="histEmpty" class="empty" style="display:none"><div class="big">📂</div>No submissions yet</div>
+        </div>
+      </section>
+
+      <!-- =========== SETTINGS =========== -->
+      <section class="view" id="v-settings">
+        <!-- Appearance -->
+        <div class="panel" style="margin-top:0">
+          <h3>🎨 Appearance</h3>
+          <div class="hint">Theme and display mode — saved automatically.</div>
+          <div class="row" style="margin:8px 0 16px">
+            <span style="font-size:12px;color:var(--muted)">Mode:</span>
+            <div class="toggle" id="modeToggle">
+              <button data-mode="light">☀ Light</button>
+              <button data-mode="dark" class="on">🌙 Dark</button>
+              <button data-mode="oled">⬛ OLED</button>
+            </div>
+          </div>
+          <div class="swatches" id="swatches"></div>
+        </div>
+
+        <!-- Profile photo (employee only) -->
+        <div class="panel empOnly">
+          <h3>🖼 Profile Photo</h3>
+          <div class="hint">Shown in your account menu.</div>
+          <div class="row" style="margin-top:10px">
+            <span class="uava" id="settingsAvaPreview" style="width:56px;height:56px;font-size:18px"></span>
+            <input class="inp" type="file" accept="image/*" onchange="updateProfilePhoto(this)" style="max-width:260px"/>
+          </div>
+        </div>
+
+        <!-- GitHub Sync -->
+        <div class="panel hrOnly">
+          <h3>🐙 GitHub Sync</h3>
+          <div class="hint">Connect a private GitHub repo to store users, submissions and settings — the app's backend. All calls run directly from the browser, no server required.</div>
+          <div class="formgrid" style="margin-top:10px">
+            <label>Repo Owner<input class="inp" id="ghOwner" placeholder="your-org-or-username"/></label>
+            <label>Repo Name<input class="inp" id="ghRepo" placeholder="tk-dashboard-data"/></label>
+            <label>Branch<input class="inp" id="ghBranch" placeholder="main"/></label>
+            <label>Personal Access Token
+              <div style="position:relative">
+                <input class="inp" type="password" id="ghPat" placeholder="ghp_… (repo scope)" style="width:100%;padding-right:42px"/>
+                <button onclick="togglePw('ghPat',this)" type="button" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--muted);cursor:pointer;font-size:16px">👁</button>
+              </div>
+            </label>
+          </div>
+          <div class="row" style="margin-top:14px">
+            <span id="ghStatus" style="font-size:12px;color:var(--muted)">Not connected</span>
+            <div class="spacer"></div>
+            <button class="btn sm primary" onclick="saveGithubConfig()">🔌 Save &amp; Test Connection</button>
+          </div>
+        </div>
+
+        <!-- Company info (HR only) -->
+        <div class="panel hrOnly">
+          <h3>🏢 Company Information</h3>
+          <div class="formgrid" style="margin-top:10px">
+            <label>Company Name<input class="inp" id="compName" placeholder="Your Company, Inc."/></label>
+            <label>Department<input class="inp" id="compDept" placeholder="Human Resources"/></label>
+            <label style="grid-column:1/-1">Address<input class="inp" id="compAddress" placeholder="123 Main St, City, Country"/></label>
+            <label style="grid-column:1/-1">Logo (used on Excel export headers — PNG, JPEG or GIF only)
+              <div class="row" style="margin-top:6px">
+                <img id="compLogoPreview" style="display:none;max-height:44px;max-width:120px;border-radius:6px;border:1px solid var(--border)"/>
+                <input class="inp" type="file" accept="image/png,image/jpeg,image/gif" onchange="companyLogoSelected(this)" style="max-width:260px"/>
+              </div>
+            </label>
+          </div>
+          <div class="row" style="margin-top:12px">
+            <div class="spacer"></div>
+            <button class="btn sm primary" onclick="saveCompany()">💾 Save</button>
+          </div>
+        </div>
+
+        <!-- Change password (all) -->
+        <div class="panel">
+          <h3>🔑 Change Password</h3>
+          <div class="formgrid" style="margin-top:10px">
+            <label>Current Password<input class="inp" type="password" id="pwCurrent" placeholder="Current password"/></label>
+            <label>New Password<input class="inp" type="password" id="pwNew" placeholder="New password"/></label>
+            <label style="grid-column:1/-1">Confirm New Password<input class="inp" type="password" id="pwConfirm" placeholder="Repeat new password"/></label>
+          </div>
+          <div class="row" style="margin-top:12px">
+            <div class="spacer"></div>
+            <button class="btn sm primary" onclick="changePassword()">🔐 Update Password</button>
+          </div>
+        </div>
+      </section>
+
+    </div><!-- /content -->
+
+    <!-- Employee TK submit bar is inside its section, not here -->
+
+  </div><!-- /main -->
+</div><!-- /app -->
+
+<!-- ======== EDIT EMPLOYEE MODAL ======== -->
+<div class="overlay" id="editEmpOverlay">
+  <div class="modal">
+    <h3>✏️ Edit Employee</h3>
+    <div class="sub" id="editEmpSub">Update employee details</div>
+    <div class="formgrid">
+      <div class="sectionlabel">Basic Info</div>
+      <label>Full Name<input class="inp" id="editEmpName" placeholder="Juan dela Cruz"/></label>
+      <label>Employee ID<input class="inp" id="editEmpId" disabled style="opacity:.5"/></label>
+      <label>Department<input class="inp" id="editEmpDept" placeholder="Department"/></label>
+      <label>Position<input class="inp" id="editEmpPos" placeholder="Position"/></label>
+      <label>Date Hired<input class="inp" type="date" id="editEmpHired"/></label>
+      <label>Work Email<input class="inp" id="editEmpEmail" type="email" placeholder="emp@company.com"/></label>
+      <div class="sectionlabel">Reset Password (optional)</div>
+      <label>New Temp Password<input class="inp" id="editEmpPw" placeholder="Leave blank to keep current"/></label>
+      <div></div>
+    </div>
+    <div id="editPwReveal" style="display:none;background:color-mix(in srgb,var(--accent) 12%,var(--panel));border:1px solid color-mix(in srgb,var(--accent) 30%,var(--border));border-radius:12px;padding:14px;margin-top:12px">
+      <div style="font-size:12px;color:var(--muted);margin-bottom:8px;font-weight:600">🔑 Password reset — share this with the employee:</div>
+      <div style="font-size:13px"><b>Employee ID:</b> <span id="editRevealId" style="color:var(--accent)"></span></div>
+      <div style="font-size:13px;margin-top:4px"><b>Temp Password:</b> <span id="editRevealPw" style="color:var(--accent)"></span></div>
+      <div style="font-size:11px;color:var(--muted2);margin-top:8px">Employee will be prompted to change it on next login.</div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn" onclick="closeModal('editEmpOverlay')">Cancel</button>
+      <button class="btn primary" id="saveEditEmpBtn" onclick="saveEditEmployee()">💾 Save Changes</button>
+    </div>
+  </div>
+</div>
+
+<!-- ======== ADD EMPLOYEE MODAL ======== -->
+<div class="overlay" id="addEmpOverlay">
+  <div class="modal">
+    <h3>➕ Add New Employee</h3>
+    <div class="sub">HR will create temporary credentials. Employee must complete profile on first login.</div>
+    <div class="formgrid">
+      <div class="sectionlabel">Basic Info</div>
+      <label>Full Name<input class="inp" id="newEmpName" placeholder="Juan dela Cruz"/></label>
+      <label>Employee ID<input class="inp" id="newEmpId" placeholder="EMP-005"/></label>
+      <label>Department<input class="inp" id="newEmpDept" placeholder="Operations"/></label>
+      <label>Position<input class="inp" id="newEmpPos" placeholder="Staff"/></label>
+      <label>Date Hired<input class="inp" type="date" id="newEmpHired"/></label>
+      <label>Work Email<input class="inp" id="newEmpEmail" placeholder="emp@company.com" type="email"/></label>
+      <div class="sectionlabel">Temporary Credentials</div>
+      <label>Temp Password<input class="inp" id="newEmpPw" placeholder="Auto-generated"/></label>
+      <div></div>
+    </div>
+    <div id="newCredsReveal" style="display:none;background:color-mix(in srgb,var(--accent) 12%,var(--panel));border:1px solid color-mix(in srgb,var(--accent) 30%,var(--border));border-radius:12px;padding:14px;margin-top:12px">
+      <div style="font-size:12px;color:var(--muted);margin-bottom:8px;font-weight:600">✅ Employee created — share these credentials:</div>
+      <div style="font-size:13px"><b>Employee ID:</b> <span id="revealId" style="color:var(--accent)"></span></div>
+      <div style="font-size:13px;margin-top:4px"><b>Temp Password:</b> <span id="revealPw" style="color:var(--accent)"></span></div>
+      <div style="font-size:11px;color:var(--muted2);margin-top:8px">Employee will be prompted to change password on first login.</div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn" onclick="closeModal('addEmpOverlay')">Close</button>
+      <button class="btn primary" id="saveEmpBtn" onclick="saveNewEmployee()">Create Employee</button>
+    </div>
+  </div>
+</div>
+
+<!-- ======== VIEW RECORD MODAL ======== -->
+<div class="overlay" id="viewRecOverlay">
+  <div class="modal">
+    <h3 id="viewRecTitle">Timesheet Record</h3>
+    <div class="sub" id="viewRecSub"></div>
+    <div id="viewRecContent"></div>
+    <div class="modal-actions" id="viewRecActions">
+      <button class="btn" onclick="closeModal('viewRecOverlay')">Close</button>
+      <button class="btn sm" onclick="downloadRecordExcel()">⬇ Download Excel</button>
+      <button class="btn sm hrOnly" id="viewRecRejectBtn" style="display:none;color:#f87171" onclick="rejectSubmission(viewRecord.id);closeModal('viewRecOverlay')">✕ Reject</button>
+      <button class="btn sm primary hrOnly" id="viewRecApproveBtn" style="display:none" onclick="approveSubmission(viewRecord.id);closeModal('viewRecOverlay')">✔ Approve</button>
+    </div>
+  </div>
+</div>
+
+<!-- ======== FIRST LOGIN FLOW ======== -->
+<div class="overlay" id="firstLoginOverlay">
+  <div class="modal" style="max-width:500px">
+    <div class="step-bar" id="firstStepBar">
+      <div class="step active" id="step1"><div class="dot">1</div> Change Password</div>
+      <div class="step-line" id="stepLine1"></div>
+      <div class="step" id="step2"><div class="dot">2</div> Complete Profile</div>
+    </div>
+    <!-- Step 1 -->
+    <div id="firstStep1">
+      <h3>🔐 Set Your New Password</h3>
+      <div class="sub">Your account requires a password change before you can continue.</div>
+      <div style="display:flex;flex-direction:column;gap:12px;margin-top:14px">
+        <label class="fld">New Password<input class="inp" type="password" id="fl_pw1" placeholder="New password" style="margin-top:4px"/></label>
+        <label class="fld">Confirm Password<input class="inp" type="password" id="fl_pw2" placeholder="Repeat password" style="margin-top:4px"/></label>
+      </div>
+      <div class="err" id="fl_err1" style="color:#ff8080;font-size:12px;margin-top:10px;min-height:16px"></div>
+      <div style="display:flex;justify-content:flex-end;margin-top:16px">
+        <button class="btn primary" onclick="firstLoginStep1()">Next →</button>
+      </div>
+    </div>
+    <!-- Step 2 -->
+    <div id="firstStep2" style="display:none">
+      <h3>👤 Complete Your Profile</h3>
+      <div class="sub">Fill in your personal details to finish setup.</div>
+      <div class="formgrid" style="margin-top:14px">
+        <label>Full Name<input class="inp" id="fl_name" placeholder="Your full name"/></label>
+        <label>Work Email<input class="inp" id="fl_email" type="email" placeholder="you@company.com"/></label>
+        <label>Department<input class="inp" id="fl_dept" placeholder="Department"/></label>
+        <label>Position<input class="inp" id="fl_pos" placeholder="Your position"/></label>
+        <label style="grid-column:1/-1">Profile Photo (optional)
+          <div style="display:flex;align-items:center;gap:12px;margin-top:6px">
+            <img id="flPhotoPreview" style="display:none;width:48px;height:48px;border-radius:50%;object-fit:cover;border:1px solid var(--border)"/>
+            <input class="inp" type="file" accept="image/*" onchange="flPhotoSelected(this)"/>
+          </div>
+        </label>
+      </div>
+      <div class="err" id="fl_err2" style="color:#ff8080;font-size:12px;margin-top:10px;min-height:16px"></div>
+      <div style="display:flex;justify-content:flex-end;margin-top:16px">
+        <button class="btn primary" onclick="firstLoginStep2()">✓ Finish Setup</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ======== LOGIN ======== -->
+<div class="login-overlay show" id="loginOverlay">
+  <div class="login-card">
+    <div class="logo">⏱</div>
+    <h2>TK Dashboard</h2>
+    <p>Sign in to access your timekeeping portal</p>
+    <label>Employee ID</label>
+    <input id="loginId" placeholder="EMP-001 or HR-ADMIN" autocomplete="username" onkeydown="if(event.key==='Enter')doLogin()"/>
+    <label>Password</label>
+    <input type="password" id="loginPass" placeholder="Enter password" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()"/>
+    <div class="err" id="loginErr"></div>
+    <button class="btn primary" onclick="doLogin()" style="width:100%;justify-content:center;margin-top:14px">Sign In</button>
+    <div style="text-align:center;margin-top:10px">
+      <a onclick="toggleForgotPw()" style="font-size:12px;color:var(--accent);cursor:pointer;text-decoration:underline">Forgot password?</a>
+    </div>
+    <div class="note" id="forgotPwNote" style="display:none;text-align:center;background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:10px;margin-top:8px">
+      There's no self-service reset yet — contact your HR Administrator and they can reset your password for you (HR: Employees → Edit → Reset Password).
+    </div>
+    <div class="note" id="loginNote">Demo: EMP-001 / pass123 &nbsp;|&nbsp; HR-ADMIN / admin123</div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<!-- ExcelJS: used only for the templated timesheet downloads (downloadExcel/downloadRecordExcel)
+     because they need to embed the company logo image — SheetJS's free build (above) can't draw
+     images into cells. The flat list exports (exportAllExcel/exportReportExcel) stay on SheetJS,
+     it's lighter and they don't need a logo. -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script>
+/* ============================================================
+   DATA STORE (in-memory; replace with GitHub API for prod)
+   ============================================================ */
+let USERS = {
+  'EMP-001':{pw:'pass123',role:'emp',name:'Andreu S. Sulayao',dept:'IT',pos:'IT Support',email:'andreu@company.com',dateHired:'2022-03-01',firstLogin:false,active:true},
+  'EMP-002':{pw:'pass123',role:'emp',name:'Maria Santos',dept:'Finance',pos:'Accountant',email:'maria@company.com',dateHired:'2021-07-15',firstLogin:false,active:true},
+  'EMP-003':{pw:'temp1234',role:'emp',name:'Jose dela Cruz',dept:'Operations',pos:'Ops Lead',email:'jose@company.com',dateHired:'2023-01-10',firstLogin:true,active:true},
+  'HR-ADMIN':{pw:'admin123',role:'hr',name:'HR Administrator',dept:'Human Resources',pos:'HR Admin',email:'hr@company.com',dateHired:'2020-01-01',firstLogin:false,active:true},
+};
+
+let SUBMISSIONS = [
+  {id:'sub1',empId:'EMP-001',empName:'Andreu S. Sulayao',dept:'IT',cutoff:'A',month:'August',year:2026,period:'Jul 25 – Aug 9',payDate:'Aug 15, 2026',submittedOn:'2026-08-10 09:14',status:'submitted',rows:[]},
+  {id:'sub2',empId:'EMP-002',empName:'Maria Santos',dept:'Finance',cutoff:'B',month:'August',year:2026,period:'Aug 10 – Aug 24',payDate:'Aug 31, 2026',submittedOn:'2026-08-25 14:03',status:'submitted',rows:[]},
+];
+
+let COMPANY = JSON.parse(localStorage.getItem('tk_company')||'{"name":"Cummins Philippines","dept":"HR","address":"","logo":""}');
+let AUDIT_LOG = [];
+let currentUser = null;
+let currentCutoff = 'A';
+let attachFiles = [];
+let viewRecord = null;
+let charts = {};
+
+const MONTH_NAMES = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+const DAY_NAMES = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+
+// Escapes text pulled from shared data (GitHub-sourced USERS/SUBMISSIONS, user input)
+// before it's interpolated into innerHTML template strings, to prevent stored XSS.
+function escapeHtml(str){
+  return String(str??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+const esc = escapeHtml;
+
+/* ============================================================
+   GITHUB BACKEND
+   Data lives in a private repo: data/users.json, data/submissions.json,
+   data/settings.json (= {company}), data/audit.json. Connection config
+   (owner/repo/branch/PAT) is per-browser, stored in localStorage — see CLAUDE.md.
+   ============================================================ */
+let GH_SHA = {users:null, submissions:null, settings:null, audit:null};
+let ghStatus = 'unconfigured'; // unconfigured | connecting | connected | error
+
+function getGhConfig(){
+  return {
+    owner: localStorage.getItem('tk_gh_owner')||'r3u-software',
+    repo: localStorage.getItem('tk_gh_repo')||'tk-dashboard-data',
+    branch: localStorage.getItem('tk_gh_branch')||'main',
+    pat: localStorage.getItem('tk_gh_pat')||'',
+  };
+}
+
+function ghConfigured(){
+  const c = getGhConfig();
+  return !!(c.owner && c.repo && c.pat);
+}
+
+function b64EncodeUnicode(str){
+  return btoa(encodeURIComponent(str).replace(/%([0-9A-F]{2})/g,(_,p1)=>String.fromCharCode('0x'+p1)));
+}
+function b64DecodeUnicode(str){
+  return decodeURIComponent(atob(str.replace(/\n/g,'')).split('').map(c=>'%'+('00'+c.charCodeAt(0).toString(16)).slice(-2)).join(''));
+}
+
+async function ghGetFile(path){
+  const {owner,repo,branch,pat} = getGhConfig();
+  const url = `https://api.github.com/repos/${owner}/${repo}/contents/${path}?ref=${encodeURIComponent(branch)}`;
+  const res = await fetch(url,{headers:{Authorization:`token ${pat}`,Accept:'application/vnd.github+json'}});
+  if(res.status===404) return {content:null, sha:null};
+  if(!res.ok){
+    const body = await res.text().catch(()=> '');
+    throw new Error(`GET ${path} failed (${res.status}): ${body.slice(0,200)}`);
+  }
+  const data = await res.json();
+  return {content: JSON.parse(b64DecodeUnicode(data.content)), sha: data.sha};
+}
+
+async function ghPutFile(path,obj,message,sha){
+  const {owner,repo,branch,pat} = getGhConfig();
+  const url = `https://api.github.com/repos/${owner}/${repo}/contents/${path}`;
+  const body = {message, content: b64EncodeUnicode(JSON.stringify(obj,null,2)), branch};
+  if(sha) body.sha = sha;
+  const res = await fetch(url,{method:'PUT',headers:{Authorization:`token ${pat}`,Accept:'application/vnd.github+json','Content-Type':'application/json'},body:JSON.stringify(body)});
+  if(!res.ok){
+    const errBody = await res.text().catch(()=> '');
+    throw new Error(`PUT ${path} failed (${res.status}): ${errBody.slice(0,200)}`);
+  }
+  const data = await res.json();
+  return data.content.sha;
+}
+
+async function saveUsersToGitHub(){
+  if(!ghConfigured()) return;
+  try{
+    GH_SHA.users = await ghPutFile('data/users.json', USERS, 'Update users.json', GH_SHA.users);
+  }catch(e){
+    console.error(e);
+    toast('⚠️ Failed to sync users to GitHub: '+e.message,'error');
+  }
+}
+
+async function saveSubmissionsToGitHub(){
+  if(!ghConfigured()) return;
+  try{
+    GH_SHA.submissions = await ghPutFile('data/submissions.json', SUBMISSIONS, 'Update submissions.json', GH_SHA.submissions);
+  }catch(e){
+    console.error(e);
+    toast('⚠️ Failed to sync submissions to GitHub: '+e.message,'error');
+  }
+}
+
+async function saveSettingsToGitHub(){
+  if(!ghConfigured()) return;
+  try{
+    const payload = {company:COMPANY};
+    GH_SHA.settings = await ghPutFile('data/settings.json', payload, 'Update settings.json', GH_SHA.settings);
+  }catch(e){
+    console.error(e);
+    toast('⚠️ Failed to sync settings to GitHub: '+e.message,'error');
+  }
+}
+
+async function saveAuditToGitHub(){
+  if(!ghConfigured()) return;
+  try{
+    GH_SHA.audit = await ghPutFile('data/audit.json', AUDIT_LOG, 'Update audit.json', GH_SHA.audit);
+  }catch(e){
+    console.error(e);
+    toast('⚠️ Failed to sync audit log to GitHub: '+e.message,'error');
+  }
+}
+
+// Appends one audit entry (newest first) and persists it — call this at every
+// meaningful state change (auth, employee CRUD, submissions, settings).
+function addAudit(action,detail){
+  AUDIT_LOG.unshift({
+    ts: new Date().toISOString(),
+    actor: currentUser ? `${currentUser.id} (${currentUser.name})` : 'system',
+    action, detail: detail||''
+  });
+  if(AUDIT_LOG.length>500) AUDIT_LOG.length=500; // cap growth
+  saveAuditToGitHub();
+  if(document.getElementById('v-hr-audit')?.classList.contains('active')) renderAudit();
+}
+
+function loadGithubUI(){
+  const c = getGhConfig();
+  const own=document.getElementById('ghOwner'), rep=document.getElementById('ghRepo'),
+        br=document.getElementById('ghBranch'), pat=document.getElementById('ghPat');
+  if(!own) return; // settings view not in DOM yet
+  own.value=c.owner; rep.value=c.repo; br.value=c.branch; pat.value=c.pat;
+  updateGhStatusUI(ghStatus);
+}
+
+function updateGhStatusUI(status){
+  ghStatus = status;
+  const el = document.getElementById('ghStatus');
+  if(!el) return;
+  const map = {
+    unconfigured: ['Not connected','var(--muted)'],
+    connecting: ['Connecting…','var(--muted)'],
+    connected: ['✅ Connected','#10b981'],
+    error: ['❌ Connection failed','#ef4444'],
+  };
+  const [text,color] = map[status]||map.unconfigured;
+  el.textContent = text;
+  el.style.color = color;
+}
+
+async function saveGithubConfig(){
+  const owner=document.getElementById('ghOwner').value.trim();
+  const repo=document.getElementById('ghRepo').value.trim();
+  const branch=document.getElementById('ghBranch').value.trim()||'main';
+  const pat=document.getElementById('ghPat').value.trim();
+  if(!owner||!repo||!pat){toast('Owner, repo and PAT are required.','error');return;}
+  localStorage.setItem('tk_gh_owner',owner);
+  localStorage.setItem('tk_gh_repo',repo);
+  localStorage.setItem('tk_gh_branch',branch);
+  localStorage.setItem('tk_gh_pat',pat);
+  updateGhStatusUI('connecting');
+  try{
+    const u = await ghGetFile('data/users.json');
+    GH_SHA.users = u.sha;
+    if(u.content===null){
+      // Repo reachable but data files don't exist yet — push current data as the first commit.
+      // Use ghPutFile directly (not the saveXToGitHub wrappers) so a failed write here
+      // throws into the catch below instead of being swallowed and reported as success.
+      GH_SHA.users = await ghPutFile('data/users.json', USERS, 'Initialize users.json', null);
+      GH_SHA.submissions = await ghPutFile('data/submissions.json', SUBMISSIONS, 'Initialize submissions.json', null);
+      GH_SHA.settings = await ghPutFile('data/settings.json', {company:COMPANY}, 'Initialize settings.json', null);
+      GH_SHA.audit = await ghPutFile('data/audit.json', AUDIT_LOG, 'Initialize audit.json', null);
+      toast('✅ Connected! Initialized data files in the repo.','success');
+    }else{
+      USERS = u.content;
+      if(currentUser && USERS[currentUser.id]) currentUser = {...USERS[currentUser.id], id: currentUser.id};
+      const [s,st,au] = await Promise.all([ghGetFile('data/submissions.json'), ghGetFile('data/settings.json'), ghGetFile('data/audit.json')]);
+      if(s.content){SUBMISSIONS=s.content; GH_SHA.submissions=s.sha;}
+      if(st.content){COMPANY=st.content.company||COMPANY; GH_SHA.settings=st.sha;}
+      if(au.content){AUDIT_LOG=au.content; GH_SHA.audit=au.sha;}
+      loadCompanyUI(); renderEmployees(); renderRecords(); renderHistory();
+      toast('✅ Connected to GitHub! Data loaded.','success');
+    }
+    updateGhStatusUI('connected');
+  }catch(e){
+    console.error(e);
+    updateGhStatusUI('error');
+    toast('❌ Connection failed: '+e.message,'error');
+  }
+}
+
+async function bootLoad(){
+  if(!ghConfigured()){ ghStatus='unconfigured'; return; }
+  ghStatus='connecting';
+  try{
+    const [u,s,st,au] = await Promise.all([
+      ghGetFile('data/users.json'),
+      ghGetFile('data/submissions.json'),
+      ghGetFile('data/settings.json'),
+      ghGetFile('data/audit.json'),
+    ]);
+    if(u.content){USERS=u.content; GH_SHA.users=u.sha;}
+    if(s.content){SUBMISSIONS=s.content; GH_SHA.submissions=s.sha;}
+    if(st.content){
+      COMPANY = st.content.company||COMPANY;
+      GH_SHA.settings = st.sha;
+    }
+    if(au.content){AUDIT_LOG=au.content; GH_SHA.audit=au.sha;}
+    ghStatus='connected';
+  }catch(e){
+    console.error(e);
+    ghStatus='error';
+    toast('⚠️ Could not reach GitHub — using local/demo data. '+e.message,'error');
+  }
+}
+
+/* ============================================================
+   AUTH
+   ============================================================ */
+function toggleForgotPw(){
+  const el=document.getElementById('forgotPwNote');
+  el.style.display=el.style.display==='none'?'block':'none';
+}
+
+function doLogin(){
+  const id = document.getElementById('loginId').value.trim().toUpperCase();
+  const pw = document.getElementById('loginPass').value;
+  const u = USERS[id];
+  document.getElementById('loginErr').textContent = '';
+  if(!u || u.pw !== pw){ document.getElementById('loginErr').textContent = 'Invalid Employee ID or password.'; return; }
+  currentUser = {...u, id};
+  addAudit('login','Signed in');
+  document.getElementById('loginOverlay').classList.remove('show');
+  if(u.firstLogin){ openFirstLogin(); return; }
+  initApp();
+}
+
+function openFirstLogin(){
+  document.getElementById('firstStep1').style.display='block';
+  document.getElementById('firstStep2').style.display='none';
+  document.getElementById('step1').className='step active';
+  document.getElementById('step2').className='step';
+  document.getElementById('stepLine1').className='step-line';
+  document.getElementById('firstLoginOverlay').classList.add('show');
+}
+
+function firstLoginStep1(){
+  const p1=document.getElementById('fl_pw1').value, p2=document.getElementById('fl_pw2').value;
+  const err=document.getElementById('fl_err1');
+  if(p1.length<6){err.textContent='Password must be at least 6 characters.';return;}
+  if(p1!==p2){err.textContent='Passwords do not match.';return;}
+  USERS[currentUser.id].pw = p1;
+  saveUsersToGitHub();
+  addAudit('password_change','Changed own password (first login)');
+  err.textContent='';
+  document.getElementById('firstStep1').style.display='none';
+  document.getElementById('firstStep2').style.display='block';
+  document.getElementById('step1').className='step done';
+  document.getElementById('step2').className='step active';
+  document.getElementById('stepLine1').className='step-line done';
+}
+
+function firstLoginStep2(){
+  const name=document.getElementById('fl_name').value.trim();
+  const email=document.getElementById('fl_email').value.trim();
+  const dept=document.getElementById('fl_dept').value.trim();
+  const pos=document.getElementById('fl_pos').value.trim();
+  const err=document.getElementById('fl_err2');
+  if(!name||!email){err.textContent='Name and email are required.';return;}
+  const photo=USERS[currentUser.id].profilePhoto||null;
+  USERS[currentUser.id] = {...USERS[currentUser.id], name,email,dept,pos,firstLogin:false,profilePhoto:photo};
+  currentUser = {...currentUser,name,email,dept,pos,firstLogin:false,profilePhoto:photo};
+  saveUsersToGitHub();
+  addAudit('profile_complete','Completed first-login profile setup');
+  document.getElementById('firstLoginOverlay').classList.remove('show');
+  initApp();
+}
+
+function flPhotoSelected(input){
+  const file=input.files&&input.files[0];
+  if(!file)return;
+  const reader=new FileReader();
+  reader.onload=()=>{
+    USERS[currentUser.id].profilePhoto=reader.result;
+    document.getElementById('flPhotoPreview').src=reader.result;
+    document.getElementById('flPhotoPreview').style.display='block';
+  };
+  reader.readAsDataURL(file);
+}
+
+function logout(){
+  currentUser=null;
+  document.getElementById('loginId').value='';
+  document.getElementById('loginPass').value='';
+  document.getElementById('loginErr').textContent='';
+  document.getElementById('loginOverlay').classList.add('show');
+  document.getElementById('userPop').classList.remove('show');
+  document.body.className='';
+  setView(''); // blank so nothing is highlighted
+}
+
+function renderAvatar(){
+  if(!currentUser)return;
+  const ini=currentUser.name.split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2);
+  [document.getElementById('uAva'),document.getElementById('settingsAvaPreview')].forEach(el=>{
+    if(!el)return;
+    if(currentUser.profilePhoto) el.innerHTML=`<img class="avatar-photo" src="${currentUser.profilePhoto}" alt=""/>`;
+    else el.textContent=ini;
+  });
+}
+
+function updateProfilePhoto(input){
+  const file=input.files&&input.files[0];
+  if(!file||!currentUser)return;
+  const reader=new FileReader();
+  reader.onload=()=>{
+    USERS[currentUser.id].profilePhoto=reader.result;
+    currentUser.profilePhoto=reader.result;
+    renderAvatar();
+    saveUsersToGitHub();
+    addAudit('profile_photo_update','Updated own profile photo');
+    toast('✅ Profile photo updated!','success');
+  };
+  reader.readAsDataURL(file);
+}
+
+/* ============================================================
+   APP INIT
+   ============================================================ */
+function initApp(){
+  const isHR = currentUser.role === 'hr';
+  document.body.classList.toggle('roleHR', isHR);
+  document.body.classList.toggle('roleEmp', !isHR);
+
+  // Update user chip
+  renderAvatar();
+  document.getElementById('uName').textContent = currentUser.name;
+  document.getElementById('uWho').textContent = currentUser.id + ' · ' + (isHR?'HR Admin':'Employee');
+
+  // Nav: activate first item for role
+  document.querySelectorAll('.nav a').forEach(a=>a.classList.remove('active'));
+  const firstView = isHR ? 'hr-dashboard' : 'emp-tk';
+  const firstLink = document.querySelector(`[data-view="${firstView}"]`);
+  if(firstLink) firstLink.classList.add('active');
+
+  // Set current month/year on TK selectors
+  const now = new Date();
+  const selM = document.getElementById('selMonth');
+  const selY = document.getElementById('selYear');
+  selM.value = MONTH_NAMES[now.getMonth()];
+  const yearEl = document.getElementById('selYear');
+  yearEl.innerHTML='';
+  for(let y=2024;y<=2030;y++){const o=document.createElement('option');o.value=y;o.textContent=y;yearEl.appendChild(o);}
+  selY.value = now.getFullYear();
+
+  // Load settings UI
+  loadGithubUI();
+  loadCompanyUI();
+  renderSwatches();
+  buildModeToggle();
+  renderEmployees();
+  renderRecords();
+  renderHistory();
+
+  setView(firstView);
+}
+
+/* ============================================================
+   NAVIGATION
+   ============================================================ */
+let currentView = '';
+function setView(v){
+  currentView = v;
+  document.querySelectorAll('.view').forEach(s=>s.classList.remove('active'));
+  if(v) document.getElementById('v-'+v)?.classList.add('active');
+  document.querySelectorAll('.nav a').forEach(a=>{
+    a.classList.toggle('active', a.dataset.view===v);
+  });
+  const titles = {
+    'hr-dashboard':['Dashboard','Overview of all timekeeping activity'],
+    'hr-records':['All Records','Browse and export all employee timesheets'],
+    'hr-employees':['Employees','Manage employee accounts'],
+    'hr-reports':['Reports','Hours and attendance summary by employee'],
+    'hr-audit':['Audit Log','Who changed what, when'],
+    'emp-tk':['My Timesheet','Submit your bimonthly cutoff timesheet'],
+    'emp-history':['History','Your previous submissions'],
+    'settings':['Settings','Appearance, GitHub sync, and account settings'],
+  };
+  const [t,s] = titles[v]||['',''];
+  document.getElementById('viewTitle').textContent = t;
+  document.getElementById('viewSub').textContent = s;
+  if(v==='hr-dashboard') renderHRDashboard();
+  if(v==='emp-tk') buildTimeTable();
+  if(v==='emp-history') renderHistory();
+  if(v==='hr-records') renderRecords();
+  if(v==='hr-employees') renderEmployees();
+  if(v==='hr-reports') renderReports();
+  if(v==='hr-audit') renderAudit();
+  document.getElementById('userPop').classList.remove('show');
+}
+
+document.getElementById('nav').addEventListener('click',e=>{
+  const a = e.target.closest('[data-view]');
+  if(a){ setView(a.dataset.view); closeMobileNav(); }
+});
+
+/* ============================================================
+   CLOCK
+   ============================================================ */
+function tickClock(){
+  const now=new Date();
+  document.getElementById('ckTime').textContent=now.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+  document.getElementById('ckDate').textContent=now.toLocaleDateString('en-US',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+}
+setInterval(tickClock,1000);tickClock();
+
+/* ============================================================
+   SIDEBAR COLLAPSE
+   Desktop (>768px): ☰ toggles the icon-only "collapsed" mode.
+   Mobile (<=768px): the sidebar is off-canvas by default; ☰ toggles it
+   open as a drawer over the content, closed by the backdrop or a nav click.
+   ============================================================ */
+function isMobileWidth(){ return window.innerWidth<=768; }
+function closeMobileNav(){ document.body.classList.remove('mobileNavOpen'); }
+document.getElementById('collapseBtn').addEventListener('click',()=>{
+  if(isMobileWidth()) document.body.classList.toggle('mobileNavOpen');
+  else document.body.classList.toggle('collapsed');
+});
+// Resizing across the breakpoint shouldn't leave a drawer pre-opened (narrow→wide→
+// narrow without touching ☰) or a stray backdrop showing on desktop.
+window.addEventListener('resize',()=>{ if(!isMobileWidth()) closeMobileNav(); });
+document.getElementById('userChip').addEventListener('click',()=>document.getElementById('userPop').classList.toggle('show'));
+document.getElementById('logoutBtn').addEventListener('click',logout);
+
+/* ============================================================
+   CUTOFF LOGIC
+   ============================================================ */
+function getMonthIdx(){return MONTH_NAMES.indexOf(document.getElementById('selMonth').value);}
+
+function getCutoffInfo(){
+  const mi = getMonthIdx(), yr = parseInt(document.getElementById('selYear').value);
+  const mn = MONTH_NAMES[mi];
+  if(currentCutoff==='A'){
+    const pm=(mi-1+12)%12, py=mi===0?yr-1:yr;
+    const pmn=MONTH_NAMES[pm];
+    return {
+      period:`${pmn} 25 – ${mn} 9, ${yr}`,
+      payDate:`${mn} 15, ${yr}`,
+      desc:`Cutoff A covers the 25th of ${pmn} through the 9th of ${mn}.`
+    };
+  } else {
+    const lastDay=new Date(yr,mi+1,0).getDate();
+    return {
+      period:`${mn} 10 – ${mn} 24, ${yr}`,
+      payDate:`${mn} ${lastDay}, ${yr}`,
+      desc:`Cutoff B covers the 10th through the 24th of ${mn}.`
+    };
+  }
+}
+
+function selectCutoff(c){
+  currentCutoff=c;
+  document.getElementById('pillA').classList.toggle('active',c==='A');
+  document.getElementById('pillB').classList.toggle('active',c==='B');
+  buildTimeTable();
+}
+
+function buildTimeTable(){
+  const mi=getMonthIdx(), yr=parseInt(document.getElementById('selYear').value);
+  const info = getCutoffInfo();
+
+  const existing=findExistingSubmission();
+  const statusLabel={draft:'Draft',submitted:'Pending Review',approved:'Approved',rejected:'Rejected'}[existing?.status]||'Not Started';
+  const statusClass=existing?(existing.status==='submitted'?'pending':existing.status):'notstarted';
+  document.getElementById('cutoffInfoBox').innerHTML=
+    `<div class="row" style="justify-content:space-between"><div><b>Period:</b> ${info.period} &nbsp;·&nbsp; <b>Pay Date:</b> <span style="color:var(--accent)">${info.payDate}</span><br/><span style="color:var(--muted);font-size:11px">${info.desc}</span></div><span class="tag ${statusClass}">${statusLabel}</span></div>`;
+  document.getElementById('cutoffPayLabel').textContent='Pay: '+info.payDate;
+
+  let days=[];
+  if(currentCutoff==='A'){
+    const pm=(mi-1+12)%12,py=mi===0?yr-1:yr,lastPrev=new Date(py,pm+1,0).getDate();
+    for(let d=25;d<=lastPrev;d++) days.push(new Date(py,pm,d));
+    for(let d=1;d<=9;d++) days.push(new Date(yr,mi,d));
+  } else {
+    for(let d=10;d<=24;d++) days.push(new Date(yr,mi,d));
+  }
+
+  const tbody=document.getElementById('tkBody');
+  tbody.innerHTML='';
+  days.forEach(dt=>{
+    const dow=dt.getDay();
+    const isWE=(dow===0||dow===6);
+    const dateStr=dt.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+    const key=dt.toISOString().slice(0,10);
+    const cls=isWE?'weekend':'';
+    tbody.insertAdjacentHTML('beforeend',`
+      <tr class="${cls}" data-date="${key}">
+        <td>${dateStr}${isWE?` <span style="font-size:10px;color:var(--accent);opacity:.7">(WE)</span>`:''}</td>
+        <td>${DAY_NAMES[dow]}</td>
+        <td><input type="time" class="tk-in" data-col="inAM"/></td>
+        <td><input type="time" class="tk-in" data-col="outAM"/></td>
+        <td><input type="time" class="tk-in" data-col="inPM"/></td>
+        <td><input type="time" class="tk-in" data-col="outPM"/></td>
+        <td class="hrs-cell" data-date="${key}">—</td>
+      </tr>`);
+  });
+
+  // Auto-compute hours on time input
+  tbody.querySelectorAll('tr').forEach(tr=>{
+    tr.querySelectorAll('.tk-in').forEach(inp=>{
+      inp.addEventListener('change',()=>computeHours(tr));
+    });
+  });
+}
+
+function computeHours(tr){
+  const get=col=>{const i=tr.querySelector(`[data-col="${col}"]`);return i?i.value:'';};
+  const toMins=t=>{if(!t)return 0;const[h,m]=t.split(':').map(Number);return h*60+m;};
+  const amI=toMins(get('inAM')),amO=toMins(get('outAM')),pmI=toMins(get('inPM')),pmO=toMins(get('outPM'));
+  let total=0;
+  if(amI&&amO&&amO>amI)total+=amO-amI;
+  if(pmI&&pmO&&pmO>pmI)total+=pmO-pmI;
+  const cell=tr.querySelector('.hrs-cell');
+  if(cell) cell.textContent=total>0?`${Math.floor(total/60)}h ${total%60}m`:'—';
+}
+
+/* ============================================================
+   ATTACHMENTS
+   ============================================================ */
+function addAttachments(files){
+  [...files].forEach(f=>{
+    attachFiles.push(f);
+    const chip=document.createElement('div');
+    chip.className='pill';
+    chip.innerHTML=`📎 ${esc(f.name)} <button onclick="removeAttach(this,'${esc(f.name)}')">✕</button>`;
+    document.getElementById('attachChips').appendChild(chip);
+  });
+  document.getElementById('attachInput').value='';
+}
+function removeAttach(btn,name){
+  attachFiles=attachFiles.filter(f=>f.name!==name);
+  btn.parentElement.remove();
+}
+function handleDrop(e){
+  e.preventDefault();
+  addAttachments(e.dataTransfer.files);
+}
+
+/* ============================================================
+   SUBMIT / DOWNLOAD
+   ============================================================ */
+function collectRows(){
+  const rows=[];
+  document.querySelectorAll('#tkBody tr').forEach(tr=>{
+    const date=tr.dataset.date;
+    if(!date)return;
+    const get=col=>{const i=tr.querySelector(`[data-col="${col}"]`);return i?i.value:'';};
+    rows.push({date,inAM:get('inAM'),outAM:get('outAM'),inPM:get('inPM'),outPM:get('outPM'),hrs:tr.querySelector('.hrs-cell')?.textContent||'—'});
+  });
+  return rows;
+}
+
+// Finds the current employee's existing draft/submission for the selected
+// cutoff+month+year, so Save Draft / Submit update it in place rather than
+// piling up duplicate rows each time either is clicked.
+function findExistingSubmission(){
+  const month=document.getElementById('selMonth').value;
+  const year=parseInt(document.getElementById('selYear').value);
+  return SUBMISSIONS.find(s=>s.empId===currentUser.id&&s.cutoff===currentCutoff&&s.month===month&&s.year===year);
+}
+
+function upsertSubmission(status){
+  const existing=findExistingSubmission();
+  const info=getCutoffInfo();
+  const rows=collectRows();
+  const remarks=document.getElementById('tkRemarks').value;
+  const sub={
+    id: existing?existing.id:'sub'+Date.now(),
+    empId:currentUser.id,empName:currentUser.name,dept:currentUser.dept,
+    cutoff:currentCutoff,month:document.getElementById('selMonth').value,year:parseInt(document.getElementById('selYear').value),
+    period:info.period,payDate:info.payDate,remarks,
+    submittedOn:new Date().toLocaleString('en-US'),status,rows
+  };
+  if(existing) Object.assign(existing,sub);
+  else SUBMISSIONS.unshift(sub);
+  saveSubmissionsToGitHub();
+  renderHistory();
+  renderRecords();
+}
+
+function saveDraft(){
+  upsertSubmission('draft');
+  addAudit('draft_save',`Saved draft — Cutoff ${currentCutoff}, ${document.getElementById('selMonth').value} ${document.getElementById('selYear').value}`);
+  toast('💾 Draft saved.','success');
+}
+
+function submitCutoff(){
+  upsertSubmission('submitted');
+  addAudit('submission_submit',`Submitted timesheet — Cutoff ${currentCutoff}, ${document.getElementById('selMonth').value} ${document.getElementById('selYear').value}`);
+  toast('✅ Timesheet submitted successfully!','success');
+}
+
+// Parses hour-cell text like "8h 30m" back into minutes (0 for "—"/blank),
+// used to compute the totals row on timesheet exports.
+function parseHrsToMinutes(hrs){
+  const m = hrs && hrs.match(/(\d+)h\s*(\d+)m/);
+  return m ? parseInt(m[1])*60+parseInt(m[2]) : 0;
+}
+function formatMinutes(total){
+  return `${Math.floor(total/60)}h ${total%60}m`;
+}
+
+// Shared layout for both the employee's own download and HR's per-record download:
+// company header (name + address, with the logo actually embedded as an image —
+// this uses ExcelJS rather than SheetJS specifically because SheetJS's free build
+// can't draw images into cells), employee/period info block, the day-by-day
+// table, and a totals row.
+async function buildTimesheetWorkbook(empInfo, periodInfo, rows, remarks){
+  const wb = new ExcelJS.Workbook();
+  const ws = wb.addWorksheet('Timesheet');
+  ws.columns = [{width:14},{width:6},{width:12},{width:12},{width:12},{width:12},{width:12},{width:22}];
+
+  ws.addRow([COMPANY.name||'Company Name']).getCell(1).font = {bold:true, size:14};
+  if(COMPANY.address) ws.addRow([COMPANY.address]);
+  ws.addRow(['TIMEKEEPING RECORD']).getCell(1).font = {bold:true};
+  ws.addRow([]);
+  ws.addRow(['Employee:',empInfo.name,'ID:',empInfo.id]);
+  ws.addRow(['Department:',empInfo.dept||'','Position:',empInfo.pos||'']);
+  ws.addRow(['Cutoff:','Cutoff '+periodInfo.cutoff,'Period:',periodInfo.period]);
+  ws.addRow(['Pay Date:',periodInfo.payDate,'Generated:',new Date().toLocaleString('en-US')]);
+  ws.addRow([]);
+  ws.addRow(['Date','Day','AM Time-In','AM Time-Out','PM Time-In','PM Time-Out','Total Hours','Remarks']).font={bold:true};
+
+  let totalMin=0;
+  rows.forEach(row=>{
+    const dt=new Date(row.date+'T12:00:00');
+    totalMin+=parseHrsToMinutes(row.hrs);
+    ws.addRow([row.date,DAY_NAMES[dt.getDay()],row.inAM||'',row.outAM||'',row.inPM||'',row.outPM||'',row.hrs||'—','']);
+  });
+  ws.addRow(['','','','','','TOTAL',formatMinutes(totalMin),'']).font={bold:true};
+  if(remarks){ws.addRow([]);ws.addRow(['Remarks:',remarks]);}
+
+  // Anchored in the header area, to the right of the text labels (which live in
+  // columns A-D) so it doesn't overlap them. ExcelJS can only embed png/jpeg/gif;
+  // the upload picker already restricts to those, but data pulled from GitHub
+  // (possibly set by a different, older client) isn't guaranteed to match, so
+  // this still checks for real rather than assuming — and warns instead of
+  // silently exporting without the logo if it doesn't.
+  if(COMPANY.logo){
+    const m = COMPANY.logo.match(/^data:image\/(png|jpe?g|gif);base64,(.+)$/i);
+    if(m){
+      const ext = m[1].toLowerCase()==='jpg' ? 'jpeg' : m[1].toLowerCase();
+      const imgId = wb.addImage({base64:COMPANY.logo, extension:ext});
+      ws.addImage(imgId, {tl:{col:5,row:0}, ext:{width:130,height:50}});
+    } else {
+      toast('⚠️ Logo format not supported in Excel exports (PNG/JPEG/GIF only) — omitted from this file.','error');
+    }
+  }
+  return wb;
+}
+
+async function downloadWorkbook(wb, filename){
+  const buf = await wb.xlsx.writeBuffer();
+  const blob = new Blob([buf], {type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
+  const url = URL.createObjectURL(blob);
+  try{
+    const a = document.createElement('a');
+    a.href = url; a.download = filename;
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  } finally {
+    URL.revokeObjectURL(url);
+  }
+}
+
+async function downloadExcel(){
+  const info=getCutoffInfo();
+  const rows=collectRows();
+  const remarks=document.getElementById('tkRemarks').value;
+  const wb = await buildTimesheetWorkbook(
+    {name:currentUser.name,id:currentUser.id,dept:currentUser.dept,pos:currentUser.pos},
+    {cutoff:currentCutoff,period:info.period,payDate:info.payDate},
+    rows, remarks
+  );
+  const fn=`${currentUser.name.replace(/\s/g,'_')}_TK_Cutoff${currentCutoff}_${info.period.replace(/[^a-zA-Z0-9]/g,'_')}.xlsx`;
+  await downloadWorkbook(wb, fn);
+  toast('⬇ Excel downloaded!');
+}
+
+async function downloadRecordExcel(){
+  if(!viewRecord) return;
+  const r=viewRecord;
+  const empUser=USERS[r.empId]||{};
+  const wb = await buildTimesheetWorkbook(
+    {name:r.empName,id:r.empId,dept:r.dept,pos:empUser.pos},
+    {cutoff:r.cutoff,period:r.period,payDate:r.payDate},
+    r.rows||[], r.remarks
+  );
+  await downloadWorkbook(wb, `${r.empName.replace(/\s/g,'_')}_TK_Cutoff${r.cutoff}.xlsx`);
+}
+
+function exportAllExcel(){
+  const rows=[['Employee','ID','Department','Cutoff','Period','Pay Date','Submitted On','Status']];
+  SUBMISSIONS.forEach(s=>rows.push([s.empName,s.empId,s.dept,'Cutoff '+s.cutoff,s.period,s.payDate,s.submittedOn,s.status]));
+  const ws=XLSX.utils.aoa_to_sheet(rows);
+  const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'Records');
+  XLSX.writeFile(wb,'TK_All_Records_'+new Date().toISOString().slice(0,10)+'.xlsx');
+  toast('⬇ All records exported!');
+}
+
+/* ============================================================
+   HR DASHBOARD
+   ============================================================ */
+function renderHRDashboard(){
+  const empCount=Object.values(USERS).filter(u=>u.role==='emp').length;
+  const activeEmp=Object.values(USERS).filter(u=>u.role==='emp'&&u.active).length;
+  const totalSubs=SUBMISSIONS.length;
+  const thisMonth=new Date().toLocaleString('en-US',{month:'long'});
+  const thisMonthSubs=SUBMISSIONS.filter(s=>s.month===thisMonth).length;
+  const cards=[
+    ['Total Employees',activeEmp,'Active accounts','👥'],
+    ['Total Submissions',totalSubs,'All time','📋'],
+    ['This Month',thisMonthSubs,'Submissions','📅'],
+    ['Pending Review',SUBMISSIONS.filter(s=>s.status==='submitted').length,'Need attention','⏳'],
+    ['Approved',SUBMISSIONS.filter(s=>s.status==='approved').length,'This period','✅'],
+  ];
+  document.getElementById('hrDashCards').innerHTML=cards.map(([k,v,d,ic])=>`
+    <div class="card"><div class="chip">${ic}</div><div class="k">${k}</div><div class="v">${v}</div><div class="d">${d}</div></div>`).join('');
+
+  // Chart: Submissions by cutoff
+  destroyChart('cc');
+  const cutoffA=SUBMISSIONS.filter(s=>s.cutoff==='A').length;
+  const cutoffB=SUBMISSIONS.filter(s=>s.cutoff==='B').length;
+  const acc=getComputedStyle(document.documentElement).getPropertyValue('--accent').trim();
+  const acc2=getComputedStyle(document.documentElement).getPropertyValue('--accent2').trim();
+  const mut=getComputedStyle(document.documentElement).getPropertyValue('--muted').trim();
+  const brd=getComputedStyle(document.documentElement).getPropertyValue('--border').trim();
+  charts.cc=new Chart(document.getElementById('chartCutoff'),{
+    type:'bar',data:{labels:['Cutoff A (25–9)','Cutoff B (10–24)'],datasets:[{label:'Submissions',data:[cutoffA,cutoffB],backgroundColor:[acc+'aa',acc2+'aa'],borderRadius:8}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:mut},grid:{color:brd}},y:{ticks:{color:mut},grid:{color:brd},beginAtZero:true}}}});
+
+  // Chart: active vs inactive
+  destroyChart('es');
+  charts.es=new Chart(document.getElementById('chartEmpStatus'),{
+    type:'doughnut',data:{labels:['Active','Inactive'],datasets:[{data:[activeEmp,empCount-activeEmp],backgroundColor:[acc+'cc',acc2+'44'],borderWidth:0}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:mut}}}}});
+}
+
+function destroyChart(k){if(charts[k]){charts[k].destroy();delete charts[k];}}
+
+/* ============================================================
+   HR RECORDS
+   ============================================================ */
+function renderRecords(){
+  const search=(document.getElementById('recSearch')?.value||'').toLowerCase();
+  const fltCutoff=document.getElementById('recFltCutoff')?.value||'';
+  const fltMonth=document.getElementById('recFltMonth')?.value||'';
+  const fltDept=document.getElementById('recFltDept')?.value||'';
+
+  let list=SUBMISSIONS.filter(s=>{
+    if(fltCutoff&&s.cutoff!==fltCutoff)return false;
+    if(fltMonth&&s.month!==fltMonth)return false;
+    if(fltDept&&s.dept!==fltDept)return false;
+    if(search&&!s.empName.toLowerCase().includes(search)&&!s.empId.toLowerCase().includes(search))return false;
+    return true;
+  });
+
+  const tbody=document.getElementById('recBody');
+  if(!tbody)return;
+  tbody.innerHTML=list.length===0?`<tr><td colspan="9"><div class="empty"><div class="big">📂</div>No records found</div></td></tr>`
+    :list.map(s=>`<tr class="clickable" onclick="openRecord('${esc(s.id)}')">
+      <td>${esc(s.empName)}</td><td>${esc(s.empId)}</td><td>${esc(s.dept)}</td>
+      <td>Cutoff ${esc(s.cutoff)}</td><td>${esc(s.period)}</td><td>${esc(s.payDate)}</td>
+      <td>${esc(s.submittedOn)}</td>
+      <td><span class="tag ${esc(s.status)}">${esc(s.status)}</span></td>
+      <td style="display:flex;gap:6px">
+        <button class="btn sm" onclick="event.stopPropagation();openRecord('${esc(s.id)}')">View</button>
+        ${s.status==='submitted'?`<button class="btn sm" onclick="event.stopPropagation();approveSubmission('${esc(s.id)}')" style="color:#34d399">✔ Approve</button>
+        <button class="btn sm" onclick="event.stopPropagation();rejectSubmission('${esc(s.id)}')" style="color:#f87171">✕ Reject</button>`:''}
+      </td>
+    </tr>`).join('');
+  const info=document.getElementById('recInfo');
+  if(info)info.textContent=list.length+' record'+(list.length!==1?'s':'');
+
+  // Populate filter dropdowns
+  const months=[...new Set(SUBMISSIONS.map(s=>s.month))].sort();
+  const depts=[...new Set(SUBMISSIONS.map(s=>s.dept))].sort();
+  const mEl=document.getElementById('recFltMonth');
+  const dEl=document.getElementById('recFltDept');
+  if(mEl&&mEl.options.length<=1) months.forEach(m=>{const o=document.createElement('option');o.textContent=m;o.value=m;mEl.appendChild(o);});
+  if(dEl&&dEl.options.length<=1) depts.forEach(d=>{const o=document.createElement('option');o.textContent=d;o.value=d;dEl.appendChild(o);});
+
+  updateNavBadge();
+}
+
+// Badge on "All Records" showing how many submissions are awaiting HR review.
+function updateNavBadge(){
+  const badge=document.getElementById('recBadge');
+  if(!badge)return;
+  const pending=SUBMISSIONS.filter(s=>s.status==='submitted').length;
+  badge.textContent=pending;
+  badge.style.display=pending>0?'inline-block':'none';
+}
+
+/* ============================================================
+   HR REPORTS
+   ============================================================ */
+let _reportData=[];
+function fmtLocalDate(d){
+  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+}
+
+function renderReports(){
+  const from=document.getElementById('repFrom')?.value||'';
+  const to=document.getElementById('repTo')?.value||'';
+  const dept=document.getElementById('repDept')?.value||'';
+
+  // Only submitted/approved rows count toward an official report — a draft is
+  // unconfirmed and a rejected submission was explicitly disputed by HR, so
+  // neither should be presented as real attendance.
+  const presentByEmp={}; // empId -> {date: minutes}
+  SUBMISSIONS.forEach(s=>{
+    if(s.status!=='submitted' && s.status!=='approved') return;
+    if(dept && s.dept!==dept) return;
+    (s.rows||[]).forEach(r=>{
+      if(from && r.date<from) return;
+      if(to && r.date>to) return;
+      const mins=parseHrsToMinutes(r.hrs);
+      if(mins<=0) return;
+      (presentByEmp[s.empId]=presentByEmp[s.empId]||{})[r.date]=mins;
+    });
+  });
+
+  // Drive the row list from the active roster, not from who happened to
+  // submit something — otherwise an employee who never opens a cutoff at all
+  // is invisible to the report instead of showing up as fully absent.
+  const roster=Object.entries(USERS).filter(([id,u])=>u.role==='emp'&&u.active&&(!dept||u.dept===dept));
+
+  if(from && to){
+    const end=new Date(to+'T12:00:00');
+    _reportData=roster.map(([id,u])=>{
+      const present=presentByEmp[id]||{};
+      let totalMin=0,presentDays=0,absentDays=0;
+      for(let d=new Date(from+'T12:00:00'); d<=end; d.setDate(d.getDate()+1)){
+        if(d.getDay()===0||d.getDay()===6) continue; // weekends aren't counted either way
+        const key=fmtLocalDate(d);
+        if(present[key]){totalMin+=present[key];presentDays++;}
+        else absentDays++;
+      }
+      return {name:u.name,dept:u.dept,totalMin,present:presentDays,absent:absentDays};
+    });
+  } else {
+    // No bounded range — can't enumerate weekdays to find absences, so just
+    // sum whatever's logged and leave Days Absent blank rather than a fake 0.
+    _reportData=roster.map(([id,u])=>{
+      const present=presentByEmp[id]||{};
+      const totalMin=Object.values(present).reduce((a,b)=>a+b,0);
+      return {name:u.name,dept:u.dept,totalMin,present:Object.keys(present).length,absent:null};
+    }).filter(a=>a.present>0);
+  }
+  _reportData.sort((a,b)=>a.name.localeCompare(b.name));
+
+  const tbody=document.getElementById('repBody');
+  if(tbody) tbody.innerHTML=_reportData.length===0
+    ? `<tr><td colspan="5"><div class="empty"><div class="big">📊</div>No data for this range</div></td></tr>`
+    : _reportData.map(a=>`<tr>
+        <td>${esc(a.name)}</td><td>${esc(a.dept)}</td>
+        <td>${formatMinutes(a.totalMin)}</td><td>${a.present}</td><td>${a.absent===null?'—':a.absent}</td>
+      </tr>`).join('');
+
+  const depts=[...new Set(Object.values(USERS).filter(u=>u.role==='emp').map(u=>u.dept))].sort();
+  const dEl=document.getElementById('repDept');
+  if(dEl&&dEl.options.length<=1) depts.forEach(d=>{const o=document.createElement('option');o.textContent=d;o.value=d;dEl.appendChild(o);});
+}
+
+function printReport(){ window.print(); }
+
+function exportReportExcel(){
+  const rows=[['Employee','Department','Total Hours','Days Present','Days Absent']];
+  _reportData.forEach(a=>rows.push([a.name,a.dept,formatMinutes(a.totalMin),a.present,a.absent===null?'—':a.absent]));
+  const ws=XLSX.utils.aoa_to_sheet(rows);
+  const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'Report');
+  XLSX.writeFile(wb,'TK_Report_'+new Date().toISOString().slice(0,10)+'.xlsx');
+  toast('⬇ Report exported!');
+}
+
+/* ============================================================
+   AUDIT LOG
+   ============================================================ */
+function renderAudit(){
+  const search=(document.getElementById('auditSearch')?.value||'').toLowerCase();
+  const list=AUDIT_LOG.filter(e=>!search||e.actor.toLowerCase().includes(search)||e.action.toLowerCase().includes(search)||(e.detail||'').toLowerCase().includes(search));
+  const tbody=document.getElementById('auditBody');
+  if(!tbody)return;
+  tbody.innerHTML=list.length===0?`<tr><td colspan="4"><div class="empty"><div class="big">📜</div>No audit entries</div></td></tr>`
+    :list.map(e=>`<tr>
+      <td style="white-space:nowrap">${esc(new Date(e.ts).toLocaleString('en-US'))}</td>
+      <td>${esc(e.actor)}</td><td>${esc(e.action)}</td><td>${esc(e.detail)}</td>
+    </tr>`).join('');
+  const info=document.getElementById('auditInfo');
+  if(info) info.textContent=list.length+' entr'+(list.length!==1?'ies':'y');
+}
+
+['recSearch','recFltCutoff','recFltMonth','recFltDept'].forEach(id=>{
+  document.getElementById(id)?.addEventListener('input',renderRecords);
+  document.getElementById(id)?.addEventListener('change',renderRecords);
+});
+
+function openRecord(id){
+  const s=SUBMISSIONS.find(r=>r.id===id);
+  if(!s)return;
+  viewRecord=s;
+  document.getElementById('viewRecTitle').textContent=`${s.empName} — Cutoff ${s.cutoff}`;
+  document.getElementById('viewRecSub').textContent=`${s.period} · Pay date: ${s.payDate} · Submitted: ${s.submittedOn}`;
+  let html=`<div class="tablewrap"><table class="tk-table"><thead><tr><th>Date</th><th>Day</th><th>In AM</th><th>Out AM</th><th>In PM</th><th>Out PM</th><th>Hours</th></tr></thead><tbody>`;
+  if(s.rows&&s.rows.length){
+    s.rows.forEach(r=>{
+      const dt=new Date(r.date+'T12:00:00');
+      html+=`<tr><td>${esc(r.date)}</td><td>${DAY_NAMES[dt.getDay()]}</td><td>${esc(r.inAM)||'—'}</td><td>${esc(r.outAM)||'—'}</td><td>${esc(r.inPM)||'—'}</td><td>${esc(r.outPM)||'—'}</td><td>${esc(r.hrs)||'—'}</td></tr>`;
+    });
+  } else {
+    html+=`<tr><td colspan="7" style="text-align:center;color:var(--muted);padding:20px">No time entries in this record.</td></tr>`;
+  }
+  html+=`</tbody></table></div>`;
+  if(s.remarks) html+=`<div style="margin-top:12px;font-size:13px"><b>Remarks:</b> ${esc(s.remarks)}</div>`;
+  document.getElementById('viewRecContent').innerHTML=html;
+  const canReview = currentUser?.role==='hr' && s.status==='submitted';
+  document.getElementById('viewRecApproveBtn').style.display=canReview?'':'none';
+  document.getElementById('viewRecRejectBtn').style.display=canReview?'':'none';
+  document.getElementById('viewRecOverlay').classList.add('show');
+}
+
+function approveSubmission(id){
+  const s=SUBMISSIONS.find(r=>r.id===id);
+  if(!s)return;
+  s.status='approved';
+  saveSubmissionsToGitHub();
+  addAudit('submission_approve',`Approved ${s.empName} (${s.empId}) — Cutoff ${s.cutoff}, ${s.period}`);
+  renderRecords(); renderHRDashboard();
+  toast(`✅ ${s.empName}'s timesheet approved.`,'success');
+}
+
+function rejectSubmission(id){
+  const s=SUBMISSIONS.find(r=>r.id===id);
+  if(!s)return;
+  s.status='rejected';
+  saveSubmissionsToGitHub();
+  addAudit('submission_reject',`Rejected ${s.empName} (${s.empId}) — Cutoff ${s.cutoff}, ${s.period}`);
+  renderRecords(); renderHRDashboard();
+  toast(`❌ ${s.empName}'s timesheet rejected.`,'error');
+}
+
+/* ============================================================
+   EMPLOYEES
+   ============================================================ */
+function renderEmployees(){
+  const search=(document.getElementById('empSearch')?.value||'').toLowerCase();
+  const list=Object.entries(USERS).filter(([id,u])=>{
+    if(u.role!=='emp')return false;
+    if(search&&!u.name.toLowerCase().includes(search)&&!id.toLowerCase().includes(search))return false;
+    return true;
+  });
+  const tbody=document.getElementById('empBody');
+  if(!tbody)return;
+  tbody.innerHTML=list.length===0
+    ?`<tr><td colspan="7"><div class="empty"><div class="big">👤</div>No employees found</div></td></tr>`
+    :list.map(([id,u])=>`<tr>
+      <td>${esc(u.name)}</td><td>${esc(id)}</td><td>${esc(u.dept)||'—'}</td><td>${esc(u.pos)||'—'}</td>
+      <td>${esc(u.dateHired)||'—'}</td>
+      <td><span class="tag ${u.active?'submitted':'draft'}">${u.active?'Active':'Inactive'}</span></td>
+      <td style="display:flex;gap:6px">
+        <button class="btn sm" onclick="openEditEmployee('${esc(id)}')">✏️ Edit</button>
+        <button class="btn sm" onclick="toggleActive('${esc(id)}')" style="min-width:0">${u.active?'Deactivate':'Activate'}</button>
+      </td>
+    </tr>`).join('');
+}
+
+function toggleActive(id){
+  if(!USERS[id])return;
+  USERS[id].active=!USERS[id].active;
+  renderEmployees();
+  saveUsersToGitHub();
+  addAudit('employee_'+(USERS[id].active?'activate':'deactivate'),`${USERS[id].name} (${id})`);
+  toast(USERS[id].active?'Employee activated.':'Employee deactivated.');
+}
+
+let editingEmpId=null;
+function openEditEmployee(id){
+  const u=USERS[id];
+  if(!u)return;
+  editingEmpId=id;
+  document.getElementById('editEmpName').value=u.name||'';
+  document.getElementById('editEmpId').value=id;
+  document.getElementById('editEmpDept').value=u.dept||'';
+  document.getElementById('editEmpPos').value=u.pos||'';
+  document.getElementById('editEmpHired').value=u.dateHired||'';
+  document.getElementById('editEmpEmail').value=u.email||'';
+  document.getElementById('editEmpPw').value='';
+  document.getElementById('editEmpSub').textContent=`Editing: ${u.name} (${id})`;
+  document.getElementById('editPwReveal').style.display='none';
+  document.getElementById('saveEditEmpBtn').style.display='';
+  document.getElementById('editEmpOverlay').classList.add('show');
+}
+
+function saveEditEmployee(){
+  const id=editingEmpId;
+  if(!id||!USERS[id])return;
+  const name=document.getElementById('editEmpName').value.trim();
+  if(!name){toast('Name is required.','error');return;}
+  const newPw=document.getElementById('editEmpPw').value.trim();
+  if(newPw.length>0&&newPw.length<6){
+    toast('New password must be at least 6 characters.','error');return;
+  }
+  // Validate everything above before touching USERS[id] — an early return must
+  // never leave a half-applied edit sitting in memory ready to be pushed to
+  // GitHub by some later, unrelated save.
+  USERS[id].name=name;
+  USERS[id].dept=document.getElementById('editEmpDept').value.trim();
+  USERS[id].pos=document.getElementById('editEmpPos').value.trim();
+  USERS[id].dateHired=document.getElementById('editEmpHired').value;
+  USERS[id].email=document.getElementById('editEmpEmail').value.trim();
+  let pwReset=false;
+  if(newPw.length>=6){
+    USERS[id].pw=newPw;
+    USERS[id].firstLogin=true; // force the employee to change it on next login
+    pwReset=true;
+  }
+  renderEmployees();
+  saveUsersToGitHub();
+  addAudit('employee_update',`Updated ${name} (${id})`+(pwReset?' and reset password':''));
+  if(pwReset){
+    document.getElementById('editRevealId').textContent=id;
+    document.getElementById('editRevealPw').textContent=newPw;
+    document.getElementById('editPwReveal').style.display='block';
+    document.getElementById('saveEditEmpBtn').style.display='none';
+    toast('✅ Employee updated — share the new temp password shown below.','success');
+  }else{
+    closeModal('editEmpOverlay');
+    toast('✅ Employee updated!','success');
+  }
+}
+
+/* ============================================================
+   ADD EMPLOYEE
+   ============================================================ */
+function openAddEmployee(){
+  document.getElementById('newEmpName').value='';
+  document.getElementById('newEmpId').value='';
+  document.getElementById('newEmpDept').value='';
+  document.getElementById('newEmpPos').value='';
+  document.getElementById('newEmpHired').value='';
+  document.getElementById('newEmpEmail').value='';
+  document.getElementById('newEmpPw').value=genTempPw();
+  document.getElementById('newCredsReveal').style.display='none';
+  document.getElementById('saveEmpBtn').style.display='';
+  document.getElementById('addEmpOverlay').classList.add('show');
+}
+
+function genTempPw(){
+  const chars='abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  return [...Array(8)].map(()=>chars[Math.floor(Math.random()*chars.length)]).join('');
+}
+
+function saveNewEmployee(){
+  const name=document.getElementById('newEmpName').value.trim();
+  const id=document.getElementById('newEmpId').value.trim().toUpperCase();
+  const dept=document.getElementById('newEmpDept').value.trim();
+  const pos=document.getElementById('newEmpPos').value.trim();
+  const hired=document.getElementById('newEmpHired').value;
+  const email=document.getElementById('newEmpEmail').value.trim();
+  const pw=document.getElementById('newEmpPw').value.trim();
+  if(!name||!id||!pw){toast('Name, Employee ID and password are required.','error');return;}
+  if(USERS[id]){toast('Employee ID already exists.','error');return;}
+  USERS[id]={pw,role:'emp',name,dept,pos,email,dateHired:hired,firstLogin:true,active:true};
+  document.getElementById('revealId').textContent=id;
+  document.getElementById('revealPw').textContent=pw;
+  document.getElementById('newCredsReveal').style.display='block';
+  document.getElementById('saveEmpBtn').style.display='none';
+  renderEmployees();
+  saveUsersToGitHub();
+  addAudit('employee_create',`Created ${name} (${id})`);
+  toast('✅ Employee created!','success');
+}
+
+/* ============================================================
+   HISTORY
+   ============================================================ */
+function renderHistory(){
+  if(!currentUser)return;
+  const list=SUBMISSIONS.filter(s=>s.empId===currentUser.id);
+  const tbody=document.getElementById('histBody');
+  const empty=document.getElementById('histEmpty');
+  if(!tbody)return;
+  if(list.length===0){tbody.innerHTML='';empty.style.display='block';return;}
+  empty.style.display='none';
+  tbody.innerHTML=list.map(s=>`<tr class="clickable" onclick="openRecord('${esc(s.id)}')">
+    <td>Cutoff ${esc(s.cutoff)}</td><td>${esc(s.period)}</td><td>${esc(s.payDate)}</td>
+    <td>${esc(s.submittedOn)}</td>
+    <td><span class="tag ${esc(s.status)}">${esc(s.status)}</span></td>
+    <td><button class="btn sm" onclick="event.stopPropagation();openRecord('${esc(s.id)}')">View</button></td>
+  </tr>`).join('');
+}
+
+function togglePw(id,btn){
+  const inp=document.getElementById(id);
+  inp.type=inp.type==='password'?'text':'password';
+  btn.textContent=inp.type==='password'?'👁':'🙈';
+}
+
+/* ============================================================
+   SETTINGS — COMPANY + PASSWORD
+   ============================================================ */
+function loadCompanyUI(){
+  document.getElementById('compName').value=COMPANY.name||'';
+  document.getElementById('compDept').value=COMPANY.dept||'';
+  document.getElementById('compAddress').value=COMPANY.address||'';
+  const prev=document.getElementById('compLogoPreview');
+  if(COMPANY.logo){prev.src=COMPANY.logo;prev.style.display='inline-block';}
+  else prev.style.display='none';
+}
+
+function companyLogoSelected(input){
+  const file=input.files&&input.files[0];
+  if(!file)return;
+  // The `accept` attribute is only a picker hint, not enforcement — validate
+  // for real, since an unsupported format would otherwise preview fine here
+  // but silently vanish from Excel exports (ExcelJS can only embed png/jpeg/gif).
+  if(!/^image\/(png|jpe?g|gif)$/i.test(file.type)){
+    toast('⚠️ Logo must be PNG, JPEG, or GIF to appear in Excel exports.','error');
+    input.value='';
+    return;
+  }
+  const reader=new FileReader();
+  reader.onload=()=>{
+    COMPANY.logo=reader.result;
+    const prev=document.getElementById('compLogoPreview');
+    prev.src=reader.result; prev.style.display='inline-block';
+  };
+  reader.readAsDataURL(file);
+}
+
+function saveCompany(){
+  COMPANY={
+    name:document.getElementById('compName').value.trim(),
+    dept:document.getElementById('compDept').value.trim(),
+    address:document.getElementById('compAddress').value.trim(),
+    logo:COMPANY.logo||''
+  };
+  localStorage.setItem('tk_company',JSON.stringify(COMPANY));
+  saveSettingsToGitHub();
+  addAudit('settings_update','Saved company information');
+  toast('✅ Company info saved!','success');
+}
+
+function changePassword(){
+  const cur=document.getElementById('pwCurrent').value;
+  const nw=document.getElementById('pwNew').value;
+  const cf=document.getElementById('pwConfirm').value;
+  if(cur!==currentUser.pw){toast('Current password is incorrect.','error');return;}
+  if(nw.length<6){toast('New password must be at least 6 characters.','error');return;}
+  if(nw!==cf){toast('Passwords do not match.','error');return;}
+  USERS[currentUser.id].pw=nw;
+  currentUser.pw=nw;
+  document.getElementById('pwCurrent').value='';
+  document.getElementById('pwNew').value='';
+  document.getElementById('pwConfirm').value='';
+  saveUsersToGitHub();
+  addAudit('password_change','Changed own password');
+  toast('✅ Password updated!','success');
+}
+
+/* ============================================================
+   APPEARANCE
+   ============================================================ */
+const THEMES=[
+  {name:'Ocean',key:'ocean',c1:'#2f8fff',c2:'#00d4ff'},
+  {name:'Royal',key:'royal',c1:'#3a56ff',c2:'#6b8cff'},
+  {name:'Emerald',key:'emerald',c1:'#10b981',c2:'#34e0a1'},
+  {name:'Forest',key:'forest',c1:'#2f9e44',c2:'#94d82d'},
+  {name:'Purple',key:'purple',c1:'#8b5cf6',c2:'#c084fc'},
+  {name:'Crimson',key:'crimson',c1:'#ef4444',c2:'#ff7a7a'},
+  {name:'Amber',key:'amber',c1:'#f59e0b',c2:'#fcd34d'},
+  {name:'Rose',key:'rose',c1:'#f43f8e',c2:'#fda4d0'},
+  {name:'Teal',key:'teal',c1:'#14b8a6',c2:'#5eead4'},
+  {name:'Sunset',key:'sunset',c1:'#ff6b6b',c2:'#ffd166'},
+];
+
+function renderSwatches(){
+  const cur=document.documentElement.dataset.theme||'ocean';
+  document.getElementById('swatches').innerHTML=THEMES.map(t=>`
+    <div class="sw ${t.key===cur?'active':''}" onclick="setTheme('${t.key}')">
+      <div class="dot" style="background:linear-gradient(135deg,${t.c1},${t.c2})"></div>
+      ${t.name}
+    </div>`).join('');
+}
+
+function setTheme(k){
+  document.documentElement.dataset.theme=k;
+  localStorage.setItem('tk_theme',k);
+  renderSwatches();
+}
+
+function buildModeToggle(){
+  const cur=document.documentElement.dataset.mode||'dark';
+  document.querySelectorAll('#modeToggle button').forEach(b=>{
+    b.classList.toggle('on',b.dataset.mode===cur);
+    b.onclick=()=>{
+      document.documentElement.dataset.mode=b.dataset.mode;
+      localStorage.setItem('tk_mode',b.dataset.mode);
+      document.querySelectorAll('#modeToggle button').forEach(x=>x.classList.remove('on'));
+      b.classList.add('on');
+    };
+  });
+}
+
+/* ============================================================
+   TOAST
+   ============================================================ */
+let toastTimer;
+function toast(msg,type){
+  const el=document.getElementById('toast');
+  el.textContent=msg;
+  el.style.borderColor=type==='success'?'color-mix(in srgb,#10b981 50%,var(--border))':type==='error'?'color-mix(in srgb,#ef4444 50%,var(--border))':'var(--border)';
+  el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer=setTimeout(()=>el.classList.remove('show'),3500);
+}
+
+/* ============================================================
+   MODALS
+   ============================================================ */
+function closeModal(id){document.getElementById(id).classList.remove('show');}
+document.querySelectorAll('.overlay').forEach(o=>{
+  o.addEventListener('click',e=>{if(e.target===o)o.classList.remove('show');});
+});
+
+/* ============================================================
+   BOOT
+   ============================================================ */
+(function boot(){
+  const theme=localStorage.getItem('tk_theme');
+  if(theme)document.documentElement.dataset.theme=theme;
+  const mode=localStorage.getItem('tk_mode');
+  if(mode)document.documentElement.dataset.mode=mode;
+
+  const msgEl=document.getElementById('loadMsg');
+  if(ghConfigured()&&msgEl) msgEl.textContent='Connecting to GitHub…';
+
+  let p=0;const bar=document.getElementById('loadBar');
+  const tick=setInterval(()=>{p=Math.min(p+Math.random()*10+4,90);bar.style.width=p+'%';},120);
+  const minWait=new Promise(res=>setTimeout(res,900));
+
+  Promise.all([bootLoad(),minWait]).finally(()=>{
+    clearInterval(tick);bar.style.width='100%';
+    setTimeout(()=>{
+      document.getElementById('loadOverlay').classList.remove('show');
+      document.getElementById('loginOverlay').classList.add('show');
+    },300);
+  });
+})();
+</script>
+</body>
+</html>
