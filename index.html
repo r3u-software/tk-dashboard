@@ -45,8 +45,10 @@ button,input,select,textarea{font-family:inherit;color:inherit}
 .brand b{font-size:15px;letter-spacing:.2px;line-height:1.1}.brand small{color:var(--muted);font-size:11px}
 .nav-group{color:var(--muted2);font-size:10.5px;text-transform:uppercase;letter-spacing:1.4px;padding:12px 12px 5px}
 .nav a{display:flex;align-items:center;gap:11px;padding:9px 12px;border-radius:11px;color:var(--muted);cursor:pointer;
- font-size:13.5px;font-weight:500;text-decoration:none;transition:var(--transition);position:relative}
-.nav a .ic{width:18px;text-align:center;font-size:15px;opacity:.9}
+ font-size:13.5px;font-weight:500;text-decoration:none;transition:var(--transition);position:relative;min-height:40px}
+.nav a .ic{width:18px;height:18px;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;opacity:.85}
+.nav a .ic svg{width:18px;height:18px;stroke:currentColor;stroke-width:1.6;fill:none;stroke-linecap:round;stroke-linejoin:round}
+.nav a .nav-label{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis}
 .nav a:hover{background:var(--hover);color:var(--text)}
 .nav a.active{background:linear-gradient(135deg,color-mix(in srgb,var(--accent) 28%,transparent),color-mix(in srgb,var(--accent2) 18%,transparent));
  color:var(--text);box-shadow:inset 0 0 0 1px var(--border)}
@@ -62,7 +64,9 @@ button,input,select,textarea{font-family:inherit;color:inherit}
 .btn.danger{color:#fff;background:linear-gradient(135deg,#ef4444,#f87171);border:none}
 .btn.success{color:#fff;background:linear-gradient(135deg,#10b981,#34d399);border:none}
 .content{padding:22px;overflow-y:auto;flex:1}
+body.empTkActive .content{padding:0;overflow:hidden;display:flex;flex-direction:column}
 .view{display:none;animation:fade .3s ease}.view.active{display:block}
+#v-emp-tk.active{display:flex!important;flex-direction:column;overflow:hidden;height:100%}
 @keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
 .cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:15px;margin-bottom:18px}
 .card{background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);padding:17px 18px;backdrop-filter:blur(14px);
@@ -91,12 +95,12 @@ tbody tr.clickable{cursor:pointer}
 select.inp,input.inp,textarea.inp{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:8px 11px;font-size:12.5px;outline:none;color:var(--text)}
 input.inp:focus,select.inp:focus,textarea.inp:focus{border-color:var(--accent)}
 label.fld{display:flex;flex-direction:column;gap:5px;font-size:11.5px;color:var(--muted)}
-.swatches{display:grid;grid-template-columns:repeat(auto-fill,minmax(90px,1fr));gap:10px;margin-top:10px}
-.sw{border:1px solid var(--border);border-radius:12px;padding:10px;cursor:pointer;text-align:center;font-size:11px;transition:var(--transition)}
-.sw:hover{transform:translateY(-2px)}.sw.active{box-shadow:0 0 0 2px var(--accent)}.sw .dot{height:24px;border-radius:8px;margin-bottom:7px}
-.toggle{display:inline-flex;background:var(--panel);border:1px solid var(--border);border-radius:11px;overflow:hidden}
-.toggle button{background:none;border:none;padding:8px 14px;cursor:pointer;color:var(--muted);font-size:12.5px;font-weight:600}
-.toggle button.on{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff}
+.swatches{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px;align-items:center}
+.sw{width:40px;height:40px;border-radius:50%;border:2px solid transparent;cursor:pointer;transition:var(--transition);position:relative;flex:0 0 auto}
+.sw:hover{transform:scale(1.12)}.sw.active{box-shadow:0 0 0 3px var(--accent),0 0 0 5px var(--bg)}
+.toggle{display:inline-flex;background:var(--panel);border:1px solid var(--border);border-radius:40px;overflow:hidden;gap:4px;padding:4px}
+.toggle button{background:none;border:none;width:36px;height:36px;border-radius:50%;cursor:pointer;color:var(--muted);font-size:14px;display:grid;place-items:center;transition:var(--transition)}
+.toggle button.on{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;box-shadow:0 3px 10px color-mix(in srgb,var(--accent) 40%,transparent)}
 .empty{text-align:center;color:var(--muted);padding:50px 20px}.empty .big{font-size:46px;opacity:.5;margin-bottom:12px}
 .toast{position:fixed;bottom:22px;right:22px;background:var(--panel-solid);border:1px solid var(--border);border-radius:12px;padding:13px 17px;box-shadow:var(--shadow);font-size:13px;z-index:120;opacity:0;transform:translateY(10px);transition:var(--transition)}
 .toast.show{opacity:1;transform:none}
@@ -109,7 +113,7 @@ label.fld{display:flex;flex-direction:column;gap:5px;font-size:11.5px;color:var(
 .tag.approved{background:rgba(16,185,129,.18);color:#34d399}
 .tag.rejected{background:rgba(239,68,68,.18);color:#f87171}
 .tag.notstarted{background:rgba(148,163,184,.18);color:#94a3b8}
-.navbadge{margin-left:auto;background:#ef4444;color:#fff;border-radius:20px;font-size:10px;font-weight:700;padding:1px 7px;min-width:16px;text-align:center}
+.navbadge{background:#ef4444;color:#fff;border-radius:20px;font-size:10px;font-weight:700;padding:1px 7px;min-width:16px;text-align:center;flex-shrink:0;align-self:center}
 .avatar-photo{width:100%;height:100%;object-fit:cover;border-radius:inherit}
 /* modal */
 .overlay{position:fixed;inset:0;background:rgba(0,0,0,.55);backdrop-filter:blur(4px);display:none;align-items:center;justify-content:center;z-index:100}
@@ -136,8 +140,14 @@ label.fld{display:flex;flex-direction:column;gap:5px;font-size:11.5px;color:var(
 .login-card .err{color:#ff8080;font-size:12px;margin-top:10px;min-height:16px}
 .login-card .note{color:var(--muted2);font-size:11.5px;margin-top:14px;line-height:1.5}
 /* collapsible sidebar */
-#collapseBtn{background:var(--panel);border:1px solid var(--border);border-radius:10px;width:34px;height:34px;cursor:pointer;font-size:16px;color:var(--muted);display:grid;place-items:center}
+#collapseBtn{position:fixed;left:calc(var(--sidebar-w) - 14px);top:50%;transform:translateY(-50%);
+  width:28px;height:28px;border-radius:50%;background:var(--panel-solid);border:1px solid var(--border);
+  display:none;place-items:center;cursor:pointer;font-size:12px;font-weight:700;color:var(--muted);
+  z-index:300;box-shadow:0 2px 10px rgba(0,0,0,.18);transition:left var(--transition);line-height:1}
+body.loggedIn #collapseBtn{display:grid}
 #collapseBtn:hover{background:var(--hover);color:var(--text)}
+#mobileMenuBtn{background:var(--panel);border:1px solid var(--border);border-radius:10px;width:34px;height:34px;cursor:pointer;font-size:16px;color:var(--muted);display:none;place-items:center;flex:0 0 auto}
+#mobileMenuBtn:hover{background:var(--hover);color:var(--text)}
 .sidebar{overflow-x:hidden}
 .mobile-backdrop{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:140}
 /* Desktop-only: ☰ shrinks the sidebar to icon-only. Scoped to >768px so it can
@@ -150,10 +160,13 @@ label.fld{display:flex;flex-direction:column;gap:5px;font-size:11.5px;color:var(
   body.collapsed .brand{justify-content:center}
   body.collapsed .nav-group{font-size:0;height:8px}
   body.collapsed .nav a{justify-content:center;font-size:0}
-  body.collapsed .nav a .ic{font-size:16px}
+  body.collapsed .nav a .nav-label{display:none}
+  body.collapsed .nav a .ic{width:20px;height:20px}
+  body.collapsed .nav a .ic svg{width:20px;height:20px}
   body.collapsed .nav a.active::before{display:none}
   body.collapsed #userMenu .label,body.collapsed #userMenu .caret{display:none}
   body.collapsed #userMenu .userchip{justify-content:center}
+  body.collapsed #collapseBtn{left:calc(66px - 14px)}
 }
 /* Mobile: sidebar becomes an off-canvas drawer instead of the icon-only "collapsed" mode */
 @media(max-width:768px){
@@ -164,35 +177,43 @@ label.fld{display:flex;flex-direction:column;gap:5px;font-size:11.5px;color:var(
   body.mobileNavOpen .mobile-backdrop{display:block}
   .topbar h1{font-size:18px}
   .clock{display:none}
+  #mobileMenuBtn{display:grid}
+  #collapseBtn{display:none}
+
 }
 /* user menu */
 #userMenu{position:relative;padding:8px 12px}
 .userchip{width:100%;display:flex;align-items:center;gap:9px;background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:7px 10px;cursor:pointer;color:var(--text);font-size:12.5px;font-weight:600}
 .userchip:hover{background:var(--hover)}
 .uava{width:26px;height:26px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;display:grid;place-items:center;font-weight:800;font-size:12px;flex:0 0 auto}
-.userpop{position:absolute;bottom:calc(100% + 6px);left:12px;right:12px;background:var(--panel-solid);border:1px solid var(--border);border-radius:12px;box-shadow:var(--shadow);padding:6px;display:none;z-index:60}
+.userpop{position:fixed;bottom:auto;left:0;right:auto;background:var(--panel-solid);border:1px solid var(--border);border-radius:12px;box-shadow:var(--shadow);padding:6px;display:none;z-index:2000;min-width:190px}
 .userpop.show{display:block}
 .userpop a{display:flex;align-items:center;gap:9px;padding:9px 11px;border-radius:9px;font-size:13px;color:var(--text);cursor:pointer;text-decoration:none}
 .userpop a:hover{background:var(--hover)}
+#filePreviewImg{transition:transform 0.18s cubic-bezier(.4,0,.2,1);transform-origin:center center}
 .userpop .sep{height:1px;background:var(--border);margin:4px 2px}
 .userpop .who{padding:8px 11px;font-size:11.5px;color:var(--muted)}
 /* TK-specific */
 .tk-table{width:100%;border-collapse:collapse;font-size:12.5px}
-.tk-table thead th{background:var(--grid-head);padding:9px 10px;text-align:center;font-weight:700;color:var(--muted);border-bottom:1px solid var(--border);white-space:nowrap}
+.tk-table thead th{background:color-mix(in srgb,var(--accent) 18%,var(--grid-head));padding:5px 7px;text-align:center;font-weight:700;color:var(--muted);border-bottom:1px solid var(--border);white-space:nowrap}
+.tk-table th[data-col-time]{min-width:130px}
 .tk-table thead th:first-child{text-align:left}
-.tk-table tbody td{padding:5px 6px;border-bottom:1px solid var(--border);text-align:center;vertical-align:middle}
+.tk-table tbody td{padding:3px 5px;border-bottom:1px solid var(--border);text-align:center;vertical-align:middle}
 .tk-table tbody td:first-child{text-align:left;padding-left:10px}
 .tk-table tbody tr.weekend td:first-child,.tk-table tbody tr.weekend td:nth-child(2){opacity:.5}
 .tk-table tbody tr.weekend{background:color-mix(in srgb,var(--accent) 4%,transparent)}
 .tk-table input[type=time]{background:var(--panel);border:1px solid var(--border);border-radius:7px;padding:5px 7px;font-size:12px;color:var(--text);outline:none;width:90px}
 .tk-table input[type=time]:focus{border-color:var(--accent)}
 .submit-bar{display:flex;gap:10px;padding:14px 22px;border-top:1px solid var(--border);background:var(--glass);backdrop-filter:blur(14px)}
+[data-theme="dark"] #histBanner,[data-theme="auto"] #histBanner{--hist-banner-bg:#451a03;}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]) #histBanner{--hist-banner-bg:#451a03;color:#fde68a}}
 .cutoff-selector{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:14px 22px;border-bottom:1px solid var(--border);background:var(--panel);backdrop-filter:blur(10px)}
 .cutoff-selector select.inp{padding:7px 10px}
 .cutoff-pill{padding:4px 14px;border-radius:20px;font-size:12px;font-weight:700;border:1px solid var(--border);background:var(--panel);cursor:pointer;transition:var(--transition)}
 .cutoff-pill.active{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;border:none;box-shadow:0 4px 12px color-mix(in srgb,var(--accent) 40%,transparent)}
-.attach-area{border:2px dashed color-mix(in srgb,var(--accent) 40%,var(--border));border-radius:12px;padding:22px;text-align:center;cursor:pointer;transition:var(--transition);background:var(--panel)}
+.attach-area{border:2px dashed color-mix(in srgb,var(--accent) 40%,var(--border));border-radius:12px;padding:8px 14px;text-align:center;cursor:pointer;transition:var(--transition);background:var(--panel)}
 .attach-area:hover{border-color:var(--accent);background:var(--hover)}
+.attach-chip.active{background:var(--accent);color:#fff;border-color:var(--accent)}
 .attach-chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
 .email-chips{display:flex;flex-wrap:wrap;gap:6px;align-items:center;background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:6px 8px;cursor:text}
 .email-chips input{background:none;border:none;outline:none;font-size:12.5px;min-width:160px;color:var(--text)}
@@ -206,6 +227,19 @@ label.fld{display:flex;flex-direction:column;gap:5px;font-size:11.5px;color:var(
 .badge-role{display:inline-flex;align-items:center;gap:6px;background:var(--panel);border:1px solid var(--border);border-radius:20px;padding:4px 11px;font-size:12px;font-weight:600}
 .cutoff-info-box{background:color-mix(in srgb,var(--accent) 12%,var(--panel));border:1px solid color-mix(in srgb,var(--accent) 30%,var(--border));border-radius:12px;padding:12px 15px;font-size:12.5px;margin-bottom:12px}
 .cutoff-info-box b{color:var(--accent)}
+/* OT table */
+.ot-table{width:100%;border-collapse:collapse;font-size:11.5px;white-space:nowrap}
+.ot-table thead th{background:color-mix(in srgb,var(--accent) 18%,var(--grid-head));padding:5px 7px;text-align:center;font-weight:700;color:var(--muted);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:2}
+.ot-table thead th:first-child{text-align:left;min-width:110px}
+.ot-table tbody td{padding:2px 4px;border-bottom:1px solid var(--border);text-align:center;vertical-align:middle}
+.ot-table tbody td:first-child{text-align:left;padding-left:10px}
+.ot-table tbody tr.weekend td{opacity:.45}
+.ot-table input[type=time]{background:var(--panel);border:1px solid var(--border);border-radius:7px;padding:4px 8px;font-size:12px;color:var(--text);outline:none;width:108px}
+.ot-table input[type=time]:focus{border-color:var(--accent)}
+.ot-table select.ot-type{background:var(--panel);border:1px solid var(--border);border-radius:7px;padding:4px 8px;font-size:11.5px;color:var(--text);outline:none;width:280px}
+.ot-table select.ot-type:focus{border-color:var(--accent)}
+.ot-table td.ot-hrs{font-weight:700;color:var(--accent);font-size:12px}
+.ot-table td.ot-val{font-weight:700;color:var(--text);font-size:12px}
 /* chart */
 .chartbox{position:relative;height:280px}
 canvas{max-width:100%}
@@ -248,25 +282,25 @@ body.roleHR .empOnly{display:none!important}
   <!-- SIDEBAR -->
   <aside class="sidebar">
     <div class="brand">
-      <div class="logo">⏱</div>
+      <div class="logo"><svg viewBox="0 0 24 24" width="26" height="26" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div>
       <div><b>TK Dashboard</b><br><small>Timekeeping System</small></div>
     </div>
     <nav class="nav" id="nav">
       <!-- HR nav -->
       <div class="nav-group hrOnly">Overview</div>
-      <a data-view="hr-dashboard" class="hrOnly active"><span class="ic">▦</span> Dashboard</a>
-      <a data-view="hr-records" class="hrOnly"><span class="ic">▤</span> All Records <span class="navbadge" id="recBadge" style="display:none"></span></a>
+      <a data-view="hr-dashboard" class="hrOnly active"><span class="ic"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg></span><span class="nav-label">Dashboard</span></a>
+      <a data-view="hr-records" class="hrOnly"><span class="ic"><svg viewBox="0 0 24 24"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg></span><span class="nav-label">All Records</span><span class="navbadge" id="recBadge" style="display:none"></span></a>
       <div class="nav-group hrOnly">Management</div>
-      <a data-view="hr-employees" class="hrOnly"><span class="ic">👤</span> Employees</a>
-      <a data-view="hr-reports" class="hrOnly"><span class="ic">📊</span> Reports</a>
-      <a data-view="hr-audit" class="hrOnly"><span class="ic">📜</span> Audit Log</a>
+      <a data-view="hr-employees" class="hrOnly"><span class="ic"><svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></span><span class="nav-label">Employees</span></a>
+      <a data-view="hr-reports" class="hrOnly"><span class="ic"><svg viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg></span><span class="nav-label">Reports</span></a>
+      <a data-view="hr-audit" class="hrOnly"><span class="ic"><svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></span><span class="nav-label">Audit Log</span></a>
       <!-- Employee nav -->
       <div class="nav-group empOnly">Timekeeping</div>
-      <a data-view="emp-tk" class="empOnly active"><span class="ic">📋</span> My Timesheet</a>
-      <a data-view="emp-history" class="empOnly"><span class="ic">🕐</span> History</a>
+      <a data-view="emp-tk" class="empOnly active"><span class="ic"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></span><span class="nav-label">My Timesheet</span></a>
+      <a data-view="emp-history" class="empOnly"><span class="ic"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></span><span class="nav-label">History</span></a>
       <!-- Shared -->
       <div class="nav-group">System</div>
-      <a data-view="settings"><span class="ic">⚙</span> Settings</a>
+      <a data-view="settings"><span class="ic"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></span><span class="nav-label">Settings</span></a>
     </nav>
     <div style="flex:1"></div>
     <div id="userMenu">
@@ -275,19 +309,21 @@ body.roleHR .empOnly{display:none!important}
         <span class="label" id="uName">User</span>
         <span class="caret" style="margin-left:auto;color:var(--muted)">▴</span>
       </button>
-      <div class="userpop" id="userPop">
+      
+    </div>
+  </aside>
+  <div class="userpop" id="userPop">
         <div class="who" id="uWho">Signed in</div>
         <a onclick="setView('settings')"><span>⚙</span> Settings</a>
         <div class="sep"></div>
-        <a id="logoutBtn"><span>🚪</span> Sign out</a>
+        <a id="logoutBtn"><span style="display:inline-flex;align-items:center;width:16px;height:16px"><svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg></span> Sign out</a>
       </div>
-    </div>
-  </aside>
+  <button id="collapseBtn" title="Collapse sidebar">❯</button>
 
   <!-- MAIN -->
   <div class="main">
     <div class="topbar">
-      <button id="collapseBtn" title="Collapse sidebar">☰</button>
+      <button id="mobileMenuBtn" title="Open menu">☰</button>
       <div><h1 id="viewTitle">Dashboard</h1><div class="sub" id="viewSub"></div></div>
       <div class="clock" id="clock"><div class="ck-time" id="ckTime">—</div><div class="ck-date" id="ckDate">—</div></div>
     </div>
@@ -385,62 +421,105 @@ body.roleHR .empOnly{display:none!important}
             <button class="cutoff-pill active" id="pillA" onclick="selectCutoff('A')">Cutoff A &nbsp;25–9</button>
             <button class="cutoff-pill" id="pillB" onclick="selectCutoff('B')">Cutoff B &nbsp;10–24</button>
           </div>
-          <select class="inp" id="selMonth" onchange="buildTimeTable()" style="padding:7px 10px">
-            <option value="January">January</option><option value="February">February</option>
-            <option value="March">March</option><option value="April">April</option>
-            <option value="May">May</option><option value="June">June</option>
-            <option value="July">July</option><option value="August">August</option>
-            <option value="September">September</option><option value="October">October</option>
-            <option value="November">November</option><option value="December">December</option>
-          </select>
-          <select class="inp" id="selYear" onchange="buildTimeTable()" style="padding:7px 10px"></select>
-          <div class="spacer"></div>
+          <span id="cutoffMonthLabel" style="font-size:13px;font-weight:700;color:var(--text);padding:4px 8px;background:var(--panel);border:1px solid var(--border);border-radius:10px"></span>
+          <div style="width:1px;height:18px;background:var(--border);margin:0 4px"></div>
           <span id="cutoffPayLabel" style="font-size:12px;color:var(--muted)"></span>
+          <div class="spacer"></div>
+          <span id="tkStatusBadge" class="tag notstarted" style="font-size:11px">Not Started</span>
         </div>
 
-        <!-- Content inside padding wrapper -->
-        <div style="padding:18px 22px;overflow-y:auto;flex:1" id="tkScrollArea">
-          <div class="cutoff-info-box" id="cutoffInfoBox"></div>
-
-          <!-- Remarks + Attachments -->
-          <div class="grid2" style="margin-bottom:14px">
-            <label class="fld">
-              Remarks / Notes
-              <textarea class="inp" id="tkRemarks" rows="3" placeholder="Optional remarks for this cutoff submission…" style="resize:vertical"></textarea>
-            </label>
-            <div>
-              <label class="fld" style="margin-bottom:6px">Attachments (photos/files)</label>
-              <div class="attach-area" id="attachArea" onclick="document.getElementById('attachInput').click()" ondragover="event.preventDefault()" ondrop="handleDrop(event)">
-                <div style="font-size:28px;margin-bottom:6px">📎</div>
-                <div style="font-size:13px;color:var(--muted)">Click or drag &amp; drop files here</div>
-                <div style="font-size:11px;color:var(--muted2);margin-top:4px">Photos, PDFs, or any file</div>
-              </div>
-              <input type="file" id="attachInput" multiple style="display:none" onchange="addAttachments(this.files)"/>
-              <div class="attach-chips" id="attachChips"></div>
-            </div>
-          </div>
-
-          <!-- Time table -->
-          <div class="tablewrap" id="tkTableWrap">
-            <table class="tk-table">
-              <thead><tr>
-                <th>Date</th><th>Day</th>
-                <th>Time In AM</th><th>Time Out AM</th>
-                <th>Time In PM</th><th>Time Out PM</th>
-                <th>Total Hours</th>
-              </tr></thead>
-              <tbody id="tkBody"></tbody>
-            </table>
-          </div>
+        <!-- History read-only banner (hidden by default) -->
+        <div id="histBanner" style="display:none;align-items:center;gap:10px;padding:6px 18px;background:var(--hist-banner-bg,#fef3c7);border-bottom:1px solid #f59e0b;font-size:12px;font-weight:600;color:#92400e">
+          <span>👁</span>
+          <span id="histBannerText">Viewing history record</span>
+          <div class="spacer"></div>
+          <button class="btn sm" id="histBannerBackBtn" onclick="exitHistoryView()" style="background:#f59e0b;color:#fff;border:none;min-width:130px">← Back to Current</button>
         </div>
 
-        <!-- Always-visible submit bar -->
-        <div class="submit-bar">
+        <!-- Action bar -->
+        <div class="submit-bar" style="padding:8px 18px;border-top:none;border-bottom:1px solid var(--border)">
+          <div class="spacer"></div>
           <button class="btn" onclick="downloadExcel()" style="min-width:130px">⬇ Download Excel</button>
           <button class="btn" onclick="saveDraft()" style="min-width:130px">💾 Save Draft</button>
-          <div class="spacer"></div>
           <button class="btn primary" onclick="submitCutoff()" style="min-width:130px">✅ Submit</button>
         </div>
+
+        <!-- Split layout: 60% grid + 40% file preview -->
+        <div id="tkScrollArea" style="display:flex;flex:1;overflow:hidden;min-height:0">
+
+          <!-- LEFT 60%: Attendance + OT tables -->
+          <div style="flex:0 0 60%;display:flex;flex-direction:column;overflow:hidden;border-right:2px solid var(--border)">
+            <div style="overflow-y:auto;flex:1">
+              <div class="cutoff-info-box" id="cutoffInfoBox" style="display:none"></div>
+              <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;padding:6px 10px;border-bottom:1px solid var(--border)">Attendance</div>
+              <div class="tablewrap" id="tkTableWrap" style="border-radius:0;border:none;border-bottom:1px solid var(--border)">
+                <table class="tk-table">
+                  <thead><tr>
+                    <th>Date</th><th>Day</th>
+                    <th data-col-time>Time In</th>
+                    <th data-col-time>Time Out</th>
+                    <th>Total Hours</th>
+                    <th>Remarks</th>
+                  </tr></thead>
+                  <tbody id="tkBody"></tbody>
+                </table>
+              </div>
+
+              <!-- Overtime table -->
+              <div style="margin-top:0">
+                <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;padding:6px 10px;border-bottom:1px solid var(--border);background:var(--panel)">Overtime / Additional Pay</div>
+                <div class="tablewrap" style="border-radius:0;border:none">
+                  <table class="ot-table">
+                <thead><tr>
+                  <th style="text-align:left">Date</th>
+                  <th>Day</th>
+                  <th>OT From</th>
+                  <th>OT To</th>
+                  <th>Type / Rate</th>
+                  <th>OT Hours</th>
+                  <th>OT Value (hrs)</th>
+                </tr></thead>
+                <tbody id="otBody"></tbody>
+              </table>
+                </div><!-- end OT tablewrap -->
+              </div><!-- end OT section -->
+              <div style="display:flex;align-items:center;gap:12px;padding:6px 10px;font-size:12px;color:var(--muted)">
+                <span>Total OT Hours: <b id="otTotalHrs" style="color:var(--accent)">0h 0m</b></span>
+              </div>
+            </div><!-- end scroll -->
+          </div><!-- end left 60% -->
+
+          <!-- RIGHT 40%: File preview panel -->
+          <div style="flex:0 0 40%;display:flex;flex-direction:column;overflow:hidden;background:var(--panel)">
+            <!-- Header: file chips -->
+            <div style="padding:8px 12px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px;flex-shrink:0;flex-wrap:wrap">
+              <span style="font-size:11.5px;font-weight:700;color:var(--muted)">📎 Attachments</span>
+              <div id="attachChips" style="display:flex;gap:4px;flex-wrap:wrap;flex:1"></div>
+              <button class="btn" style="font-size:11px;padding:3px 9px" onclick="document.getElementById('attachInput').click()">+ Add</button>
+              <input type="file" id="attachInput" multiple style="display:none" onchange="addAttachments(this.files)" accept="image/*,.pdf,.doc,.docx,.xls,.xlsx"/>
+              <span style="font-size:10px;color:var(--muted);display:flex;align-items:center;gap:3px">🔗 GitHub</span>
+            </div>
+            <!-- Preview body -->
+            <div id="filePreviewBody" style="flex:1;display:flex;align-items:center;justify-content:center;overflow:auto;position:relative;background:var(--panel)">
+              <div id="filePreviewPlaceholder" style="display:flex;flex-direction:column;align-items:center;gap:10px;color:var(--muted);padding:24px;text-align:center">
+                <div style="font-size:40px;opacity:.4">📎</div>
+                <div id="attachArea" onclick="document.getElementById('attachInput').click()" ondragover="event.preventDefault()" ondrop="handleDrop(event)"
+                  style="border:2px dashed color-mix(in srgb,var(--accent) 40%,var(--border));border-radius:12px;padding:20px 28px;cursor:pointer;transition:var(--transition)">
+                  <p style="font-size:12px;color:var(--muted)">Click or drag &amp; drop<br><span style="font-size:11px;opacity:.7">JPG, PNG, PDF, DOCX, XLSX</span></p>
+                </div>
+              </div>
+              <img id="filePreviewImg" style="display:none;max-width:100%;max-height:100%;object-fit:contain" />
+              <iframe id="filePreviewFrame" style="display:none;width:100%;height:100%;border:none"></iframe>
+              <!-- Zoom controls -->
+              <div id="zoomBar" style="display:none;position:absolute;bottom:10px;right:10px;display:none;gap:4px;background:var(--panel-solid);border:1px solid var(--border);border-radius:8px;padding:3px 6px">
+                <button onclick="zoomPreview(-0.2)" style="border:none;background:none;font-size:16px;cursor:pointer;color:var(--text);width:24px;height:24px;border-radius:4px">−</button>
+                <button onclick="zoomPreview(0)" style="border:none;background:none;font-size:13px;cursor:pointer;color:var(--text);width:24px;height:24px;border-radius:4px">⊡</button>
+                <button onclick="zoomPreview(0.2)" style="border:none;background:none;font-size:16px;cursor:pointer;color:var(--text);width:24px;height:24px;border-radius:4px">+</button>
+              </div>
+            </div>
+          </div><!-- end right 40% -->
+
+        </div><!-- end tkScrollArea split -->
       </section>
 
       <!-- =========== EMPLOYEE HISTORY =========== -->
@@ -462,24 +541,70 @@ body.roleHR .empOnly{display:none!important}
         <div class="panel" style="margin-top:0">
           <h3>🎨 Appearance</h3>
           <div class="hint">Theme and display mode — saved automatically.</div>
-          <div class="row" style="margin:8px 0 16px">
+          <div class="row" style="margin:8px 0 4px;flex-wrap:wrap;gap:8px;align-items:center">
             <span style="font-size:12px;color:var(--muted)">Mode:</span>
             <div class="toggle" id="modeToggle">
-              <button data-mode="light">☀ Light</button>
-              <button data-mode="dark" class="on">🌙 Dark</button>
-              <button data-mode="oled">⬛ OLED</button>
+              <button data-mode="light" title="Light">☀️</button>
+              <button data-mode="dark" class="on" title="Dark">🌙</button>
+              <button data-mode="oled" title="OLED Black">⬛</button>
             </div>
+            <div class="swatches" id="swatches" style="margin-top:0;flex:1;justify-content:flex-end"></div>
           </div>
-          <div class="swatches" id="swatches"></div>
         </div>
 
-        <!-- Profile photo (employee only) -->
-        <div class="panel empOnly">
-          <h3>🖼 Profile Photo</h3>
-          <div class="hint">Shown in your account menu.</div>
-          <div class="row" style="margin-top:10px">
-            <span class="uava" id="settingsAvaPreview" style="width:56px;height:56px;font-size:18px"></span>
-            <input class="inp" type="file" accept="image/*" onchange="updateProfilePhoto(this)" style="max-width:260px"/>
+        <!-- Row 1: My Profile (50%) + Change Password (50%) -->
+        <div class="empOnly" style="display:flex;gap:0;align-items:stretch">
+          <!-- My Profile -->
+          <div class="panel" id="empProfilePanel" style="flex:1;margin-right:8px">
+            <h3>👤 My Profile</h3>
+            <div class="hint">Update your personal details. Saves to GitHub automatically.</div>
+            <div class="formgrid" style="margin-top:10px">
+              <label>Full Name<input class="inp" id="profName" placeholder="Your full name" style="max-width:260px"/></label>
+              <label>Work Email<input class="inp" id="profEmail" type="email" placeholder="you@company.com" style="max-width:260px"/></label>
+              <label>Department<input class="inp" id="profDept" placeholder="Department" style="max-width:260px"/></label>
+              <label>Position<input class="inp" id="profPos" placeholder="Your position" style="max-width:260px"/></label>
+              <label>Date Hired<input class="inp" type="date" id="profHired" style="max-width:260px"/></label>
+              <div></div>
+            </div>
+            <div class="row" style="margin-top:12px">
+              <button class="btn sm primary" onclick="saveMyProfile()">💾 Save Profile</button>
+            </div>
+          </div>
+          <!-- Change Password -->
+          <div class="panel" style="flex:1">
+            <h3>🔑 Change Password</h3>
+            <div style="display:flex;flex-direction:column;gap:12px;margin-top:10px">
+              <label class="fld">Current Password<input class="inp" type="password" id="pwCurrent" placeholder="Current password"/></label>
+              <label class="fld">New Password<input class="inp" type="password" id="pwNew" placeholder="New password"/></label>
+              <label class="fld">Confirm New Password<input class="inp" type="password" id="pwConfirm" placeholder="Repeat new password"/></label>
+            </div>
+            <div class="row" style="margin-top:12px">
+              <button class="btn sm primary" onclick="changePassword()">🔐 Update Password</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Row 2: Profile Photo (50%) + Default Schedule (50%) -->
+        <div class="empOnly" style="display:flex;gap:0;align-items:stretch">
+          <!-- Profile Photo -->
+          <div class="panel" style="flex:1;margin-right:8px">
+            <h3>🖼 Profile Photo</h3>
+            <div class="hint">Shown in your account menu.</div>
+            <div class="row" style="margin-top:10px">
+              <span class="uava" id="settingsAvaPreview" style="width:56px;height:56px;font-size:18px"></span>
+              <input class="inp" type="file" accept="image/*" onchange="updateProfilePhoto(this)" style="max-width:260px"/>
+            </div>
+          </div>
+          <!-- Default Schedule -->
+          <div class="panel" id="defaultSchedPanel" style="flex:1">
+            <h3>⏰ Default Schedule</h3>
+            <div class="hint">Auto-fills weekday rows on My Timesheet.</div>
+            <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end;margin-top:10px">
+              <label style="display:flex;flex-direction:column;gap:4px;font-size:11px;color:var(--muted)">Time In<input class="inp" type="time" id="schedInAM" style="width:130px"/></label>
+              <label style="display:flex;flex-direction:column;gap:4px;font-size:11px;color:var(--muted)">Time Out<input class="inp" type="time" id="schedOutPM" style="width:130px"/></label>
+              <button class="btn sm" onclick="clearDefaultSchedule()" title="Clear">🗑</button>
+              <button class="btn sm primary" onclick="saveDefaultSchedule()">💾 Save</button>
+            </div>
           </div>
         </div>
 
@@ -525,19 +650,7 @@ body.roleHR .empOnly{display:none!important}
           </div>
         </div>
 
-        <!-- Change password (all) -->
-        <div class="panel">
-          <h3>🔑 Change Password</h3>
-          <div class="formgrid" style="margin-top:10px">
-            <label>Current Password<input class="inp" type="password" id="pwCurrent" placeholder="Current password"/></label>
-            <label>New Password<input class="inp" type="password" id="pwNew" placeholder="New password"/></label>
-            <label style="grid-column:1/-1">Confirm New Password<input class="inp" type="password" id="pwConfirm" placeholder="Repeat new password"/></label>
-          </div>
-          <div class="row" style="margin-top:12px">
-            <div class="spacer"></div>
-            <button class="btn sm primary" onclick="changePassword()">🔐 Update Password</button>
-          </div>
-        </div>
+        <!-- Change password moved to 50/50 row above alongside My Profile -->
       </section>
 
     </div><!-- /content -->
@@ -719,11 +832,88 @@ let AUDIT_LOG = [];
 let currentUser = null;
 let currentCutoff = 'A';
 let attachFiles = [];
+let previewScale = 1;
+
+function zoomPreview(delta){
+  const img=document.getElementById('filePreviewImg');
+  if(!img||img.style.display==='none')return;
+  if(delta===0){previewScale=1;}else{previewScale=Math.min(5,Math.max(0.2,previewScale+delta));}
+  img.style.transform=`scale(${previewScale})`;
+}
+
+// Mouse wheel zoom on preview
+document.addEventListener('wheel',function(e){
+  const pb=document.getElementById('filePreviewBody');
+  const img=document.getElementById('filePreviewImg');
+  if(!pb||!img||img.style.display==='none')return;
+  if(!pb.contains(e.target))return;
+  e.preventDefault();
+  const delta=e.deltaY<0?0.15:-0.15;
+  previewScale=Math.min(5,Math.max(0.2,previewScale+delta));
+  img.style.transform=`scale(${previewScale})`;
+},{passive:false});
+
+function showFilePreview(file){
+  const img=document.getElementById('filePreviewImg');
+  const frame=document.getElementById('filePreviewFrame');
+  const ph=document.getElementById('filePreviewPlaceholder');
+  const zb=document.getElementById('zoomBar');
+  const ext=file.name.split('.').pop().toLowerCase();
+  ph.style.display='none';
+  img.style.display='none';
+  frame.style.display='none';
+  if(zb)zb.style.display='none';
+  if(['jpg','jpeg','png','gif','webp','bmp'].includes(ext)){
+    const url=URL.createObjectURL(file);
+    img.src=url; img.style.display='block'; img.style.transform='scale(1)'; previewScale=1;
+    if(zb)zb.style.display='flex';
+  } else if(ext==='pdf'){
+    const url=URL.createObjectURL(file);
+    frame.src=url; frame.style.display='block';
+  } else if(['xls','xlsx'].includes(ext)){
+    // Render Excel via SheetJS
+    const reader=new FileReader();
+    reader.onload=function(e){
+      try{
+        const wb=XLSX.read(e.target.result,{type:'array'});
+        const ws=wb.Sheets[wb.SheetNames[0]];
+        const html=XLSX.utils.sheet_to_html(ws,{header:'',editable:false});
+        const wrap=document.createElement('div');
+        wrap.style.cssText='width:100%;height:100%;overflow:auto;padding:8px;font-size:11px';
+        wrap.innerHTML=`<style>.xlspreview table{border-collapse:collapse;font-size:11px}.xlspreview td,.xlspreview th{border:1px solid var(--border);padding:3px 7px;white-space:nowrap;color:var(--text)}.xlspreview tr:nth-child(even){background:var(--row-alt)}</style><div class="xlspreview">${html}</div>`;
+        frame.style.display='none';
+        ph.style.display='none';
+        // Replace old xls container if exists
+        const old=document.getElementById('xlsPreviewContainer');
+        if(old)old.remove();
+        wrap.id='xlsPreviewContainer';
+        document.getElementById('filePreviewBody').appendChild(wrap);
+      }catch(err){
+        ph.innerHTML=`<div style="font-size:32px">⚠️</div><div style="font-size:12px;color:var(--muted)">Could not parse Excel file</div>`;
+        ph.style.display='flex';
+      }
+    };
+    reader.readAsArrayBuffer(file);
+  } else {
+    ph.style.display='flex';
+    ph.innerHTML=`<div style="font-size:32px">📄</div><div style="font-size:13px;font-weight:700;color:var(--text);margin-top:6px">${file.name}</div><div style="font-size:11px;color:var(--muted);margin-top:4px">${(file.size/1024).toFixed(1)} KB · No preview available</div>`;
+  }
+}
+
+function setActiveChip(name){
+  document.querySelectorAll('.attach-chip').forEach(c=>c.classList.toggle('active',c.dataset.name===name));
+  const f=attachFiles.find(f=>f.name===name);
+  if(f)showFilePreview(f);
+}
 let viewRecord = null;
 let charts = {};
 
 const MONTH_NAMES = ['January','February','March','April','May','June','July','August','September','October','November','December'];
 const DAY_NAMES = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+
+// Month/year for the TK selector — auto-detected from current date, not user-selectable.
+let currentMonth = new Date().getMonth(); // 0-based
+let currentYear  = new Date().getFullYear();
 
 // Escapes text pulled from shared data (GitHub-sourced USERS/SUBMISSIONS, user input)
 // before it's interpolated into innerHTML template strings, to prevent stored XSS.
@@ -1014,7 +1204,7 @@ function logout(){
   document.getElementById('loginErr').textContent='';
   document.getElementById('loginOverlay').classList.add('show');
   document.getElementById('userPop').classList.remove('show');
-  document.body.className='';
+  document.body.className=''; // clears loggedIn too
   setView(''); // blank so nothing is highlighted
 }
 
@@ -1048,6 +1238,7 @@ function updateProfilePhoto(input){
    ============================================================ */
 function initApp(){
   const isHR = currentUser.role === 'hr';
+  document.body.classList.add('loggedIn');
   document.body.classList.toggle('roleHR', isHR);
   document.body.classList.toggle('roleEmp', !isHR);
 
@@ -1062,19 +1253,18 @@ function initApp(){
   const firstLink = document.querySelector(`[data-view="${firstView}"]`);
   if(firstLink) firstLink.classList.add('active');
 
-  // Set current month/year on TK selectors
+  // Set current month/year (auto-detected, not user-selectable)
   const now = new Date();
-  const selM = document.getElementById('selMonth');
-  const selY = document.getElementById('selYear');
-  selM.value = MONTH_NAMES[now.getMonth()];
-  const yearEl = document.getElementById('selYear');
-  yearEl.innerHTML='';
-  for(let y=2024;y<=2030;y++){const o=document.createElement('option');o.value=y;o.textContent=y;yearEl.appendChild(o);}
-  selY.value = now.getFullYear();
+  currentMonth = now.getMonth();
+  currentYear  = now.getFullYear();
+  const mlEl = document.getElementById('cutoffMonthLabel');
+  if(mlEl) mlEl.textContent = MONTH_NAMES[currentMonth] + ' ' + currentYear;
 
   // Load settings UI
   loadGithubUI();
   loadCompanyUI();
+  loadProfileUI();
+  loadDefaultScheduleUI();
   renderSwatches();
   buildModeToggle();
   renderEmployees();
@@ -1089,6 +1279,7 @@ function initApp(){
    ============================================================ */
 let currentView = '';
 function setView(v){
+  document.body.classList.toggle('empTkActive', v==='emp-tk');
   currentView = v;
   document.querySelectorAll('.view').forEach(s=>s.classList.remove('active'));
   if(v) document.getElementById('v-'+v)?.classList.add('active');
@@ -1115,6 +1306,7 @@ function setView(v){
   if(v==='hr-employees') renderEmployees();
   if(v==='hr-reports') renderReports();
   if(v==='hr-audit') renderAudit();
+  if(v==='settings'){ loadGithubUI(); loadCompanyUI(); loadProfileUI(); loadDefaultScheduleUI(); }
   document.getElementById('userPop').classList.remove('show');
 }
 
@@ -1141,23 +1333,44 @@ setInterval(tickClock,1000);tickClock();
    ============================================================ */
 function isMobileWidth(){ return window.innerWidth<=768; }
 function closeMobileNav(){ document.body.classList.remove('mobileNavOpen'); }
-document.getElementById('collapseBtn').addEventListener('click',()=>{
-  if(isMobileWidth()) document.body.classList.toggle('mobileNavOpen');
-  else document.body.classList.toggle('collapsed');
+// collapseBtn floats on the sidebar's right edge (desktop only)
+const _colBtn = document.getElementById('collapseBtn');
+function _syncCollapseArrow(){
+  _colBtn.textContent = document.body.classList.contains('collapsed') ? '❮' : '❯';
+}
+_colBtn.addEventListener('click',()=>{
+  document.body.classList.toggle('collapsed');
+  _syncCollapseArrow();
+});
+// mobileMenuBtn is in the topbar, only visible on mobile — opens the off-canvas drawer
+document.getElementById('mobileMenuBtn').addEventListener('click',()=>{
+  document.body.classList.toggle('mobileNavOpen');
 });
 // Resizing across the breakpoint shouldn't leave a drawer pre-opened (narrow→wide→
 // narrow without touching ☰) or a stray backdrop showing on desktop.
 window.addEventListener('resize',()=>{ if(!isMobileWidth()) closeMobileNav(); });
-document.getElementById('userChip').addEventListener('click',()=>document.getElementById('userPop').classList.toggle('show'));
+document.getElementById('userChip').addEventListener('click',()=>{
+  const pop=document.getElementById('userPop');
+  const chip=document.getElementById('userChip');
+  const r=chip.getBoundingClientRect();
+  pop.style.left=r.left+'px';
+  pop.style.top=(r.top-8)+'px';
+  pop.style.transform='translateY(-100%)';
+  pop.classList.toggle('show');
+});
+document.addEventListener('click',e=>{
+  if(!e.target.closest('#userMenu')&&!e.target.closest('#userPop'))
+    document.getElementById('userPop').classList.remove('show');
+});
 document.getElementById('logoutBtn').addEventListener('click',logout);
 
 /* ============================================================
    CUTOFF LOGIC
    ============================================================ */
-function getMonthIdx(){return MONTH_NAMES.indexOf(document.getElementById('selMonth').value);}
+function getMonthIdx(){ return currentMonth; }
 
 function getCutoffInfo(){
-  const mi = getMonthIdx(), yr = parseInt(document.getElementById('selYear').value);
+  const mi = currentMonth, yr = currentYear;
   const mn = MONTH_NAMES[mi];
   if(currentCutoff==='A'){
     const pm=(mi-1+12)%12, py=mi===0?yr-1:yr;
@@ -1185,12 +1398,15 @@ function selectCutoff(c){
 }
 
 function buildTimeTable(){
-  const mi=getMonthIdx(), yr=parseInt(document.getElementById('selYear').value);
+  const mi=currentMonth, yr=currentYear;
   const info = getCutoffInfo();
 
   const existing=findExistingSubmission();
   const statusLabel={draft:'Draft',submitted:'Pending Review',approved:'Approved',rejected:'Rejected'}[existing?.status]||'Not Started';
   const statusClass=existing?(existing.status==='submitted'?'pending':existing.status):'notstarted';
+  // status badge
+  const statusBadgeEl=document.getElementById('tkStatusBadge');
+  if(statusBadgeEl){statusBadgeEl.className='tag '+(existing?(existing.status==='submitted'?'pending':existing.status):'notstarted');statusBadgeEl.textContent=statusLabel;}
   document.getElementById('cutoffInfoBox').innerHTML=
     `<div class="row" style="justify-content:space-between"><div><b>Period:</b> ${info.period} &nbsp;·&nbsp; <b>Pay Date:</b> <span style="color:var(--accent)">${info.payDate}</span><br/><span style="color:var(--muted);font-size:11px">${info.desc}</span></div><span class="tag ${statusClass}">${statusLabel}</span></div>`;
   document.getElementById('cutoffPayLabel').textContent='Pay: '+info.payDate;
@@ -1204,43 +1420,153 @@ function buildTimeTable(){
     for(let d=10;d<=24;d++) days.push(new Date(yr,mi,d));
   }
 
+  // Load default schedule if set by the employee
+  const sched = (currentUser && USERS[currentUser.id]?.defaultSchedule) || {};
+
   const tbody=document.getElementById('tkBody');
   tbody.innerHTML='';
   days.forEach(dt=>{
     const dow=dt.getDay();
     const isWE=(dow===0||dow===6);
     const dateStr=dt.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
-    const key=dt.toISOString().slice(0,10);
+    const key=localDateStr(dt.getFullYear(),dt.getMonth(),dt.getDate());
     const cls=isWE?'weekend':'';
+    // Pre-fill with default schedule only on weekdays
+    const dIn  = !isWE && sched.inAM  ? `value="${sched.inAM}"`  : '';
+    const dOut = !isWE && sched.outPM ? `value="${sched.outPM}"` : '';
     tbody.insertAdjacentHTML('beforeend',`
       <tr class="${cls}" data-date="${key}">
         <td>${dateStr}${isWE?` <span style="font-size:10px;color:var(--accent);opacity:.7">(WE)</span>`:''}</td>
         <td>${DAY_NAMES[dow]}</td>
-        <td><input type="time" class="tk-in" data-col="inAM"/></td>
-        <td><input type="time" class="tk-in" data-col="outAM"/></td>
-        <td><input type="time" class="tk-in" data-col="inPM"/></td>
-        <td><input type="time" class="tk-in" data-col="outPM"/></td>
+        <td><input type="time" class="tk-in" data-col="in"  ${dIn}/></td>
+        <td><input type="time" class="tk-in" data-col="out" ${dOut}/></td>
         <td class="hrs-cell" data-date="${key}">—</td>
+        <td><input type="text" class="tk-rmk" data-col="rmk" placeholder="—" style="background:var(--panel);border:1px solid var(--border);border-radius:6px;padding:3px 6px;font-size:11px;color:var(--text);outline:none;width:100%;min-width:70px"/></td>
       </tr>`);
   });
 
-  // Auto-compute hours on time input
+  // Auto-compute hours on time input change, and run once now for pre-filled rows
   tbody.querySelectorAll('tr').forEach(tr=>{
     tr.querySelectorAll('.tk-in').forEach(inp=>{
       inp.addEventListener('change',()=>computeHours(tr));
     });
+    computeHours(tr); // pre-fill hours if defaults applied
   });
+  // Build OT table with same rows
+  buildOTTable();
 }
 
 function computeHours(tr){
   const get=col=>{const i=tr.querySelector(`[data-col="${col}"]`);return i?i.value:'';};
   const toMins=t=>{if(!t)return 0;const[h,m]=t.split(':').map(Number);return h*60+m;};
-  const amI=toMins(get('inAM')),amO=toMins(get('outAM')),pmI=toMins(get('inPM')),pmO=toMins(get('outPM'));
+  const inT=toMins(get('in')), outT=toMins(get('out'));
   let total=0;
-  if(amI&&amO&&amO>amI)total+=amO-amI;
-  if(pmI&&pmO&&pmO>pmI)total+=pmO-pmI;
+  if(inT&&outT&&outT>inT) total=outT-inT;
+  // Break deduction: <4h=none; 4h–5h=deduct excess over 4h (cap at 4h); >=5h=deduct 60min
+  if(total>=240&&total<300) total=240;
+  else if(total>=300) total-=60;
   const cell=tr.querySelector('.hrs-cell');
   if(cell) cell.textContent=total>0?`${Math.floor(total/60)}h ${total%60}m`:'—';
+}
+
+const OT_TYPES=[
+  {label:'— None —',rate:0},
+  {label:'Night Differential  (+10%) — 10:00 PM–6:00 AM',rate:0.10},
+  {label:'Special Holiday Duty  (+30%)',rate:0.30},
+  {label:'Rest Day Duty  (+30%)',rate:0.30},
+  {label:'Special Holiday on Rest Day  (+50%)',rate:0.50},
+  {label:'Regular Holiday Duty  (+100%)',rate:1.00},
+  {label:'Regular Overtime  (+125%)',rate:1.25},
+  {label:'Rest Day OT  (+169%)',rate:1.69},
+  {label:'Special Holiday OT  (+169%)',rate:1.69},
+  {label:'Special Holiday + Rest Day OT  (+195%)',rate:1.95},
+  {label:'Regular Holiday OT  (+260%)',rate:2.60},
+  {label:'Regular Holiday on Rest Day Duty  (+260%)',rate:2.60},
+  {label:'Regular Holiday + Rest Day OT  (+338%)',rate:3.38},
+];
+
+function buildOTTable(){
+  const otBody=document.getElementById('otBody');
+  if(!otBody) return;
+  // Collect same dates as attendance table
+  const rows=document.querySelectorAll('#tkBody tr');
+  otBody.innerHTML='';
+  rows.forEach(tr=>{
+    const dateKey=tr.dataset.date;
+    const isWE=tr.classList.contains('weekend');
+    const dateCell=tr.querySelector('td:first-child');
+    const dayCell=tr.querySelector('td:nth-child(2)');
+    const dateTxt=dateCell?dateCell.textContent.replace('(WE)','').trim():'';
+    const dayTxt=dayCell?dayCell.textContent:'';
+    const typeOpts=OT_TYPES.map((t,i)=>`<option value="${i}">${t.label}${t.rate>0?' (+'+(t.rate*100).toFixed(0)+'%)':''}</option>`).join('');
+    otBody.insertAdjacentHTML('beforeend',`
+      <tr class="${isWE?'weekend':''}" data-date="${dateKey}">
+        <td style="font-size:11.5px">${dateTxt}</td>
+        <td style="font-size:11px;color:var(--muted)">${dayTxt}</td>
+        <td><input type="time" class="ot-from"/></td>
+        <td><input type="time" class="ot-to"/></td>
+        <td><select class="ot-type">${typeOpts}</select></td>
+        <td class="ot-hrs">—</td>
+        <td class="ot-val">—</td>
+      </tr>`);
+  });
+  // Wire change events
+  otBody.querySelectorAll('tr').forEach(tr=>{
+    tr.querySelector('.ot-from').addEventListener('change',()=>computeOT(tr));
+    tr.querySelector('.ot-to').addEventListener('change',()=>computeOT(tr));
+    tr.querySelector('.ot-type').addEventListener('change',()=>computeOT(tr));
+  });
+  updateOTTotal();
+}
+
+function computeOT(tr){
+  const from=tr.querySelector('.ot-from').value;
+  const to=tr.querySelector('.ot-to').value;
+  const typeIdx=parseInt(tr.querySelector('.ot-type').value)||0;
+  const toMins=t=>{if(!t)return 0;const[h,m]=t.split(':').map(Number);return h*60+m;};
+  let mins=0;
+  if(from&&to){
+    let diff=toMins(to)-toMins(from);
+    if(diff<0) diff+=24*60; // overnight
+    mins=diff;
+  }
+  const cell=tr.querySelector('.ot-hrs');
+  const valCell=tr.querySelector('.ot-val');
+  const t=OT_TYPES[typeIdx];
+  if(mins>0){
+    const hrs=mins/60;
+    cell.textContent=`${Math.floor(mins/60)}h ${mins%60}m`;
+    if(valCell) valCell.textContent=t.rate>0?(hrs*t.rate).toFixed(2)+' hrs':'—';
+  } else {
+    cell.textContent='—';
+    if(valCell) valCell.textContent='—';
+  }
+  tr.dataset.otMins=mins;
+  tr.dataset.otRate=t.rate;
+  updateOTTotal();
+}
+
+function updateOTTotal(){
+  let total=0;
+  document.querySelectorAll('#otBody tr').forEach(tr=>{
+    total+=parseInt(tr.dataset.otMins||0);
+  });
+  const el=document.getElementById('otTotalHrs');
+  if(el) el.textContent=`${Math.floor(total/60)}h ${total%60}m`;
+}
+
+function collectOTRows(){
+  const rows=[];
+  document.querySelectorAll('#otBody tr').forEach(tr=>{
+    const from=tr.querySelector('.ot-from')?.value;
+    const to=tr.querySelector('.ot-to')?.value;
+    const typeIdx=parseInt(tr.querySelector('.ot-type')?.value||0);
+    const mins=parseInt(tr.dataset.otMins||0);
+    if(mins>0){
+      rows.push({date:tr.dataset.date,from,to,type:OT_TYPES[typeIdx].label,rate:OT_TYPES[typeIdx].rate,mins});
+    }
+  });
+  return rows;
 }
 
 /* ============================================================
@@ -1249,16 +1575,31 @@ function computeHours(tr){
 function addAttachments(files){
   [...files].forEach(f=>{
     attachFiles.push(f);
-    const chip=document.createElement('div');
-    chip.className='pill';
-    chip.innerHTML=`📎 ${esc(f.name)} <button onclick="removeAttach(this,'${esc(f.name)}')">✕</button>`;
+    const chip=document.createElement('span');
+    chip.className='attach-chip';chip.dataset.name=f.name;
+    chip.style.cssText='display:inline-flex;align-items:center;gap:4px;padding:2px 9px;border-radius:12px;font-size:10.5px;font-weight:600;border:1px solid var(--border);background:var(--panel);cursor:pointer;white-space:nowrap;color:var(--text)';
+    chip.innerHTML=`<span>${esc(f.name)}</span><span style="cursor:pointer;color:var(--muted);margin-left:2px" onclick="removeAttachment('${esc(f.name)}')">✕</span>`;
+    chip.querySelector('span').addEventListener('click',()=>setActiveChip(f.name));
     document.getElementById('attachChips').appendChild(chip);
+    if(attachFiles.length===1)setActiveChip(f.name);
   });
   document.getElementById('attachInput').value='';
 }
-function removeAttach(btn,name){
+function removeAttachment(name){
   attachFiles=attachFiles.filter(f=>f.name!==name);
-  btn.parentElement.remove();
+  const chip=document.querySelector(`.attach-chip[data-name="${name}"]`);
+  if(chip)chip.remove();
+  // Show placeholder if no files left
+  if(attachFiles.length===0){
+    const ph=document.getElementById('filePreviewPlaceholder');
+    const img=document.getElementById('filePreviewImg');
+    const frame=document.getElementById('filePreviewFrame');
+    if(ph){ph.innerHTML='<div style="font-size:40px;opacity:.4">📎</div><div id="attachArea" onclick="document.getElementById(\'attachInput\').click()" style="border:2px dashed color-mix(in srgb,var(--accent) 40%,var(--border));border-radius:12px;padding:20px 28px;cursor:pointer"><p style="font-size:12px;color:var(--muted)">Click or drag &amp; drop<br><span style="font-size:11px;opacity:.7">JPG, PNG, PDF, DOCX, XLSX</span></p></div>';ph.style.display='flex';}
+    if(img)img.style.display='none';
+    if(frame)frame.style.display='none';
+  } else {
+    setActiveChip(attachFiles[0].name);
+  }
 }
 function handleDrop(e){
   e.preventDefault();
@@ -1274,7 +1615,7 @@ function collectRows(){
     const date=tr.dataset.date;
     if(!date)return;
     const get=col=>{const i=tr.querySelector(`[data-col="${col}"]`);return i?i.value:'';};
-    rows.push({date,inAM:get('inAM'),outAM:get('outAM'),inPM:get('inPM'),outPM:get('outPM'),hrs:tr.querySelector('.hrs-cell')?.textContent||'—'});
+    rows.push({date,in:get('in'),out:get('out'),hrs:tr.querySelector('.hrs-cell')?.textContent||'—',remarks:get('rmk')});
   });
   return rows;
 }
@@ -1283,8 +1624,8 @@ function collectRows(){
 // cutoff+month+year, so Save Draft / Submit update it in place rather than
 // piling up duplicate rows each time either is clicked.
 function findExistingSubmission(){
-  const month=document.getElementById('selMonth').value;
-  const year=parseInt(document.getElementById('selYear').value);
+  const month=MONTH_NAMES[currentMonth];
+  const year=currentYear;
   return SUBMISSIONS.find(s=>s.empId===currentUser.id&&s.cutoff===currentCutoff&&s.month===month&&s.year===year);
 }
 
@@ -1296,7 +1637,7 @@ function upsertSubmission(status){
   const sub={
     id: existing?existing.id:'sub'+Date.now(),
     empId:currentUser.id,empName:currentUser.name,dept:currentUser.dept,
-    cutoff:currentCutoff,month:document.getElementById('selMonth').value,year:parseInt(document.getElementById('selYear').value),
+    cutoff:currentCutoff,month:MONTH_NAMES[currentMonth],year:currentYear,
     period:info.period,payDate:info.payDate,remarks,
     submittedOn:new Date().toLocaleString('en-US'),status,rows
   };
@@ -1309,13 +1650,13 @@ function upsertSubmission(status){
 
 function saveDraft(){
   upsertSubmission('draft');
-  addAudit('draft_save',`Saved draft — Cutoff ${currentCutoff}, ${document.getElementById('selMonth').value} ${document.getElementById('selYear').value}`);
+  addAudit('draft_save',`Saved draft — Cutoff ${currentCutoff}, ${MONTH_NAMES[currentMonth]} ${currentYear}`);
   toast('💾 Draft saved.','success');
 }
 
 function submitCutoff(){
   upsertSubmission('submitted');
-  addAudit('submission_submit',`Submitted timesheet — Cutoff ${currentCutoff}, ${document.getElementById('selMonth').value} ${document.getElementById('selYear').value}`);
+  addAudit('submission_submit',`Submitted timesheet — Cutoff ${currentCutoff}, ${MONTH_NAMES[currentMonth]} ${currentYear}`);
   toast('✅ Timesheet submitted successfully!','success');
 }
 
@@ -1329,50 +1670,154 @@ function formatMinutes(total){
   return `${Math.floor(total/60)}h ${total%60}m`;
 }
 
+// Generate all calendar dates for a cutoff period.
+// Returns array of ISO date strings (YYYY-MM-DD) in order.
+// Use local date string to avoid timezone off-by-one (toISOString() returns UTC which
+// can land on the previous calendar day in UTC+8 and similar timezones).
+function localDateStr(y,m,d){return `${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;}
+
+function getCutoffDates(cutoff, month, year){
+  const mi = MONTH_NAMES.indexOf(month);
+  const yr = parseInt(year);
+  const dates = [];
+  if(cutoff==='A'){
+    const pm=(mi-1+12)%12, py=mi===0?yr-1:yr;
+    const lastPrev=new Date(py,pm+1,0).getDate();
+    for(let d=25;d<=lastPrev;d++) dates.push(localDateStr(py,pm,d));
+    for(let d=1;d<=9;d++) dates.push(localDateStr(yr,mi,d));
+  } else {
+    for(let d=10;d<=24;d++) dates.push(localDateStr(yr,mi,d));
+  }
+  return dates;
+}
+
 // Shared layout for both the employee's own download and HR's per-record download:
 // company header (name + address, with the logo actually embedded as an image —
 // this uses ExcelJS rather than SheetJS specifically because SheetJS's free build
 // can't draw images into cells), employee/period info block, the day-by-day
 // table, and a totals row.
-async function buildTimesheetWorkbook(empInfo, periodInfo, rows, remarks){
+// allDates: array of YYYY-MM-DD strings for every day in the cutoff (generated by getCutoffDates).
+// rowsData: array of row objects (from collectRows or submission.rows) — merged by date.
+// Builds a timesheet workbook that matches the Avasia/Cummins attendance sheet layout:
+// Centered title block → employee info → column headers → daily rows → summary stats → signatures.
+async function buildTimesheetWorkbook(empInfo, periodInfo, allDates, rowsData, remarks){
   const wb = new ExcelJS.Workbook();
-  const ws = wb.addWorksheet('Timesheet');
-  ws.columns = [{width:14},{width:6},{width:12},{width:12},{width:12},{width:12},{width:12},{width:22}];
+  const ws = wb.addWorksheet('Attendance Sheet');
+  // Columns: A=Date B=Day C=AM-In D=AM-Out E=PM-In F=PM-Out G=Total H=Remarks
+  ws.columns = [{width:14},{width:8},{width:12},{width:12},{width:12},{width:12},{width:14},{width:28}];
 
-  ws.addRow([COMPANY.name||'Company Name']).getCell(1).font = {bold:true, size:14};
-  if(COMPANY.address) ws.addRow([COMPANY.address]);
-  ws.addRow(['TIMEKEEPING RECORD']).getCell(1).font = {bold:true};
-  ws.addRow([]);
-  ws.addRow(['Employee:',empInfo.name,'ID:',empInfo.id]);
-  ws.addRow(['Department:',empInfo.dept||'','Position:',empInfo.pos||'']);
-  ws.addRow(['Cutoff:','Cutoff '+periodInfo.cutoff,'Period:',periodInfo.period]);
-  ws.addRow(['Pay Date:',periodInfo.payDate,'Generated:',new Date().toLocaleString('en-US')]);
-  ws.addRow([]);
-  ws.addRow(['Date','Day','AM Time-In','AM Time-Out','PM Time-In','PM Time-Out','Total Hours','Remarks']).font={bold:true};
+  const COLS = 8; // A–H
+  const merge = (r,c1,c2) => ws.mergeCells(r,c1,r,c2);
+  const center = cell => { cell.alignment={horizontal:'center',vertical:'middle'}; };
+  const bold   = cell => { cell.font={bold:true}; };
+  const fill   = (cell,rgb) => { cell.fill={type:'pattern',pattern:'solid',fgColor:{argb:rgb}}; };
+  const border = cell => {
+    const b={style:'thin',color:{argb:'FF000000'}};
+    cell.border={top:b,left:b,bottom:b,right:b};
+  };
 
-  let totalMin=0;
-  rows.forEach(row=>{
-    const dt=new Date(row.date+'T12:00:00');
-    totalMin+=parseHrsToMinutes(row.hrs);
-    ws.addRow([row.date,DAY_NAMES[dt.getDay()],row.inAM||'',row.outAM||'',row.inPM||'',row.outPM||'',row.hrs||'—','']);
+  // --- Row 1: ATTENDANCE SHEET title ---
+  ws.addRow(['ATTENDANCE SHEET']);
+  ws.getRow(1).height=20;
+  merge(1,1,COLS);
+  const r1=ws.getCell(1,1);
+  r1.font={bold:true,size:14};center(r1);
+
+  // --- Row 2: Company name ---
+  ws.addRow([COMPANY.name||'CUMMINS PHILIPPINES']);
+  merge(2,1,COLS);
+  const r2=ws.getCell(2,1);
+  r2.font={bold:true,size:12};center(r2);
+
+  // --- Row 3: Period ---
+  ws.addRow([periodInfo.period]);
+  merge(3,1,COLS);
+  const r3=ws.getCell(3,1);
+  r3.font={size:11};center(r3);
+
+  // --- Row 4: Employee name ---
+  ws.addRow([empInfo.name]);
+  merge(4,1,COLS);
+  const r4=ws.getCell(4,1);
+  r4.font={italic:true,size:11};center(r4);
+
+  // --- Row 5: blank spacer ---
+  ws.addRow([]);
+
+  // --- Row 6: Employee ID + Department ---
+  ws.addRow(['Employee ID No.:',empInfo.id,'','Department:',empInfo.dept||'','','Position:',empInfo.pos||'']);
+  ws.getRow(6).getCell(1).font={bold:true};
+  ws.getRow(6).getCell(4).font={bold:true};
+  ws.getRow(6).getCell(7).font={bold:true};
+
+  // --- Row 7: blank ---
+  ws.addRow([]);
+
+  // --- Row 8: Column headers ---
+  const HDR_FILL='FFD6E4FF'; // light blue header
+  const hdrRow = ws.addRow(['DATE','DAY','AM TIME-IN','AM TIME-OUT','PM TIME-IN','PM TIME-OUT','TOTAL HOURS','REMARKS']);
+  hdrRow.eachCell(c=>{ bold(c);center(c);border(c);fill(c,HDR_FILL); });
+  ws.getRow(8).height=22;
+
+  // --- Rows 9+: Daily time entries ---
+  const rowMap={};
+  (rowsData||[]).forEach(r=>{ if(r.date) rowMap[r.date]=r; });
+
+  let totalMin=0, present=0, absent=0;
+  const dataStartRow=9;
+
+  (allDates||[]).forEach((dateKey,i)=>{
+    const [yy,mm,dd]=dateKey.split('-').map(Number);
+    const dt=new Date(yy,mm-1,dd);
+    const dow=dt.getDay();
+    const isWE=(dow===0||dow===6);
+    const r=rowMap[dateKey]||{};
+    const hrs=r.hrs||'';
+    const hrsMin=parseHrsToMinutes(hrs);
+    totalMin+=hrsMin;
+    if(!isWE){ if(hrsMin>0) present++; else absent++; }
+    const dateDisp=dt.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+    const dataRow=ws.addRow([dateDisp,DAY_NAMES[dow],r.in||'',r.out||'',hrs||'',r.remarks||'']);
+    if(isWE){
+      dataRow.eachCell(c=>{ c.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FFF5F5F5'}}; c.font={color:{argb:'FF888888'}}; });
+    }
+    dataRow.eachCell(c=>{ border(c);center(c); });
+    dataRow.getCell(1).alignment={horizontal:'left',vertical:'middle'};
+    dataRow.getCell(8).alignment={horizontal:'left',vertical:'middle'};
   });
-  ws.addRow(['','','','','','TOTAL',formatMinutes(totalMin),'']).font={bold:true};
-  if(remarks){ws.addRow([]);ws.addRow(['Remarks:',remarks]);}
 
-  // Anchored in the header area, to the right of the text labels (which live in
-  // columns A-D) so it doesn't overlap them. ExcelJS can only embed png/jpeg/gif;
-  // the upload picker already restricts to those, but data pulled from GitHub
-  // (possibly set by a different, older client) isn't guaranteed to match, so
-  // this still checks for real rather than assuming — and warns instead of
-  // silently exporting without the logo if it doesn't.
+  // --- Total row ---
+  const totalRow=ws.addRow(['','','','','','','TOTAL',formatMinutes(totalMin),'']);
+  totalRow.eachCell(c=>{ bold(c);center(c);border(c);fill(c,'FFFFD700'); });
+  if(remarks){
+    ws.addRow([]);
+    ws.addRow(['Overall Remarks:',remarks]).getCell(1).font={bold:true,italic:true};
+  }
+
+  // --- Summary stats ---
+  ws.addRow([]);
+  const summaryStart=ws.rowCount+1;
+  ws.addRow(['PRESENT:',present,'','ABSENT:',absent,'','','']);
+  ws.addRow(['PAY DATE:',periodInfo.payDate,'','CUTOFF:','Cutoff '+periodInfo.cutoff,'','','']);
+  ws.addRow(['GENERATED:',new Date().toLocaleString('en-US'),'','','','','','']);
+
+  // --- Signature lines ---
+  ws.addRow([]);
+  ws.addRow(['PREPARED BY:','','','CHECKED BY:','','','VERIFIED BY:','']);
+  ws.addRow([]);ws.addRow([]);
+  const sigRow=ws.addRow([empInfo.name,'','','HR Admin','','','HR Director','']);
+  sigRow.eachCell((c,ci)=>{ if([1,4,7].includes(ci)){ c.font={bold:true}; } });
+  ws.addRow(['Employee','','','HR Admin','','','HR Director / Manager','']);
+
+  // --- Embed company logo (PNG/JPEG/GIF only) ---
   if(COMPANY.logo){
-    const m = COMPANY.logo.match(/^data:image\/(png|jpe?g|gif);base64,(.+)$/i);
+    const m=COMPANY.logo.match(/^data:image\/(png|jpe?g|gif);base64,(.+)$/i);
     if(m){
-      const ext = m[1].toLowerCase()==='jpg' ? 'jpeg' : m[1].toLowerCase();
-      const imgId = wb.addImage({base64:COMPANY.logo, extension:ext});
-      ws.addImage(imgId, {tl:{col:5,row:0}, ext:{width:130,height:50}});
+      const ext=m[1].toLowerCase()==='jpg'?'jpeg':m[1].toLowerCase();
+      const imgId=wb.addImage({base64:COMPANY.logo,extension:ext});
+      ws.addImage(imgId,{tl:{col:6,row:0},ext:{width:120,height:45}});
     } else {
-      toast('⚠️ Logo format not supported in Excel exports (PNG/JPEG/GIF only) — omitted from this file.','error');
+      toast('⚠️ Logo format not supported in Excel (PNG/JPEG/GIF only) — omitted.','error');
     }
   }
   return wb;
@@ -1393,12 +1838,14 @@ async function downloadWorkbook(wb, filename){
 
 async function downloadExcel(){
   const info=getCutoffInfo();
+  const month=MONTH_NAMES[currentMonth];
+  const allDates=getCutoffDates(currentCutoff,month,currentYear);
   const rows=collectRows();
   const remarks=document.getElementById('tkRemarks').value;
   const wb = await buildTimesheetWorkbook(
     {name:currentUser.name,id:currentUser.id,dept:currentUser.dept,pos:currentUser.pos},
     {cutoff:currentCutoff,period:info.period,payDate:info.payDate},
-    rows, remarks
+    allDates, rows, remarks
   );
   const fn=`${currentUser.name.replace(/\s/g,'_')}_TK_Cutoff${currentCutoff}_${info.period.replace(/[^a-zA-Z0-9]/g,'_')}.xlsx`;
   await downloadWorkbook(wb, fn);
@@ -1409,10 +1856,12 @@ async function downloadRecordExcel(){
   if(!viewRecord) return;
   const r=viewRecord;
   const empUser=USERS[r.empId]||{};
+  // Generate all calendar days for this record's cutoff so the Excel is never empty
+  const allDates=getCutoffDates(r.cutoff, r.month||MONTH_NAMES[new Date().getMonth()], r.year||new Date().getFullYear());
   const wb = await buildTimesheetWorkbook(
     {name:r.empName,id:r.empId,dept:r.dept,pos:empUser.pos},
     {cutoff:r.cutoff,period:r.period,payDate:r.payDate},
-    r.rows||[], r.remarks
+    allDates, r.rows||[], r.remarks
   );
   await downloadWorkbook(wb, `${r.empName.replace(/\s/g,'_')}_TK_Cutoff${r.cutoff}.xlsx`);
 }
@@ -1634,7 +2083,7 @@ function openRecord(id){
   if(s.rows&&s.rows.length){
     s.rows.forEach(r=>{
       const dt=new Date(r.date+'T12:00:00');
-      html+=`<tr><td>${esc(r.date)}</td><td>${DAY_NAMES[dt.getDay()]}</td><td>${esc(r.inAM)||'—'}</td><td>${esc(r.outAM)||'—'}</td><td>${esc(r.inPM)||'—'}</td><td>${esc(r.outPM)||'—'}</td><td>${esc(r.hrs)||'—'}</td></tr>`;
+      html+=`<tr><td>${esc(r.date)}</td><td>${DAY_NAMES[dt.getDay()]}</td><td>${esc(r['in'])||'—'}</td><td>${esc(r.out)||'—'}</td><td>${esc(r.hrs)||'—'}</td></tr>`;
     });
   } else {
     html+=`<tr><td colspan="7" style="text-align:center;color:var(--muted);padding:20px">No time entries in this record.</td></tr>`;
@@ -1811,18 +2260,181 @@ function renderHistory(){
   if(!tbody)return;
   if(list.length===0){tbody.innerHTML='';empty.style.display='block';return;}
   empty.style.display='none';
-  tbody.innerHTML=list.map(s=>`<tr class="clickable" onclick="openRecord('${esc(s.id)}')">
+  tbody.innerHTML=list.map(s=>`<tr class="clickable" onclick="viewHistoryInTimesheet('${esc(s.id)}')">
     <td>Cutoff ${esc(s.cutoff)}</td><td>${esc(s.period)}</td><td>${esc(s.payDate)}</td>
     <td>${esc(s.submittedOn)}</td>
     <td><span class="tag ${esc(s.status)}">${esc(s.status)}</span></td>
-    <td><button class="btn sm" onclick="event.stopPropagation();openRecord('${esc(s.id)}')">View</button></td>
+    <td><button class="btn sm" onclick="event.stopPropagation();viewHistoryInTimesheet('${esc(s.id)}')">View</button></td>
   </tr>`).join('');
+}
+
+function viewHistoryInTimesheet(id){
+  const s=SUBMISSIONS.find(r=>r.id===id);
+  if(!s)return;
+
+  // Navigate to emp-tk view
+  setView('emp-tk');
+
+  // Set cutoff pills to match submission (visual only, won't rebuild)
+  document.getElementById('pillA').classList.toggle('active',s.cutoff==='A');
+  document.getElementById('pillB').classList.toggle('active',s.cutoff==='B');
+
+  // Update month label and pay label from submission
+  const mlEl=document.getElementById('cutoffMonthLabel');
+  if(mlEl) mlEl.textContent=s.month+' '+s.year;
+  const payEl=document.getElementById('cutoffPayLabel');
+  if(payEl) payEl.textContent='Pay: '+s.payDate;
+
+  // Status badge
+  const badgeEl=document.getElementById('tkStatusBadge');
+  if(badgeEl){
+    const statusLabel={draft:'Draft',submitted:'Pending Review',approved:'Approved',rejected:'Rejected'}[s.status]||s.status;
+    const statusClass=s.status==='submitted'?'pending':s.status;
+    badgeEl.className='tag '+statusClass;
+    badgeEl.textContent=statusLabel;
+  }
+
+  // Rebuild the table for the submission's cutoff + month/year dates
+  const savedCutoff=currentCutoff, savedMonth=currentMonth, savedYear=currentYear;
+  const monthIdx=MONTH_NAMES.indexOf(s.month);
+  currentCutoff=s.cutoff;
+  currentMonth=monthIdx>=0?monthIdx:currentMonth;
+  currentYear=s.year||currentYear;
+  buildTimeTable();
+  // Restore globals (we're in read-only mode; exitHistoryView will restore)
+  window._histSavedState={cutoff:savedCutoff,month:savedMonth,year:savedYear};
+  currentCutoff=s.cutoff; currentMonth=monthIdx>=0?monthIdx:savedMonth; currentYear=s.year||savedYear;
+
+  // Fill attendance rows from submission data
+  if(s.rows&&s.rows.length){
+    s.rows.forEach(r=>{
+      const tr=document.querySelector(`#tkBody tr[data-date="${r.date}"]`);
+      if(!tr)return;
+      const inEl=tr.querySelector('[data-col="in"]');
+      const outEl=tr.querySelector('[data-col="out"]');
+      const rmkEl=tr.querySelector('[data-col="rmk"]');
+      if(inEl){inEl.value=r.in||'';inEl.disabled=true;}
+      if(outEl){outEl.value=r.out||'';outEl.disabled=true;}
+      if(rmkEl){rmkEl.value=r.remarks||'';rmkEl.disabled=true;}
+      computeHours(tr);
+    });
+  }
+
+  // Disable OT inputs
+  document.querySelectorAll('#otBody input, #otBody select').forEach(el=>el.disabled=true);
+
+  // Disable action buttons
+  ['downloadExcel','saveDraft'].forEach(fn=>{
+    document.querySelectorAll(`.submit-bar .btn`).forEach(btn=>{
+      if(btn.textContent.includes('Download')||btn.textContent.includes('Draft')||btn.textContent.includes('Submit'))
+        btn.disabled=true;
+    });
+  });
+
+  // Show yellow banner
+  const banner=document.getElementById('histBanner');
+  const bannerText=document.getElementById('histBannerText');
+  const statusLabel={draft:'Draft',submitted:'Pending Review',approved:'Approved',rejected:'Rejected'}[s.status]||s.status;
+  if(bannerText) bannerText.textContent=`Viewing: Cutoff ${s.cutoff} · ${s.period} (${statusLabel})`;
+  if(banner) banner.style.display='flex';
+
+  // Store reference so exitHistoryView can restore
+  window._histViewActive=true;
+}
+
+function exitHistoryView(){
+  if(!window._histViewActive)return;
+  window._histViewActive=false;
+
+  // Restore saved cutoff/month/year
+  const saved=window._histSavedState||{};
+  currentCutoff=saved.cutoff||currentCutoff;
+  currentMonth=saved.month!=null?saved.month:currentMonth;
+  currentYear=saved.year||currentYear;
+
+  // Restore pills
+  document.getElementById('pillA').classList.toggle('active',currentCutoff==='A');
+  document.getElementById('pillB').classList.toggle('active',currentCutoff==='B');
+
+  // Restore month/year label and pay label
+  const mlEl=document.getElementById('cutoffMonthLabel');
+  if(mlEl) mlEl.textContent=MONTH_NAMES[currentMonth]+' '+currentYear;
+
+  // Hide banner
+  const banner=document.getElementById('histBanner');
+  if(banner) banner.style.display='none';
+
+  // Re-enable buttons
+  document.querySelectorAll('.submit-bar .btn').forEach(btn=>btn.disabled=false);
+
+  // Rebuild current timesheet (re-enables all inputs via fresh DOM)
+  buildTimeTable();
 }
 
 function togglePw(id,btn){
   const inp=document.getElementById(id);
   inp.type=inp.type==='password'?'text':'password';
   btn.textContent=inp.type==='password'?'👁':'🙈';
+}
+
+/* ============================================================
+   SETTINGS — EMPLOYEE PROFILE EDIT
+   ============================================================ */
+function loadProfileUI(){
+  if(!currentUser||currentUser.role!=='emp') return;
+  const u = USERS[currentUser.id]||currentUser;
+  const n=document.getElementById('profName');
+  if(!n) return; // settings panel not yet in DOM
+  n.value = u.name||'';
+  document.getElementById('profEmail').value = u.email||'';
+  document.getElementById('profDept').value = u.dept||'';
+  document.getElementById('profPos').value = u.pos||'';
+  document.getElementById('profHired').value = u.dateHired||'';
+}
+
+function saveMyProfile(){
+  if(!currentUser) return;
+  const name  = document.getElementById('profName').value.trim();
+  const email = document.getElementById('profEmail').value.trim();
+  const dept  = document.getElementById('profDept').value.trim();
+  const pos   = document.getElementById('profPos').value.trim();
+  const hired = document.getElementById('profHired').value;
+  if(!name){ toast('Name is required.','error'); return; }
+  USERS[currentUser.id] = {...USERS[currentUser.id], name, email, dept, pos, dateHired:hired};
+  currentUser = {...currentUser, name, email, dept, pos, dateHired:hired};
+  renderAvatar();
+  document.getElementById('uName').textContent = currentUser.name;
+  saveUsersToGitHub();
+  addAudit('profile_update','Updated own profile details');
+  toast('✅ Profile saved!','success');
+}
+
+/* ============================================================
+   SETTINGS — DEFAULT SCHEDULE (employee)
+   ============================================================ */
+function loadDefaultScheduleUI(){
+  if(!currentUser||currentUser.role!=='emp') return;
+  const s=(USERS[currentUser.id]||{}).defaultSchedule||{};
+  const set=id=>v=>{ const el=document.getElementById(id); if(el) el.value=v||''; };
+  set('schedInAM')(s.inAM); set('schedOutPM')(s.outPM);
+}
+
+function saveDefaultSchedule(){
+  if(!currentUser) return;
+  const g=id=>(document.getElementById(id)||{}).value||'';
+  const sched={inAM:g('schedInAM'),outPM:g('schedOutPM')};
+  USERS[currentUser.id]={...USERS[currentUser.id],defaultSchedule:sched};
+  saveUsersToGitHub();
+  addAudit('schedule_save','Saved default schedule');
+  toast('✅ Default schedule saved! Timesheet will auto-fill on next open.','success');
+}
+
+function clearDefaultSchedule(){
+  if(!currentUser) return;
+  USERS[currentUser.id]={...USERS[currentUser.id],defaultSchedule:{}};
+  ['schedInAM','schedOutAM','schedInPM','schedOutPM'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
+  saveUsersToGitHub();
+  toast('🗑 Default schedule cleared.','success');
 }
 
 /* ============================================================
@@ -1901,15 +2513,23 @@ const THEMES=[
   {name:'Rose',key:'rose',c1:'#f43f8e',c2:'#fda4d0'},
   {name:'Teal',key:'teal',c1:'#14b8a6',c2:'#5eead4'},
   {name:'Sunset',key:'sunset',c1:'#ff6b6b',c2:'#ffd166'},
+  {name:'Midnight',key:'midnight',c1:'#1e3a5f',c2:'#4a90d9'},
+  {name:'Violet',key:'violet',c1:'#7c3aed',c2:'#a855f7'},
+  {name:'Coral',key:'coral',c1:'#f97316',c2:'#fb923c'},
+  {name:'Mint',key:'mint',c1:'#059669',c2:'#6ee7b7'},
+  {name:'Sky',key:'sky',c1:'#0ea5e9',c2:'#67e8f9'},
+  {name:'Gold',key:'gold',c1:'#ca8a04',c2:'#fde047'},
+  {name:'Indigo',key:'indigo',c1:'#4338ca',c2:'#818cf8'},
+  {name:'Cherry',key:'cherry',c1:'#be123c',c2:'#fb7185'},
+  {name:'Sage',key:'sage',c1:'#4d7c5f',c2:'#86efac'},
+  {name:'Dusk',key:'dusk',c1:'#7e22ce',c2:'#f472b6'},
 ];
 
 function renderSwatches(){
   const cur=document.documentElement.dataset.theme||'ocean';
   document.getElementById('swatches').innerHTML=THEMES.map(t=>`
-    <div class="sw ${t.key===cur?'active':''}" onclick="setTheme('${t.key}')">
-      <div class="dot" style="background:linear-gradient(135deg,${t.c1},${t.c2})"></div>
-      ${t.name}
-    </div>`).join('');
+    <div class="sw ${t.key===cur?'active':''}" onclick="setTheme('${t.key}')" title="${t.name}"
+      style="background:linear-gradient(135deg,${t.c1},${t.c2})"></div>`).join('');
 }
 
 function setTheme(k){
