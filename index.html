@@ -146,6 +146,17 @@ label.fld{display:flex;flex-direction:column;gap:5px;font-size:11.5px;color:var(
   z-index:300;box-shadow:0 2px 10px rgba(0,0,0,.18);transition:left var(--transition);line-height:1}
 body.loggedIn #collapseBtn{display:grid}
 #collapseBtn:hover{background:var(--hover);color:var(--text)}
+/* Attachments/file-preview panel collapse toggle — sits on the split boundary,
+   same visual language as the sidebar's own #collapseBtn but a separate control. */
+#previewCollapseBtn{position:absolute;top:50%;left:60%;transform:translate(-50%,-50%);
+  width:22px;height:22px;border-radius:50%;background:var(--panel-solid);border:1px solid var(--border);
+  display:grid;place-items:center;cursor:pointer;font-size:12px;font-weight:700;color:var(--muted);
+  z-index:5;box-shadow:0 2px 8px rgba(0,0,0,.15);transition:left var(--transition);line-height:1}
+#previewCollapseBtn:hover{background:var(--hover);color:var(--text)}
+/* tkPreviewPanel/tkLeftPanel visibility and sizing are toggled via inline
+   style in toggleFilePreviewPanel() (JS), not here — both elements set
+   display/flex inline, which beats a class selector on specificity. */
+#tkScrollArea.previewCollapsed #previewCollapseBtn{left:100%;transform:translate(calc(-100% - 10px),-50%)}
 #mobileMenuBtn{background:var(--panel);border:1px solid var(--border);border-radius:10px;width:34px;height:34px;cursor:pointer;font-size:16px;color:var(--muted);display:none;place-items:center;flex:0 0 auto}
 #mobileMenuBtn:hover{background:var(--hover);color:var(--text)}
 .sidebar{overflow-x:hidden}
@@ -445,10 +456,13 @@ body.roleHR .empOnly{display:none!important}
         </div>
 
         <!-- Split layout: 60% grid + 40% file preview -->
-        <div id="tkScrollArea" style="display:flex;flex:1;overflow:hidden;min-height:0">
+        <div id="tkScrollArea" style="display:flex;flex:1;overflow:hidden;min-height:0;position:relative">
+
+          <!-- Collapse/expand the attachments panel -->
+          <button id="previewCollapseBtn" title="Hide attachments panel" onclick="toggleFilePreviewPanel()">›</button>
 
           <!-- LEFT 60%: Attendance + OT tables -->
-          <div style="flex:0 0 60%;display:flex;flex-direction:column;overflow:hidden;border-right:2px solid var(--border)">
+          <div id="tkLeftPanel" style="flex:0 0 60%;display:flex;flex-direction:column;overflow:hidden;border-right:2px solid var(--border)">
             <div style="overflow-y:auto;flex:1">
               <div class="cutoff-info-box" id="cutoffInfoBox" style="display:none"></div>
               <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;padding:6px 10px;border-bottom:1px solid var(--border)">Attendance</div>
@@ -490,7 +504,7 @@ body.roleHR .empOnly{display:none!important}
           </div><!-- end left 60% -->
 
           <!-- RIGHT 40%: File preview panel -->
-          <div style="flex:0 0 40%;display:flex;flex-direction:column;overflow:hidden;background:var(--panel)">
+          <div id="tkPreviewPanel" style="flex:0 0 40%;display:flex;flex-direction:column;overflow:hidden;background:var(--panel)">
             <!-- Header: file chips -->
             <div style="padding:8px 12px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px;flex-shrink:0;flex-wrap:wrap">
               <span style="font-size:11.5px;font-weight:700;color:var(--muted)">📎 Attachments</span>
@@ -833,6 +847,23 @@ let currentUser = null;
 let currentCutoff = 'A';
 let attachFiles = [];
 let previewScale = 1;
+let _previewToken = 0; // guards against a stale async xlsx render landing after a newer preview request
+
+function toggleFilePreviewPanel(){
+  const area=document.getElementById('tkScrollArea');
+  const btn=document.getElementById('previewCollapseBtn');
+  const left=document.getElementById('tkLeftPanel');
+  const preview=document.getElementById('tkPreviewPanel');
+  const collapsed=area.classList.toggle('previewCollapsed');
+  // Both panels set their layout via inline style="", which beats the
+  // .previewCollapsed CSS rules on specificity — set the inline styles
+  // directly instead of relying on the class alone to do the visual work.
+  preview.style.display=collapsed?'none':'flex';
+  left.style.flex=collapsed?'1 1 100%':'0 0 60%';
+  left.style.borderRight=collapsed?'none':'2px solid var(--border)';
+  btn.textContent=collapsed?'‹':'›';
+  btn.title=collapsed?'Show attachments panel':'Hide attachments panel';
+}
 
 function zoomPreview(delta){
   const img=document.getElementById('filePreviewImg');
@@ -854,6 +885,7 @@ document.addEventListener('wheel',function(e){
 },{passive:false});
 
 function showFilePreview(file){
+  const myToken=++_previewToken; // if a newer preview starts before this xlsx read finishes, its result is discarded
   const img=document.getElementById('filePreviewImg');
   const frame=document.getElementById('filePreviewFrame');
   const ph=document.getElementById('filePreviewPlaceholder');
@@ -863,6 +895,11 @@ function showFilePreview(file){
   img.style.display='none';
   frame.style.display='none';
   if(zb)zb.style.display='none';
+  // The xlsx branch below injects its own extra <div> into the preview body —
+  // clear it out unconditionally, not just when the NEXT file happens to also
+  // be xlsx, otherwise it lingers behind whatever preview comes after it.
+  const oldXls=document.getElementById('xlsPreviewContainer');
+  if(oldXls)oldXls.remove();
   if(['jpg','jpeg','png','gif','webp','bmp'].includes(ext)){
     const url=URL.createObjectURL(file);
     img.src=url; img.style.display='block'; img.style.transform='scale(1)'; previewScale=1;
@@ -874,6 +911,7 @@ function showFilePreview(file){
     // Render Excel via SheetJS
     const reader=new FileReader();
     reader.onload=function(e){
+      if(myToken!==_previewToken)return; // a different attachment was selected while this was reading
       try{
         const wb=XLSX.read(e.target.result,{type:'array'});
         const ws=wb.Sheets[wb.SheetNames[0]];
@@ -1423,6 +1461,14 @@ function buildTimeTable(){
   // Load default schedule if set by the employee
   const sched = (currentUser && USERS[currentUser.id]?.defaultSchedule) || {};
 
+  // If a draft/submitted record already exists for this cutoff+month+year,
+  // its saved rows take priority over the default schedule — otherwise
+  // reopening a draft (switching cutoffs and back, or just navigating away
+  // and back) would show a blank grid, and the next Save Draft would
+  // overwrite the real saved data with that blank state.
+  const savedRowMap={};
+  (existing?.rows||[]).forEach(r=>{ if(r.date) savedRowMap[r.date]=r; });
+
   const tbody=document.getElementById('tkBody');
   tbody.innerHTML='';
   days.forEach(dt=>{
@@ -1431,17 +1477,18 @@ function buildTimeTable(){
     const dateStr=dt.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
     const key=localDateStr(dt.getFullYear(),dt.getMonth(),dt.getDate());
     const cls=isWE?'weekend':'';
-    // Pre-fill with default schedule only on weekdays
-    const dIn  = !isWE && sched.inAM  ? `value="${sched.inAM}"`  : '';
-    const dOut = !isWE && sched.outPM ? `value="${sched.outPM}"` : '';
+    const saved=savedRowMap[key];
+    const inVal  = saved ? saved.in  : (!isWE && sched.inAM  ? sched.inAM  : '');
+    const outVal = saved ? saved.out : (!isWE && sched.outPM ? sched.outPM : '');
+    const rmkVal = saved ? (saved.remarks||'') : '';
     tbody.insertAdjacentHTML('beforeend',`
       <tr class="${cls}" data-date="${key}">
         <td>${dateStr}${isWE?` <span style="font-size:10px;color:var(--accent);opacity:.7">(WE)</span>`:''}</td>
         <td>${DAY_NAMES[dow]}</td>
-        <td><input type="time" class="tk-in" data-col="in"  ${dIn}/></td>
-        <td><input type="time" class="tk-in" data-col="out" ${dOut}/></td>
+        <td><input type="time" class="tk-in" data-col="in"  ${inVal?`value="${inVal}"`:''}/></td>
+        <td><input type="time" class="tk-in" data-col="out" ${outVal?`value="${outVal}"`:''}/></td>
         <td class="hrs-cell" data-date="${key}">—</td>
-        <td><input type="text" class="tk-rmk" data-col="rmk" placeholder="—" style="background:var(--panel);border:1px solid var(--border);border-radius:6px;padding:3px 6px;font-size:11px;color:var(--text);outline:none;width:100%;min-width:70px"/></td>
+        <td><input type="text" class="tk-rmk" data-col="rmk" placeholder="—" value="${esc(rmkVal)}" style="background:var(--panel);border:1px solid var(--border);border-radius:6px;padding:3px 6px;font-size:11px;color:var(--text);outline:none;width:100%;min-width:70px"/></td>
       </tr>`);
   });
 
@@ -1450,10 +1497,29 @@ function buildTimeTable(){
     tr.querySelectorAll('.tk-in').forEach(inp=>{
       inp.addEventListener('change',()=>computeHours(tr));
     });
-    computeHours(tr); // pre-fill hours if defaults applied
+    computeHours(tr); // pre-fill hours if defaults or saved data applied
   });
-  // Build OT table with same rows
+  // Build OT table with same rows, then restore any saved OT entries onto it
   buildOTTable();
+  restoreOTRows(existing?.otRows||[]);
+}
+
+// Overlays previously-saved Overtime entries onto the freshly-built (blank)
+// OT table — same reload problem as the Attendance grid above: without this,
+// a draft's OT data would appear to vanish on reopen and the next save would
+// wipe it out for real.
+function restoreOTRows(savedOtRows){
+  if(!savedOtRows||!savedOtRows.length)return;
+  const otMap={}; savedOtRows.forEach(r=>{ if(r.date)otMap[r.date]=r; });
+  document.querySelectorAll('#otBody tr').forEach(tr=>{
+    const saved=otMap[tr.dataset.date];
+    if(!saved)return;
+    const typeIdx=OT_TYPES.findIndex(t=>t.label===saved.type);
+    if(saved.from) tr.querySelector('.ot-from').value=saved.from;
+    if(saved.to) tr.querySelector('.ot-to').value=saved.to;
+    if(typeIdx>=0) tr.querySelector('.ot-type').value=typeIdx;
+    computeOT(tr);
+  });
 }
 
 function computeHours(tr){
@@ -1547,9 +1613,12 @@ function computeOT(tr){
 }
 
 function updateOTTotal(){
+  // Only rows with an actual paid OT type selected count toward the total —
+  // From/To filled in with Type still at "— None —" is an unfinished entry,
+  // not real overtime, even though it shows a duration in its own row.
   let total=0;
   document.querySelectorAll('#otBody tr').forEach(tr=>{
-    total+=parseInt(tr.dataset.otMins||0);
+    if(parseFloat(tr.dataset.otRate||0)>0) total+=parseInt(tr.dataset.otMins||0);
   });
   const el=document.getElementById('otTotalHrs');
   if(el) el.textContent=`${Math.floor(total/60)}h ${total%60}m`;
@@ -1562,7 +1631,10 @@ function collectOTRows(){
     const to=tr.querySelector('.ot-to')?.value;
     const typeIdx=parseInt(tr.querySelector('.ot-type')?.value||0);
     const mins=parseInt(tr.dataset.otMins||0);
-    if(mins>0){
+    // Same rule as updateOTTotal(): a real rate must be selected, not just a
+    // filled time range, or this becomes phantom overtime with no rate column
+    // to land in (RATE_COLS has no 0 entry) yet still inflating the total.
+    if(mins>0 && OT_TYPES[typeIdx].rate>0){
       rows.push({date:tr.dataset.date,from,to,type:OT_TYPES[typeIdx].label,rate:OT_TYPES[typeIdx].rate,mins});
     }
   });
@@ -1633,13 +1705,13 @@ function upsertSubmission(status){
   const existing=findExistingSubmission();
   const info=getCutoffInfo();
   const rows=collectRows();
-  const remarks=document.getElementById('tkRemarks').value;
+  const otRows=collectOTRows();
   const sub={
     id: existing?existing.id:'sub'+Date.now(),
     empId:currentUser.id,empName:currentUser.name,dept:currentUser.dept,
     cutoff:currentCutoff,month:MONTH_NAMES[currentMonth],year:currentYear,
-    period:info.period,payDate:info.payDate,remarks,
-    submittedOn:new Date().toLocaleString('en-US'),status,rows
+    period:info.period,payDate:info.payDate,
+    submittedOn:new Date().toLocaleString('en-US'),status,rows,otRows
   };
   if(existing) Object.assign(existing,sub);
   else SUBMISSIONS.unshift(sub);
@@ -1691,123 +1763,164 @@ function getCutoffDates(cutoff, month, year){
   return dates;
 }
 
-// Shared layout for both the employee's own download and HR's per-record download:
-// company header (name + address, with the logo actually embedded as an image —
-// this uses ExcelJS rather than SheetJS specifically because SheetJS's free build
-// can't draw images into cells), employee/period info block, the day-by-day
-// table, and a totals row.
-// allDates: array of YYYY-MM-DD strings for every day in the cutoff (generated by getCutoffDates).
-// rowsData: array of row objects (from collectRows or submission.rows) — merged by date.
-// Builds a timesheet workbook that matches the Avasia/Cummins attendance sheet layout:
-// Centered title block → employee info → column headers → daily rows → summary stats → signatures.
-async function buildTimesheetWorkbook(empInfo, periodInfo, allDates, rowsData, remarks){
+// Rate multiplier columns, in this exact order, matching the reference
+// "AVASIA INFORMATION SYSTEMS" attendance sheet template. Each app-side OT_TYPES
+// entry (see OT_TYPES above) maps into whichever of these its `rate` matches
+// exactly; a handful of these columns (0.05, 0.25, 1.3, 1.5, 1.6, 2) don't have
+// a corresponding selectable OT type in this app yet, so they always read 0 —
+// that's a real gap in OT_TYPES, not a bug in this export.
+const RATE_COLS=[0.05,0.1,0.25,0.3,0.5,1,1.25,1.3,1.5,1.6,1.69,1.95,2,2.6,3.38];
+const RATE_COL_OFFSET=8; // column H is the first rate column (A-G are Date/Day/In/Out/From/To/Remarks)
+
+// "Andreu S. Sulayao" -> "Sulayao, Andreu S." (best-effort: last whitespace-
+// separated token is treated as the surname). The app only stores one name
+// field, so this can't be exact for every name shape, but matches the
+// reference template's format for the common "First [Middle] Last" case.
+function formatLastFirst(fullName){
+  const parts=(fullName||'').trim().split(/\s+/).filter(Boolean);
+  if(parts.length<2) return fullName||'';
+  const last=parts[parts.length-1];
+  return `${last}, ${parts.slice(0,-1).join(' ')}`;
+}
+
+// Shared layout for both the employee's own download and HR's per-record download.
+// allDates: array of YYYY-MM-DD strings for every day in the cutoff (from getCutoffDates).
+// rowsData: array of {date,in,out,hrs,remarks} (from collectRows or submission.rows).
+// otRowsData: array of {date,from,to,type,rate,mins} (from collectOTRows or submission.otRows).
+// empInfo additionally carries `schedule` ({inAM,outPM}, the employee's Default
+// Schedule) so LATE/UNDERTIME can be computed — omitted/blank if never set.
+//
+// Matches the reference "ATTENDANCE SHEET" template: title/company/period/
+// employee block → Employee ID + Basic Salary → ATTENDANCE/OVERTIME/REMARKS
+// section headers → per-day rows against a 15-column OT rate matrix → Grand
+// Total → Present/Leave/Absent/Late/Undertime/Total-OT summary → signatures.
+async function buildTimesheetWorkbook(empInfo, periodInfo, allDates, rowsData, otRowsData){
   const wb = new ExcelJS.Workbook();
   const ws = wb.addWorksheet('Attendance Sheet');
-  // Columns: A=Date B=Day C=AM-In D=AM-Out E=PM-In F=PM-Out G=Total H=Remarks
-  ws.columns = [{width:14},{width:8},{width:12},{width:12},{width:12},{width:12},{width:14},{width:28}];
+  const COLS = RATE_COL_OFFSET + RATE_COLS.length; // 8 + 15 = 23 (A..W); W = TOTAL
+  ws.columns = [
+    {width:13},{width:9},{width:9},{width:9},{width:9},{width:9},{width:22},
+    ...RATE_COLS.map(()=>({width:7})),
+    {width:11}
+  ];
 
-  const COLS = 8; // A–H
-  const merge = (r,c1,c2) => ws.mergeCells(r,c1,r,c2);
-  const center = cell => { cell.alignment={horizontal:'center',vertical:'middle'}; };
-  const bold   = cell => { cell.font={bold:true}; };
+  const merge  = (r,c1,c2) => ws.mergeCells(r,c1,r,c2);
+  const center = cell => { cell.alignment={horizontal:'center',vertical:'middle',wrapText:true}; };
+  const bold   = cell => { cell.font={...(cell.font||{}),bold:true}; };
   const fill   = (cell,rgb) => { cell.fill={type:'pattern',pattern:'solid',fgColor:{argb:rgb}}; };
   const border = cell => {
     const b={style:'thin',color:{argb:'FF000000'}};
     cell.border={top:b,left:b,bottom:b,right:b};
   };
 
-  // --- Row 1: ATTENDANCE SHEET title ---
-  ws.addRow(['ATTENDANCE SHEET']);
-  ws.getRow(1).height=20;
-  merge(1,1,COLS);
-  const r1=ws.getCell(1,1);
-  r1.font={bold:true,size:14};center(r1);
+  // --- Row 1-4: Title / company / period / employee name ---
+  const titleRow=ws.addRow(['ATTENDANCE SHEET']);
+  titleRow.height=20; merge(titleRow.number,1,COLS);
+  const r1=ws.getCell(titleRow.number,1); r1.font={bold:true,size:14}; center(r1);
 
-  // --- Row 2: Company name ---
-  ws.addRow([COMPANY.name||'CUMMINS PHILIPPINES']);
-  merge(2,1,COLS);
-  const r2=ws.getCell(2,1);
-  r2.font={bold:true,size:12};center(r2);
+  const compRow=ws.addRow([COMPANY.name||'Company Name']);
+  merge(compRow.number,1,COLS);
+  const r2=ws.getCell(compRow.number,1); r2.font={bold:true,size:12}; center(r2);
 
-  // --- Row 3: Period ---
-  ws.addRow([periodInfo.period]);
-  merge(3,1,COLS);
-  const r3=ws.getCell(3,1);
-  r3.font={size:11};center(r3);
+  const periodRow=ws.addRow([(periodInfo.period||'').toUpperCase()]);
+  merge(periodRow.number,1,COLS);
+  const r3=ws.getCell(periodRow.number,1); r3.font={size:11}; center(r3);
 
-  // --- Row 4: Employee name ---
-  ws.addRow([empInfo.name]);
-  merge(4,1,COLS);
-  const r4=ws.getCell(4,1);
-  r4.font={italic:true,size:11};center(r4);
+  const nameRow=ws.addRow([formatLastFirst(empInfo.name)]);
+  merge(nameRow.number,1,COLS);
+  const r4=ws.getCell(nameRow.number,1); r4.font={italic:true,size:11}; center(r4);
 
-  // --- Row 5: blank spacer ---
-  ws.addRow([]);
+  // --- Employee ID / Department / Position, then Basic Salary (blank — no such field in this app) ---
+  const idRow=ws.addRow(['Employee ID No.:',empInfo.id,'','Department:',empInfo.dept||'','','Position:',empInfo.pos||'']);
+  [1,4,7].forEach(c=>bold(idRow.getCell(c)));
+  const salRow=ws.addRow(['Basic Salary:','']);
+  bold(salRow.getCell(1));
 
-  // --- Row 6: Employee ID + Department ---
-  ws.addRow(['Employee ID No.:',empInfo.id,'','Department:',empInfo.dept||'','','Position:',empInfo.pos||'']);
-  ws.getRow(6).getCell(1).font={bold:true};
-  ws.getRow(6).getCell(4).font={bold:true};
-  ws.getRow(6).getCell(7).font={bold:true};
+  ws.addRow([]); // spacer
 
-  // --- Row 7: blank ---
-  ws.addRow([]);
-
-  // --- Row 8: Column headers ---
-  const HDR_FILL='FFD6E4FF'; // light blue header
-  const hdrRow = ws.addRow(['DATE','DAY','AM TIME-IN','AM TIME-OUT','PM TIME-IN','PM TIME-OUT','TOTAL HOURS','REMARKS']);
+  // --- Section headers: ATTENDANCE | OVERTIME | REMARKS | OT rate matrix ---
+  const secRow=ws.addRow([]);
+  const hdrRow=ws.addRow(['DATE','DAY','IN','OUT','FROM','TO','',...RATE_COLS,'TOTAL']);
+  merge(secRow.number,1,4); const secAtt=ws.getCell(secRow.number,1); secAtt.value='ATTENDANCE'; bold(secAtt); center(secAtt);
+  merge(secRow.number,5,6); const secOt=ws.getCell(secRow.number,5); secOt.value='OVERTIME'; bold(secOt); center(secOt);
+  ws.mergeCells(secRow.number,7,hdrRow.number,7); const secRmk=ws.getCell(secRow.number,7); secRmk.value='REMARKS'; bold(secRmk); center(secRmk);
+  merge(secRow.number,RATE_COL_OFFSET,RATE_COL_OFFSET+RATE_COLS.length-1);
+  const secRate=ws.getCell(secRow.number,RATE_COL_OFFSET); secRate.value='OVERTIME HOURS BY RATE (× basic hourly rate)'; bold(secRate); center(secRate);
+  ws.getCell(secRow.number,COLS).value=''; // touch the TOTAL column so eachCell() below styles it too — it'd otherwise be skipped as never-assigned
+  const HDR_FILL='FFD6E4FF';
   hdrRow.eachCell(c=>{ bold(c);center(c);border(c);fill(c,HDR_FILL); });
-  ws.getRow(8).height=22;
+  secRow.eachCell(c=>{ border(c);fill(c,HDR_FILL); });
+  hdrRow.height=26;
 
-  // --- Rows 9+: Daily time entries ---
-  const rowMap={};
-  (rowsData||[]).forEach(r=>{ if(r.date) rowMap[r.date]=r; });
+  // --- Daily rows ---
+  const rowMap={}; (rowsData||[]).forEach(r=>{ if(r.date) rowMap[r.date]=r; });
+  const otMap={}; (otRowsData||[]).forEach(r=>{ if(r.date) otMap[r.date]=r; });
+  const sched=empInfo.schedule||{};
 
-  let totalMin=0, present=0, absent=0;
-  const dataStartRow=9;
+  const rateTotals=RATE_COLS.map(()=>0);
+  let present=0, absent=0, late=0, undertime=0, grandOtMin=0;
 
-  (allDates||[]).forEach((dateKey,i)=>{
+  (allDates||[]).forEach(dateKey=>{
     const [yy,mm,dd]=dateKey.split('-').map(Number);
     const dt=new Date(yy,mm-1,dd);
     const dow=dt.getDay();
     const isWE=(dow===0||dow===6);
-    const r=rowMap[dateKey]||{};
-    const hrs=r.hrs||'';
-    const hrsMin=parseHrsToMinutes(hrs);
-    totalMin+=hrsMin;
-    if(!isWE){ if(hrsMin>0) present++; else absent++; }
+    const att=rowMap[dateKey]||{};
+    const ot=otMap[dateKey];
+    const hasTime=!!(att.in&&att.out);
+
+    const rateVals=RATE_COLS.map(()=>0);
+    if(ot&&ot.mins>0){
+      const idx=RATE_COLS.indexOf(ot.rate);
+      if(idx>=0) rateVals[idx]=+(ot.mins/60).toFixed(2);
+      grandOtMin+=ot.mins;
+    }
+    rateVals.forEach((v,i)=>rateTotals[i]+=v);
+    const rowTotal=rateVals.reduce((a,b)=>a+b,0);
+
+    if(!isWE){
+      if(hasTime){
+        present++;
+        if(sched.inAM&&att.in>sched.inAM) late++;
+        if(sched.outPM&&att.out<sched.outPM) undertime++;
+      } else absent++;
+    }
+
     const dateDisp=dt.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
-    const dataRow=ws.addRow([dateDisp,DAY_NAMES[dow],r.in||'',r.out||'',hrs||'',r.remarks||'']);
+    const dataRow=ws.addRow([dateDisp,DAY_NAMES[dow],att.in||'',att.out||'',ot?.from||'',ot?.to||'',att.remarks||'',
+      ...rateVals.map(v=>v||''), rowTotal||'']);
     if(isWE){
-      dataRow.eachCell(c=>{ c.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FFF5F5F5'}}; c.font={color:{argb:'FF888888'}}; });
+      dataRow.eachCell(c=>{ fill(c,'FFF5F5F5'); c.font={color:{argb:'FF888888'}}; });
     }
     dataRow.eachCell(c=>{ border(c);center(c); });
     dataRow.getCell(1).alignment={horizontal:'left',vertical:'middle'};
-    dataRow.getCell(8).alignment={horizontal:'left',vertical:'middle'};
+    dataRow.getCell(7).alignment={horizontal:'left',vertical:'middle',wrapText:true};
   });
 
-  // --- Total row ---
-  const totalRow=ws.addRow(['','','','','','','TOTAL',formatMinutes(totalMin),'']);
-  totalRow.eachCell(c=>{ bold(c);center(c);border(c);fill(c,'FFFFD700'); });
-  if(remarks){
-    ws.addRow([]);
-    ws.addRow(['Overall Remarks:',remarks]).getCell(1).font={bold:true,italic:true};
-  }
+  // --- Grand Total row ---
+  const grandRow=ws.addRow(['','','','','','','Grand Total',
+    ...rateTotals.map(v=>+v.toFixed(2)||''), +(rateTotals.reduce((a,b)=>a+b,0)).toFixed(2)]);
+  grandRow.eachCell(c=>{ bold(c);center(c);border(c);fill(c,'FFFFD700'); });
+  grandRow.getCell(7).alignment={horizontal:'left',vertical:'middle'};
 
   // --- Summary stats ---
   ws.addRow([]);
-  const summaryStart=ws.rowCount+1;
-  ws.addRow(['PRESENT:',present,'','ABSENT:',absent,'','','']);
-  ws.addRow(['PAY DATE:',periodInfo.payDate,'','CUTOFF:','Cutoff '+periodInfo.cutoff,'','','']);
-  ws.addRow(['GENERATED:',new Date().toLocaleString('en-US'),'','','','','','']);
+  // LEAVE has no source of truth yet — this app doesn't have a leave-tracking
+  // feature, so it always reads 0 rather than being fabricated.
+  ws.addRow(['PRESENT:',present,'','LEAVE:',0,'','ABSENT:',absent]);
+  ws.addRow(['LATE:',late,'','UNDERTIME:',undertime,'','TOTAL OVERTIME:',formatMinutes(grandOtMin)]);
+  ws.addRow(['PAY DATE:',periodInfo.payDate,'','CUTOFF:','Cutoff '+periodInfo.cutoff,'','GENERATED:',new Date().toLocaleString('en-US')]);
 
   // --- Signature lines ---
   ws.addRow([]);
-  ws.addRow(['PREPARED BY:','','','CHECKED BY:','','','VERIFIED BY:','']);
+  const sigLblRow=ws.addRow(['PREPARED BY:','','','','','','','','CHECKED BY:','','','','','','','','VERIFIED BY:']);
   ws.addRow([]);ws.addRow([]);
-  const sigRow=ws.addRow([empInfo.name,'','','HR Admin','','','HR Director','']);
-  sigRow.eachCell((c,ci)=>{ if([1,4,7].includes(ci)){ c.font={bold:true}; } });
-  ws.addRow(['Employee','','','HR Admin','','','HR Director / Manager','']);
+  // Only the employee's own name is real data — HR names aren't tracked anywhere
+  // in this app, so those lines are left blank for manual signing rather than
+  // guessing at who checked/verified it.
+  const sigNameRow=ws.addRow([formatLastFirst(empInfo.name)]);
+  bold(sigNameRow.getCell(1));
+  ws.addRow(['Employee','','','','','','','','','','','','','','','','HR Admin / HR Director']);
 
   // --- Embed company logo (PNG/JPEG/GIF only) ---
   if(COMPANY.logo){
@@ -1815,7 +1928,7 @@ async function buildTimesheetWorkbook(empInfo, periodInfo, allDates, rowsData, r
     if(m){
       const ext=m[1].toLowerCase()==='jpg'?'jpeg':m[1].toLowerCase();
       const imgId=wb.addImage({base64:COMPANY.logo,extension:ext});
-      ws.addImage(imgId,{tl:{col:6,row:0},ext:{width:120,height:45}});
+      ws.addImage(imgId,{tl:{col:COLS-4,row:0},ext:{width:120,height:45}});
     } else {
       toast('⚠️ Logo format not supported in Excel (PNG/JPEG/GIF only) — omitted.','error');
     }
@@ -1841,11 +1954,11 @@ async function downloadExcel(){
   const month=MONTH_NAMES[currentMonth];
   const allDates=getCutoffDates(currentCutoff,month,currentYear);
   const rows=collectRows();
-  const remarks=document.getElementById('tkRemarks').value;
+  const otRows=collectOTRows();
   const wb = await buildTimesheetWorkbook(
-    {name:currentUser.name,id:currentUser.id,dept:currentUser.dept,pos:currentUser.pos},
+    {name:currentUser.name,id:currentUser.id,dept:currentUser.dept,pos:currentUser.pos,schedule:currentUser.defaultSchedule},
     {cutoff:currentCutoff,period:info.period,payDate:info.payDate},
-    allDates, rows, remarks
+    allDates, rows, otRows
   );
   const fn=`${currentUser.name.replace(/\s/g,'_')}_TK_Cutoff${currentCutoff}_${info.period.replace(/[^a-zA-Z0-9]/g,'_')}.xlsx`;
   await downloadWorkbook(wb, fn);
@@ -1859,9 +1972,9 @@ async function downloadRecordExcel(){
   // Generate all calendar days for this record's cutoff so the Excel is never empty
   const allDates=getCutoffDates(r.cutoff, r.month||MONTH_NAMES[new Date().getMonth()], r.year||new Date().getFullYear());
   const wb = await buildTimesheetWorkbook(
-    {name:r.empName,id:r.empId,dept:r.dept,pos:empUser.pos},
+    {name:r.empName,id:r.empId,dept:r.dept,pos:empUser.pos,schedule:empUser.defaultSchedule},
     {cutoff:r.cutoff,period:r.period,payDate:r.payDate},
-    allDates, r.rows||[], r.remarks
+    allDates, r.rows||[], r.otRows||[]
   );
   await downloadWorkbook(wb, `${r.empName.replace(/\s/g,'_')}_TK_Cutoff${r.cutoff}.xlsx`);
 }
@@ -2079,17 +2192,26 @@ function openRecord(id){
   viewRecord=s;
   document.getElementById('viewRecTitle').textContent=`${s.empName} — Cutoff ${s.cutoff}`;
   document.getElementById('viewRecSub').textContent=`${s.period} · Pay date: ${s.payDate} · Submitted: ${s.submittedOn}`;
-  let html=`<div class="tablewrap"><table class="tk-table"><thead><tr><th>Date</th><th>Day</th><th>In AM</th><th>Out AM</th><th>In PM</th><th>Out PM</th><th>Hours</th></tr></thead><tbody>`;
+  // Matches the app's actual per-day data model (Date/Day/Time In/Time Out/
+  // Total Hours/Remarks) — the old markup here declared AM/PM-era headers
+  // left over from before that redesign, while only ever filling half of them.
+  let html=`<div class="tablewrap"><table class="tk-table"><thead><tr><th>Date</th><th>Day</th><th>Time In</th><th>Time Out</th><th>Total Hours</th><th>Remarks</th></tr></thead><tbody>`;
   if(s.rows&&s.rows.length){
     s.rows.forEach(r=>{
       const dt=new Date(r.date+'T12:00:00');
-      html+=`<tr><td>${esc(r.date)}</td><td>${DAY_NAMES[dt.getDay()]}</td><td>${esc(r['in'])||'—'}</td><td>${esc(r.out)||'—'}</td><td>${esc(r.hrs)||'—'}</td></tr>`;
+      html+=`<tr><td>${esc(r.date)}</td><td>${DAY_NAMES[dt.getDay()]}</td><td>${esc(r['in'])||'—'}</td><td>${esc(r.out)||'—'}</td><td>${esc(r.hrs)||'—'}</td><td>${esc(r.remarks)||'—'}</td></tr>`;
     });
   } else {
-    html+=`<tr><td colspan="7" style="text-align:center;color:var(--muted);padding:20px">No time entries in this record.</td></tr>`;
+    html+=`<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:20px">No time entries in this record.</td></tr>`;
   }
   html+=`</tbody></table></div>`;
-  if(s.remarks) html+=`<div style="margin-top:12px;font-size:13px"><b>Remarks:</b> ${esc(s.remarks)}</div>`;
+  if(s.otRows&&s.otRows.length){
+    html+=`<div class="tablewrap" style="margin-top:12px"><table class="tk-table"><thead><tr><th>Date</th><th>OT From</th><th>OT To</th><th>Type</th><th>OT Hours</th></tr></thead><tbody>`;
+    s.otRows.forEach(r=>{
+      html+=`<tr><td>${esc(r.date)}</td><td>${esc(r.from)||'—'}</td><td>${esc(r.to)||'—'}</td><td>${esc(r.type)||'—'}</td><td>${formatMinutes(r.mins||0)}</td></tr>`;
+    });
+    html+=`</tbody></table></div>`;
+  }
   document.getElementById('viewRecContent').innerHTML=html;
   const canReview = currentUser?.role==='hr' && s.status==='submitted';
   document.getElementById('viewRecApproveBtn').style.display=canReview?'':'none';
