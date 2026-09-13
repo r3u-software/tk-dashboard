@@ -149,9 +149,9 @@ body.loggedIn #collapseBtn{display:grid}
 /* Attachments/file-preview panel collapse toggle — sits on the split boundary,
    same visual language as the sidebar's own #collapseBtn but a separate control. */
 #previewCollapseBtn{position:absolute;top:50%;left:60%;transform:translate(-50%,-50%);
-  width:22px;height:22px;border-radius:50%;background:var(--panel-solid);border:1px solid var(--border);
+  width:28px;height:28px;border-radius:50%;background:var(--panel-solid);border:1px solid var(--border);
   display:grid;place-items:center;cursor:pointer;font-size:12px;font-weight:700;color:var(--muted);
-  z-index:5;box-shadow:0 2px 8px rgba(0,0,0,.15);transition:left var(--transition);line-height:1}
+  z-index:5;box-shadow:0 2px 10px rgba(0,0,0,.18);transition:left var(--transition);line-height:1}
 #previewCollapseBtn:hover{background:var(--hover);color:var(--text)}
 /* tkPreviewPanel/tkLeftPanel visibility and sizing are toggled via inline
    style in toggleFilePreviewPanel() (JS), not here — both elements set
@@ -213,7 +213,7 @@ body.loggedIn #collapseBtn{display:grid}
 .tk-table tbody td:first-child{text-align:left;padding-left:10px}
 .tk-table tbody tr.weekend td:first-child,.tk-table tbody tr.weekend td:nth-child(2){opacity:.5}
 .tk-table tbody tr.weekend{background:color-mix(in srgb,var(--accent) 4%,transparent)}
-.tk-table input[type=time]{background:var(--panel);border:1px solid var(--border);border-radius:7px;padding:5px 7px;font-size:12px;color:var(--text);outline:none;width:90px}
+.tk-table input[type=time]{background:var(--panel);border:1px solid var(--border);border-radius:7px;padding:5px 7px;font-size:12px;color:var(--text);outline:none;width:118px}
 .tk-table input[type=time]:focus{border-color:var(--accent)}
 .submit-bar{display:flex;gap:10px;padding:14px 22px;border-top:1px solid var(--border);background:var(--glass);backdrop-filter:blur(14px)}
 [data-theme="dark"] #histBanner,[data-theme="auto"] #histBanner{--hist-banner-bg:#451a03;}
@@ -1350,7 +1350,11 @@ function setView(v){
 
 document.getElementById('nav').addEventListener('click',e=>{
   const a = e.target.closest('[data-view]');
-  if(a){ setView(a.dataset.view); closeMobileNav(); }
+  // Navigating anywhere via the sidebar backs out of "viewing a past record"
+  // mode automatically — otherwise clicking away and back to My Timesheet left
+  // you stuck looking at that historical period, now re-enabled for editing
+  // (buildTimeTable() doesn't know about history-view state on its own).
+  if(a){ exitHistoryView(); setView(a.dataset.view); closeMobileNav(); }
 });
 
 /* ============================================================
@@ -1539,8 +1543,13 @@ const OT_TYPES=[
   {label:'— None —',rate:0},
   {label:'Night Differential  (+10%) — 10:00 PM–6:00 AM',rate:0.10},
   {label:'Special Holiday Duty  (+30%)',rate:0.30},
-  {label:'Rest Day Duty  (+30%)',rate:0.30},
-  {label:'Special Holiday on Rest Day  (+50%)',rate:0.50},
+  // Fixed against the reference template's own legend, which reads "130% Rest Day
+  // Duty" — this was wrongly set to 0.30 (colliding with Special Holiday Duty's
+  // column instead of landing in its own).
+  {label:'Rest Day Duty  (+130%)',rate:1.30},
+  // Same class of fix — the reference legend reads "150% Special Holiday on Rest
+  // Day", this was wrongly set to 0.50.
+  {label:'Special Holiday on Rest Day  (+150%)',rate:1.50},
   {label:'Regular Holiday Duty  (+100%)',rate:1.00},
   {label:'Regular Overtime  (+125%)',rate:1.25},
   {label:'Rest Day OT  (+169%)',rate:1.69},
@@ -1549,6 +1558,15 @@ const OT_TYPES=[
   {label:'Regular Holiday OT  (+260%)',rate:2.60},
   {label:'Regular Holiday on Rest Day Duty  (+260%)',rate:2.60},
   {label:'Regular Holiday + Rest Day OT  (+338%)',rate:3.38},
+  // These 4 rate columns exist as headers in the reference template but aren't
+  // explained anywhere in its own legend either — labels here are a reasonable
+  // best-effort based on standard PH OT/holiday-pay conventions, not confirmed
+  // against any definition in the source file. Verify with payroll/HR before
+  // relying on these four specifically.
+  {label:'Additional Premium  (+5%)',rate:0.05},
+  {label:'Overtime Premium Only  (+25%)',rate:0.25},
+  {label:'Additional Premium  (+160%)',rate:1.60},
+  {label:'Regular Holiday Worked — Total Pay  (+200%)',rate:2.00},
 ];
 
 function buildOTTable(){
@@ -1772,6 +1790,17 @@ function getCutoffDates(cutoff, month, year){
 const RATE_COLS=[0.05,0.1,0.25,0.3,0.5,1,1.25,1.3,1.5,1.6,1.69,1.95,2,2.6,3.38];
 const RATE_COL_OFFSET=8; // column H is the first rate column (A-G are Date/Day/In/Out/From/To/Remarks)
 
+// "17:00" -> "5:00 PM" — the reference template shows all times in 12-hour
+// format; the app's <input type=time> values are always 24-hour "HH:MM".
+function to12Hour(t){
+  if(!t) return '';
+  const [h,m]=t.split(':').map(Number);
+  if(Number.isNaN(h)) return t;
+  const period=h>=12?'PM':'AM';
+  const h12=h%12||12;
+  return `${h12}:${String(m).padStart(2,'0')} ${period}`;
+}
+
 // "Andreu S. Sulayao" -> "Sulayao, Andreu S." (best-effort: last whitespace-
 // separated token is treated as the surname). The app only stores one name
 // field, so this can't be exact for every name shape, but matches the
@@ -1839,17 +1868,22 @@ async function buildTimesheetWorkbook(empInfo, periodInfo, allDates, rowsData, o
   ws.addRow([]); // spacer
 
   // --- Section headers: ATTENDANCE | OVERTIME | REMARKS | OT rate matrix ---
+  // Column headers show the rate matrix as percentages ("5%", "10%"...) to match
+  // the reference template's display — RATE_COLS itself stays the raw decimal
+  // array everywhere else, since that's what has to exactly-match ot.rate.
   const secRow=ws.addRow([]);
-  const hdrRow=ws.addRow(['DATE','DAY','IN','OUT','FROM','TO','',...RATE_COLS,'TOTAL']);
+  const hdrRow=ws.addRow(['DATE','DAY','IN','OUT','FROM','TO','',...RATE_COLS.map(r=>Math.round(r*100)+'%'),'TOTAL']);
   merge(secRow.number,1,4); const secAtt=ws.getCell(secRow.number,1); secAtt.value='ATTENDANCE'; bold(secAtt); center(secAtt);
   merge(secRow.number,5,6); const secOt=ws.getCell(secRow.number,5); secOt.value='OVERTIME'; bold(secOt); center(secOt);
   ws.mergeCells(secRow.number,7,hdrRow.number,7); const secRmk=ws.getCell(secRow.number,7); secRmk.value='REMARKS'; bold(secRmk); center(secRmk);
   merge(secRow.number,RATE_COL_OFFSET,RATE_COL_OFFSET+RATE_COLS.length-1);
   const secRate=ws.getCell(secRow.number,RATE_COL_OFFSET); secRate.value='OVERTIME HOURS BY RATE (× basic hourly rate)'; bold(secRate); center(secRate);
   ws.getCell(secRow.number,COLS).value=''; // touch the TOTAL column so eachCell() below styles it too — it'd otherwise be skipped as never-assigned
-  const HDR_FILL='FFD6E4FF';
+  const HDR_FILL='FFD6E4FF';   // Date/Day/In/Out/From/To/Remarks — light blue
+  const RATE_FILL='FFA9D18E';  // OT rate matrix band (header + every data row + Grand Total) — green, matching the reference template
   hdrRow.eachCell(c=>{ bold(c);center(c);border(c);fill(c,HDR_FILL); });
   secRow.eachCell(c=>{ border(c);fill(c,HDR_FILL); });
+  for(let c=RATE_COL_OFFSET;c<=COLS;c++){ fill(hdrRow.getCell(c),RATE_FILL); fill(secRow.getCell(c),RATE_FILL); }
   hdrRow.height=26;
 
   // --- Daily rows ---
@@ -1887,12 +1921,15 @@ async function buildTimesheetWorkbook(empInfo, periodInfo, allDates, rowsData, o
     }
 
     const dateDisp=dt.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
-    const dataRow=ws.addRow([dateDisp,DAY_NAMES[dow],att.in||'',att.out||'',ot?.from||'',ot?.to||'',att.remarks||'',
+    const dataRow=ws.addRow([dateDisp,DAY_NAMES[dow],to12Hour(att.in),to12Hour(att.out),to12Hour(ot?.from),to12Hour(ot?.to),att.remarks||'',
       ...rateVals.map(v=>v||''), rowTotal||'']);
     if(isWE){
       dataRow.eachCell(c=>{ fill(c,'FFF5F5F5'); c.font={color:{argb:'FF888888'}}; });
     }
     dataRow.eachCell(c=>{ border(c);center(c); });
+    // Rate-matrix columns keep the green band on every row, weekday or weekend
+    // (matching the reference), overriding the grey weekend fill just above.
+    for(let c=RATE_COL_OFFSET;c<=COLS;c++) fill(dataRow.getCell(c),RATE_FILL);
     dataRow.getCell(1).alignment={horizontal:'left',vertical:'middle'};
     dataRow.getCell(7).alignment={horizontal:'left',vertical:'middle',wrapText:true};
   });
@@ -1910,6 +1947,14 @@ async function buildTimesheetWorkbook(empInfo, periodInfo, allDates, rowsData, o
   ws.addRow(['PRESENT:',present,'','LEAVE:',0,'','ABSENT:',absent]);
   ws.addRow(['LATE:',late,'','UNDERTIME:',undertime,'','TOTAL OVERTIME:',formatMinutes(grandOtMin)]);
   ws.addRow(['PAY DATE:',periodInfo.payDate,'','CUTOFF:','Cutoff '+periodInfo.cutoff,'','GENERATED:',new Date().toLocaleString('en-US')]);
+
+  // --- OT rate legend, matching the reference template's key list ---
+  ws.addRow([]);
+  const legendHdr=ws.addRow(['OT Rate Legend:']);
+  bold(legendHdr.getCell(1));
+  OT_TYPES.filter(t=>t.rate>0).forEach(t=>{
+    ws.addRow([`${Math.round(t.rate*100)}%`,t.label.replace(/\s*\(\+\d+%.*?\)\s*/,'').trim()]);
+  });
 
   // --- Signature lines ---
   ws.addRow([]);
@@ -2422,35 +2467,22 @@ function viewHistoryInTimesheet(id){
   currentCutoff=s.cutoff;
   currentMonth=monthIdx>=0?monthIdx:currentMonth;
   currentYear=s.year||currentYear;
-  buildTimeTable();
-  // Restore globals (we're in read-only mode; exitHistoryView will restore)
   window._histSavedState={cutoff:savedCutoff,month:savedMonth,year:savedYear};
-  currentCutoff=s.cutoff; currentMonth=monthIdx>=0?monthIdx:savedMonth; currentYear=s.year||savedYear;
+  // buildTimeTable() already restores this exact submission's rows/otRows via
+  // findExistingSubmission() (matched by empId+cutoff+month+year, which now
+  // point at `s`) — no need to re-fill values by hand here, that used to only
+  // touch dates present in s.rows and leave every other date's inputs enabled.
+  buildTimeTable();
 
-  // Fill attendance rows from submission data
-  if(s.rows&&s.rows.length){
-    s.rows.forEach(r=>{
-      const tr=document.querySelector(`#tkBody tr[data-date="${r.date}"]`);
-      if(!tr)return;
-      const inEl=tr.querySelector('[data-col="in"]');
-      const outEl=tr.querySelector('[data-col="out"]');
-      const rmkEl=tr.querySelector('[data-col="rmk"]');
-      if(inEl){inEl.value=r.in||'';inEl.disabled=true;}
-      if(outEl){outEl.value=r.out||'';outEl.disabled=true;}
-      if(rmkEl){rmkEl.value=r.remarks||'';rmkEl.disabled=true;}
-      computeHours(tr);
-    });
-  }
+  // Read-only regardless of status (draft/submitted/approved/rejected) — History
+  // is a preview of a past period, not where drafts get resumed for editing;
+  // reopen a draft via the Cutoff/Month/Year selectors on this same screen instead.
+  document.querySelectorAll('#tkBody input, #otBody input, #otBody select').forEach(el=>el.disabled=true);
 
-  // Disable OT inputs
-  document.querySelectorAll('#otBody input, #otBody select').forEach(el=>el.disabled=true);
-
-  // Disable action buttons
-  ['downloadExcel','saveDraft'].forEach(fn=>{
-    document.querySelectorAll(`.submit-bar .btn`).forEach(btn=>{
-      if(btn.textContent.includes('Download')||btn.textContent.includes('Draft')||btn.textContent.includes('Submit'))
-        btn.disabled=true;
-    });
+  // Save/Submit don't make sense against a historical snapshot; Download Excel
+  // still does, so it stays enabled.
+  document.querySelectorAll('.submit-bar .btn').forEach(btn=>{
+    if(btn.textContent.includes('Draft')||btn.textContent.includes('Submit')) btn.disabled=true;
   });
 
   // Show yellow banner
