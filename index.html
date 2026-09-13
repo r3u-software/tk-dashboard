@@ -113,6 +113,7 @@ label.fld{display:flex;flex-direction:column;gap:5px;font-size:11.5px;color:var(
 .tag.approved{background:rgba(16,185,129,.18);color:#34d399}
 .tag.rejected{background:rgba(239,68,68,.18);color:#f87171}
 .tag.notstarted{background:rgba(148,163,184,.18);color:#94a3b8}
+.tag.lapsed{background:rgba(51,65,85,.35);color:#94a3b8;text-decoration:line-through}
 .navbadge{background:#ef4444;color:#fff;border-radius:20px;font-size:10px;font-weight:700;padding:1px 7px;min-width:16px;text-align:center;flex-shrink:0;align-self:center}
 .avatar-photo{width:100%;height:100%;object-fit:cover;border-radius:inherit}
 /* modal */
@@ -426,12 +427,9 @@ body.roleHR .empOnly{display:none!important}
 
       <!-- =========== EMPLOYEE TIMESHEET =========== -->
       <section class="view empOnly" id="v-emp-tk" style="padding:0">
-        <!-- Cutoff selector bar -->
+        <!-- Cutoff selector bar — auto-detected from today's date, not user-selectable -->
         <div class="cutoff-selector">
-          <div style="display:flex;gap:6px">
-            <button class="cutoff-pill active" id="pillA" onclick="selectCutoff('A')">Cutoff A &nbsp;25–9</button>
-            <button class="cutoff-pill" id="pillB" onclick="selectCutoff('B')">Cutoff B &nbsp;10–24</button>
-          </div>
+          <span id="cutoffBadge" class="cutoff-pill active" style="cursor:default">Cutoff A &nbsp;25–9</span>
           <span id="cutoffMonthLabel" style="font-size:13px;font-weight:700;color:var(--text);padding:4px 8px;background:var(--panel);border:1px solid var(--border);border-radius:10px"></span>
           <div style="width:1px;height:18px;background:var(--border);margin:0 4px"></div>
           <span id="cutoffPayLabel" style="font-size:12px;color:var(--muted)"></span>
@@ -451,8 +449,9 @@ body.roleHR .empOnly{display:none!important}
         <div class="submit-bar" style="padding:8px 18px;border-top:none;border-bottom:1px solid var(--border)">
           <div class="spacer"></div>
           <button class="btn" onclick="downloadExcel()" style="min-width:130px">⬇ Download Excel</button>
-          <button class="btn" onclick="saveDraft()" style="min-width:130px">💾 Save Draft</button>
-          <button class="btn primary" onclick="submitCutoff()" style="min-width:130px">✅ Submit</button>
+          <button class="btn" id="tkDiscardBtn" onclick="discardDraft()" style="min-width:130px;color:#f87171;display:none">🗑 Discard</button>
+          <button class="btn" id="tkSaveDraftBtn" onclick="saveDraft()" style="min-width:130px">💾 Save Draft</button>
+          <button class="btn primary" id="tkSubmitBtn" onclick="submitCutoff()" style="min-width:130px">✅ Submit</button>
         </div>
 
         <!-- Split layout: 60% grid + 40% file preview -->
@@ -1291,6 +1290,11 @@ function initApp(){
   const firstLink = document.querySelector(`[data-view="${firstView}"]`);
   if(firstLink) firstLink.classList.add('active');
 
+  // No server/cron here, so this is the only place stale drafts/submissions
+  // ever actually get swept — the next time anyone (employee or HR) logs in
+  // after a deadline has passed.
+  sweepExpiredSubmissions();
+
   // Set current month/year (auto-detected, not user-selectable)
   const now = new Date();
   currentMonth = now.getMonth();
@@ -1411,6 +1415,61 @@ document.getElementById('logoutBtn').addEventListener('click',logout);
    ============================================================ */
 function getMonthIdx(){ return currentMonth; }
 
+// Employees can't pick a cutoff anymore — this decides which one the screen
+// shows, purely from today's real date. The 15th/16th split doesn't line up
+// exactly with the 9th/10th or 24th/25th period boundaries on purpose: it
+// gives someone through the 15th to still finish Cutoff A's timesheet (which
+// covers work through the 9th) before the screen moves on to Cutoff B.
+function getAutoCutoff(){
+  const now=new Date();
+  return { cutoff: now.getDate()<=15 ? 'A' : 'B', month: now.getMonth(), year: now.getFullYear() };
+}
+
+// The hard deadline for a submission still sitting in 'draft'/'submitted'/
+// 'rejected' — the same 15th/last-day boundary the auto-detect above uses.
+// Past this, draft/rejected get deleted and submitted flips to 'lapsed'
+// (see sweepExpiredSubmissions). Returns null for a record with a
+// missing/unrecognized month or year rather than silently computing a
+// garbage date — the delete path below is irreversible, so a record that
+// can't be dated with confidence must never be swept.
+function getSubmissionDeadline(sub){
+  const mi=MONTH_NAMES.indexOf(sub.month), yr=sub.year;
+  if(mi<0 || !Number.isInteger(yr)) return null;
+  const d = sub.cutoff==='A' ? new Date(yr,mi,15,23,59,59) : new Date(yr,mi+1,0,23,59,59);
+  return isNaN(d.getTime()) ? null : d;
+}
+
+// Runs once per login (any user) — there's no server/cron in this app, so
+// "deleted at 11:59:59pm" really means "swept the next time anyone opens the
+// app after that moment." A draft/rejected item past its deadline is the
+// employee's own responsibility to have resolved, so it's deleted outright.
+// A submitted item past its deadline is HR's responsibility — it isn't
+// deleted (the employee did their part on time), it's flipped to 'lapsed':
+// a dead end, no further Approve/Reject possible, kept only as a visible,
+// timestamped record that HR didn't act in time.
+function sweepExpiredSubmissions(){
+  const now=new Date();
+  let changed=false;
+  const toDelete=[];
+  SUBMISSIONS.forEach(s=>{
+    if(!['draft','submitted','rejected'].includes(s.status)) return;
+    const deadline=getSubmissionDeadline(s);
+    if(!deadline) return; // can't confidently date this record — never sweep it
+    if(now<=deadline) return;
+    if(s.status==='submitted'){
+      s.status='lapsed';
+      addAudit('submission_lapsed',`${s.empName} (${s.empId}) — Cutoff ${s.cutoff}, ${s.period} — HR did not act before the deadline`);
+    } else {
+      toDelete.push(s.id);
+      addAudit(s.status==='draft'?'draft_expired':'rejected_expired',`${s.empName} (${s.empId}) — Cutoff ${s.cutoff}, ${s.period} — auto-deleted, unresolved past deadline`);
+    }
+    changed=true;
+  });
+  if(toDelete.length) SUBMISSIONS=SUBMISSIONS.filter(s=>!toDelete.includes(s.id));
+  if(changed) saveSubmissionsToGitHub();
+  return changed;
+}
+
 function getCutoffInfo(){
   const mi = currentMonth, yr = currentYear;
   const mn = MONTH_NAMES[mi];
@@ -1432,23 +1491,26 @@ function getCutoffInfo(){
   }
 }
 
-function selectCutoff(c){
-  currentCutoff=c;
-  document.getElementById('pillA').classList.toggle('active',c==='A');
-  document.getElementById('pillB').classList.toggle('active',c==='B');
-  buildTimeTable();
-}
-
 function buildTimeTable(){
+  // Re-sync to today's actual current cutoff every time this runs, EXCEPT
+  // while History has deliberately pointed currentCutoff/month/year at a past
+  // record — that's the one case this must not clobber.
+  if(!window._histViewActive){
+    const auto=getAutoCutoff();
+    currentCutoff=auto.cutoff; currentMonth=auto.month; currentYear=auto.year;
+  }
   const mi=currentMonth, yr=currentYear;
   const info = getCutoffInfo();
 
+  const badgeEl=document.getElementById('cutoffBadge');
+  if(badgeEl) badgeEl.textContent = currentCutoff==='A' ? 'Cutoff A  25–9' : 'Cutoff B  10–24';
+
   const existing=findExistingSubmission();
-  const statusLabel={draft:'Draft',submitted:'Pending Review',approved:'Approved',rejected:'Rejected'}[existing?.status]||'Not Started';
+  const statusLabel={draft:'Draft',submitted:'Pending Review',approved:'Approved',rejected:'Rejected',lapsed:'Lapsed'}[existing?.status]||'Not Started';
   const statusClass=existing?(existing.status==='submitted'?'pending':existing.status):'notstarted';
   // status badge
   const statusBadgeEl=document.getElementById('tkStatusBadge');
-  if(statusBadgeEl){statusBadgeEl.className='tag '+(existing?(existing.status==='submitted'?'pending':existing.status):'notstarted');statusBadgeEl.textContent=statusLabel;}
+  if(statusBadgeEl){statusBadgeEl.className='tag '+statusClass;statusBadgeEl.textContent=statusLabel;}
   document.getElementById('cutoffInfoBox').innerHTML=
     `<div class="row" style="justify-content:space-between"><div><b>Period:</b> ${info.period} &nbsp;·&nbsp; <b>Pay Date:</b> <span style="color:var(--accent)">${info.payDate}</span><br/><span style="color:var(--muted);font-size:11px">${info.desc}</span></div><span class="tag ${statusClass}">${statusLabel}</span></div>`;
   document.getElementById('cutoffPayLabel').textContent='Pay: '+info.payDate;
@@ -1506,6 +1568,18 @@ function buildTimeTable(){
   // Build OT table with same rows, then restore any saved OT entries onto it
   buildOTTable();
   restoreOTRows(existing?.otRows||[]);
+
+  // Editable only while there's nothing yet, or it's still a draft/rejected
+  // (rejected gets the same treatment as draft — fix it, resubmit it).
+  // submitted/approved/lapsed are all locked: submitted is out for review,
+  // approved and lapsed are both dead ends. Download Excel always stays
+  // available regardless — exporting a locked record is still legitimate.
+  const editable = !existing || existing.status==='draft' || existing.status==='rejected';
+  document.querySelectorAll('#tkBody input, #otBody input, #otBody select').forEach(el=>el.disabled=!editable);
+  const saveBtn=document.getElementById('tkSaveDraftBtn'), submitBtn=document.getElementById('tkSubmitBtn'), discardBtn=document.getElementById('tkDiscardBtn');
+  if(saveBtn) saveBtn.style.display = editable ? '' : 'none';
+  if(submitBtn) submitBtn.style.display = editable ? '' : 'none';
+  if(discardBtn) discardBtn.style.display = (existing && (existing.status==='draft'||existing.status==='rejected')) ? '' : 'none';
 }
 
 // Overlays previously-saved Overtime entries onto the freshly-built (blank)
@@ -1719,8 +1793,18 @@ function findExistingSubmission(){
   return SUBMISSIONS.find(s=>s.empId===currentUser.id&&s.cutoff===currentCutoff&&s.month===month&&s.year===year);
 }
 
+// Returns true on success, false if blocked (and shows why) — approved and
+// lapsed are dead ends, submitted is out for review; none of those accept a
+// new save through this path. This is defense-in-depth: buildTimeTable()
+// already hides Save/Submit for those statuses, but this is what actually
+// stops a stale open tab (or the auto-detect window shifting mid-session)
+// from silently overwriting a resolved record.
 function upsertSubmission(status){
   const existing=findExistingSubmission();
+  if(existing && existing.status!=='draft' && existing.status!=='rejected'){
+    toast(`❌ This cutoff is already ${existing.status} and can't be modified.`,'error');
+    return false;
+  }
   const info=getCutoffInfo();
   const rows=collectRows();
   const otRows=collectOTRows();
@@ -1736,18 +1820,34 @@ function upsertSubmission(status){
   saveSubmissionsToGitHub();
   renderHistory();
   renderRecords();
+  return true;
 }
 
 function saveDraft(){
-  upsertSubmission('draft');
+  if(!upsertSubmission('draft')) return;
   addAudit('draft_save',`Saved draft — Cutoff ${currentCutoff}, ${MONTH_NAMES[currentMonth]} ${currentYear}`);
   toast('💾 Draft saved.','success');
+  buildTimeTable(); // refresh Discard button visibility and status badge now that a draft exists
 }
 
 function submitCutoff(){
-  upsertSubmission('submitted');
+  if(!upsertSubmission('submitted')) return;
   addAudit('submission_submit',`Submitted timesheet — Cutoff ${currentCutoff}, ${MONTH_NAMES[currentMonth]} ${currentYear}`);
   toast('✅ Timesheet submitted successfully!','success');
+  buildTimeTable(); // now locked/read-only — refresh the screen to reflect that
+}
+
+function discardDraft(){
+  const existing=findExistingSubmission();
+  if(!existing || (existing.status!=='draft' && existing.status!=='rejected')) return;
+  if(!confirm(`Discard this ${existing.status} timesheet for Cutoff ${existing.cutoff}, ${existing.period}? This can't be undone.`)) return;
+  SUBMISSIONS=SUBMISSIONS.filter(s=>s.id!==existing.id);
+  saveSubmissionsToGitHub();
+  addAudit('draft_discard',`Discarded ${existing.status} — Cutoff ${existing.cutoff}, ${existing.period}`);
+  toast('🗑 Discarded.','success');
+  renderHistory();
+  renderRecords();
+  buildTimeTable();
 }
 
 // Parses hour-cell text like "8h 30m" back into minutes (0 for "—"/blank),
@@ -2048,6 +2148,7 @@ function renderHRDashboard(){
     ['This Month',thisMonthSubs,'Submissions','📅'],
     ['Pending Review',SUBMISSIONS.filter(s=>s.status==='submitted').length,'Need attention','⏳'],
     ['Approved',SUBMISSIONS.filter(s=>s.status==='approved').length,'This period','✅'],
+    ['Lapsed',SUBMISSIONS.filter(s=>s.status==='lapsed').length,'Missed review deadline','⚠️'],
   ];
   document.getElementById('hrDashCards').innerHTML=cards.map(([k,v,d,ic])=>`
     <div class="card"><div class="chip">${ic}</div><div class="k">${k}</div><div class="v">${v}</div><div class="d">${d}</div></div>`).join('');
@@ -2140,12 +2241,14 @@ function renderReports(){
   const to=document.getElementById('repTo')?.value||'';
   const dept=document.getElementById('repDept')?.value||'';
 
-  // Only submitted/approved rows count toward an official report — a draft is
-  // unconfirmed and a rejected submission was explicitly disputed by HR, so
-  // neither should be presented as real attendance.
+  // Only submitted/approved/lapsed rows count toward an official report — a
+  // draft is unconfirmed and a rejected submission was explicitly disputed by
+  // HR, so neither should be presented as real attendance. Lapsed counts
+  // because the employee's hours are still real; HR simply never got to it —
+  // that's a review-process failure, not a reason to erase the employee's data.
   const presentByEmp={}; // empId -> {date: minutes}
   SUBMISSIONS.forEach(s=>{
-    if(s.status!=='submitted' && s.status!=='approved') return;
+    if(!['submitted','approved','lapsed'].includes(s.status)) return;
     if(dept && s.dept!==dept) return;
     (s.rows||[]).forEach(r=>{
       if(from && r.date<from) return;
@@ -2267,6 +2370,15 @@ function openRecord(id){
 function approveSubmission(id){
   const s=SUBMISSIONS.find(r=>r.id===id);
   if(!s)return;
+  // Defense-in-depth, same reasoning as upsertSubmission's guard: a stale tab
+  // left open past this record's deadline could still show the Approve button
+  // after another session's sweep already flipped it to 'lapsed' — without
+  // this, clicking it would silently resurrect a lapsed record as approved.
+  if(s.status!=='submitted'){
+    toast(`❌ This timesheet is ${s.status}, not pending review — can't approve it.`,'error');
+    renderRecords(); renderHRDashboard();
+    return;
+  }
   s.status='approved';
   saveSubmissionsToGitHub();
   addAudit('submission_approve',`Approved ${s.empName} (${s.empId}) — Cutoff ${s.cutoff}, ${s.period}`);
@@ -2277,6 +2389,11 @@ function approveSubmission(id){
 function rejectSubmission(id){
   const s=SUBMISSIONS.find(r=>r.id===id);
   if(!s)return;
+  if(s.status!=='submitted'){
+    toast(`❌ This timesheet is ${s.status}, not pending review — can't reject it.`,'error');
+    renderRecords(); renderHRDashboard();
+    return;
+  }
   s.status='rejected';
   saveSubmissionsToGitHub();
   addAudit('submission_reject',`Rejected ${s.empName} (${s.empId}) — Cutoff ${s.cutoff}, ${s.period}`);
@@ -2442,11 +2559,9 @@ function viewHistoryInTimesheet(id){
   // Navigate to emp-tk view
   setView('emp-tk');
 
-  // Set cutoff pills to match submission (visual only, won't rebuild)
-  document.getElementById('pillA').classList.toggle('active',s.cutoff==='A');
-  document.getElementById('pillB').classList.toggle('active',s.cutoff==='B');
-
-  // Update month label and pay label from submission
+  // Update the cutoff badge, month label and pay label to match the submission
+  const badgeCutoffEl=document.getElementById('cutoffBadge');
+  if(badgeCutoffEl) badgeCutoffEl.textContent = s.cutoff==='A' ? 'Cutoff A  25–9' : 'Cutoff B  10–24';
   const mlEl=document.getElementById('cutoffMonthLabel');
   if(mlEl) mlEl.textContent=s.month+' '+s.year;
   const payEl=document.getElementById('cutoffPayLabel');
@@ -2455,73 +2570,51 @@ function viewHistoryInTimesheet(id){
   // Status badge
   const badgeEl=document.getElementById('tkStatusBadge');
   if(badgeEl){
-    const statusLabel={draft:'Draft',submitted:'Pending Review',approved:'Approved',rejected:'Rejected'}[s.status]||s.status;
+    const statusLabel={draft:'Draft',submitted:'Pending Review',approved:'Approved',rejected:'Rejected',lapsed:'Lapsed'}[s.status]||s.status;
     const statusClass=s.status==='submitted'?'pending':s.status;
     badgeEl.className='tag '+statusClass;
     badgeEl.textContent=statusLabel;
   }
 
-  // Rebuild the table for the submission's cutoff + month/year dates
-  const savedCutoff=currentCutoff, savedMonth=currentMonth, savedYear=currentYear;
+  // Point at the submission's own cutoff+month+year so buildTimeTable()'s
+  // findExistingSubmission() resolves to this exact record and restores its
+  // rows/otRows — this is what actually loads the data, not a separate copy step.
   const monthIdx=MONTH_NAMES.indexOf(s.month);
   currentCutoff=s.cutoff;
   currentMonth=monthIdx>=0?monthIdx:currentMonth;
   currentYear=s.year||currentYear;
-  window._histSavedState={cutoff:savedCutoff,month:savedMonth,year:savedYear};
-  // buildTimeTable() already restores this exact submission's rows/otRows via
-  // findExistingSubmission() (matched by empId+cutoff+month+year, which now
-  // point at `s`) — no need to re-fill values by hand here, that used to only
-  // touch dates present in s.rows and leave every other date's inputs enabled.
+  window._histViewActive=true; // set before buildTimeTable() so its auto-detect guard skips
   buildTimeTable();
 
-  // Read-only regardless of status (draft/submitted/approved/rejected) — History
-  // is a preview of a past period, not where drafts get resumed for editing;
-  // reopen a draft via the Cutoff/Month/Year selectors on this same screen instead.
+  // Read-only regardless of status — History is always just a preview, never
+  // an editing surface, even for a draft/rejected item buildTimeTable() would
+  // otherwise have left editable. Download Excel is the only action left available.
   document.querySelectorAll('#tkBody input, #otBody input, #otBody select').forEach(el=>el.disabled=true);
-
-  // Save/Submit don't make sense against a historical snapshot; Download Excel
-  // still does, so it stays enabled.
-  document.querySelectorAll('.submit-bar .btn').forEach(btn=>{
-    if(btn.textContent.includes('Draft')||btn.textContent.includes('Submit')) btn.disabled=true;
+  ['tkSaveDraftBtn','tkSubmitBtn','tkDiscardBtn'].forEach(id=>{
+    const btn=document.getElementById(id);
+    if(btn) btn.style.display='none';
   });
 
   // Show yellow banner
   const banner=document.getElementById('histBanner');
   const bannerText=document.getElementById('histBannerText');
-  const statusLabel={draft:'Draft',submitted:'Pending Review',approved:'Approved',rejected:'Rejected'}[s.status]||s.status;
+  const statusLabel={draft:'Draft',submitted:'Pending Review',approved:'Approved',rejected:'Rejected',lapsed:'Lapsed'}[s.status]||s.status;
   if(bannerText) bannerText.textContent=`Viewing: Cutoff ${s.cutoff} · ${s.period} (${statusLabel})`;
   if(banner) banner.style.display='flex';
-
-  // Store reference so exitHistoryView can restore
-  window._histViewActive=true;
 }
 
 function exitHistoryView(){
   if(!window._histViewActive)return;
   window._histViewActive=false;
 
-  // Restore saved cutoff/month/year
-  const saved=window._histSavedState||{};
-  currentCutoff=saved.cutoff||currentCutoff;
-  currentMonth=saved.month!=null?saved.month:currentMonth;
-  currentYear=saved.year||currentYear;
-
-  // Restore pills
-  document.getElementById('pillA').classList.toggle('active',currentCutoff==='A');
-  document.getElementById('pillB').classList.toggle('active',currentCutoff==='B');
-
-  // Restore month/year label and pay label
-  const mlEl=document.getElementById('cutoffMonthLabel');
-  if(mlEl) mlEl.textContent=MONTH_NAMES[currentMonth]+' '+currentYear;
-
   // Hide banner
   const banner=document.getElementById('histBanner');
   if(banner) banner.style.display='none';
 
-  // Re-enable buttons
-  document.querySelectorAll('.submit-bar .btn').forEach(btn=>btn.disabled=false);
-
-  // Rebuild current timesheet (re-enables all inputs via fresh DOM)
+  // buildTimeTable() re-syncs currentCutoff/month/year to today's real
+  // auto-detected period itself now that _histViewActive is false, and
+  // correctly re-shows/re-enables whichever buttons and inputs actually
+  // apply to that real current record — nothing else needs restoring by hand.
   buildTimeTable();
 }
 
