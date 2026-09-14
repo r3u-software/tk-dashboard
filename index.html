@@ -1196,6 +1196,7 @@ function doLogin(){
   document.getElementById('loginErr').textContent = '';
   if(!u || u.pw !== pw){ document.getElementById('loginErr').textContent = 'Invalid Employee ID or password.'; return; }
   currentUser = {...u, id};
+  localStorage.setItem('tk_session_uid', id);
   addAudit('login','Signed in');
   document.getElementById('loginOverlay').classList.remove('show');
   if(u.firstLogin){ openFirstLogin(); return; }
@@ -1257,6 +1258,7 @@ function flPhotoSelected(input){
 
 function logout(){
   currentUser=null;
+  localStorage.removeItem('tk_session_uid');
   document.getElementById('loginId').value='';
   document.getElementById('loginPass').value='';
   document.getElementById('loginErr').textContent='';
@@ -2864,7 +2866,21 @@ document.querySelectorAll('.overlay').forEach(o=>{
     clearInterval(tick);bar.style.width='100%';
     setTimeout(()=>{
       document.getElementById('loadOverlay').classList.remove('show');
-      document.getElementById('loginOverlay').classList.add('show');
+      // Resume a session left open across a page refresh (F5) — restores by
+      // employee ID only, never the password, and only against whatever
+      // USERS bootLoad() just fetched (so a since-deactivated/deleted
+      // account can't silently resume).
+      const sessionId = localStorage.getItem('tk_session_uid');
+      const su = sessionId ? USERS[sessionId] : null;
+      if(su){
+        currentUser = {...su, id: sessionId};
+        document.getElementById('loginOverlay').classList.remove('show');
+        if(su.firstLogin) openFirstLogin();
+        else initApp();
+      } else {
+        localStorage.removeItem('tk_session_uid');
+        document.getElementById('loginOverlay').classList.add('show');
+      }
     },300);
   });
 })();
