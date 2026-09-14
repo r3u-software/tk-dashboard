@@ -462,7 +462,7 @@ body.roleHR .empOnly{display:none!important}
         <div id="tkScrollArea" style="display:flex;flex:1;overflow:hidden;min-height:0;position:relative">
 
           <!-- Collapse/expand the attachments panel -->
-          <button id="previewCollapseBtn" title="Hide attachments panel" onclick="toggleFilePreviewPanel()">›</button>
+          <button id="previewCollapseBtn" title="Hide attachments panel" onclick="toggleFilePreviewPanel()">❯</button>
 
           <!-- LEFT 60%: Attendance + OT tables -->
           <div id="tkLeftPanel" style="flex:0 0 60%;display:flex;flex-direction:column;overflow:hidden;border-right:2px solid var(--border)">
@@ -864,7 +864,7 @@ function toggleFilePreviewPanel(){
   preview.style.display=collapsed?'none':'flex';
   left.style.flex=collapsed?'1 1 100%':'0 0 60%';
   left.style.borderRight=collapsed?'none':'2px solid var(--border)';
-  btn.textContent=collapsed?'‹':'›';
+  btn.textContent=collapsed?'❮':'❯';
   btn.title=collapsed?'Show attachments panel':'Hide attachments panel';
   positionPreviewCollapseBtn();
 }
@@ -1299,6 +1299,9 @@ function initApp(){
   document.body.classList.add('loggedIn');
   document.body.classList.toggle('roleHR', isHR);
   document.body.classList.toggle('roleEmp', !isHR);
+  // Sidebar starts collapsed (icon-only) by default on every fresh login.
+  document.body.classList.add('collapsed');
+  _syncCollapseArrow();
 
   // Update user chip
   renderAvatar();
