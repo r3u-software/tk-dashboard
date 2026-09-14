@@ -1857,7 +1857,20 @@ function saveDraft(){
   buildTimeTable(); // refresh Discard button visibility and status badge now that a draft exists
 }
 
+// A blank cutoff (no day ever filled in, no real OT logged) must never reach
+// 'submitted' — Save Draft stays unrestricted on purpose (a draft is allowed
+// to be work-in-progress), this only gates the final Submit.
+function hasAnyTimeEntry(){
+  const hasAttendance = collectRows().some(r=>r.in && r.out);
+  const hasOT = collectOTRows().length>0;
+  return hasAttendance || hasOT;
+}
+
 function submitCutoff(){
+  if(!hasAnyTimeEntry()){
+    toast('❌ Fill in at least one day\'s Time In/Out (or an overtime entry) before submitting.','error');
+    return;
+  }
   if(!upsertSubmission('submitted')) return;
   addAudit('submission_submit',`Submitted timesheet — Cutoff ${currentCutoff}, ${MONTH_NAMES[currentMonth]} ${currentYear}`);
   toast('✅ Timesheet submitted successfully!','success');
