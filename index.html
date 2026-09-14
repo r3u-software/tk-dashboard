@@ -1857,9 +1857,14 @@ function saveDraft(){
   buildTimeTable(); // refresh Discard button visibility and status badge now that a draft exists
 }
 
-// A blank cutoff (no day ever filled in, no real OT logged) must never reach
-// 'submitted' — Save Draft stays unrestricted on purpose (a draft is allowed
-// to be work-in-progress), this only gates the final Submit.
+// There's no separate absent/leave marker anywhere in this app — a blank day
+// is the only way a genuinely-absent cutoff ever gets represented, so a
+// completely empty sheet isn't necessarily wrong (someone out the whole
+// period is real). What it can't be is silent: an untouched fresh sheet
+// going through with one accidental click is the actual bug. So this asks
+// instead of blocking — a deliberate "yes, submit it empty" still goes
+// through. Save Draft stays untouched either way (a draft is allowed to be
+// work-in-progress, no prompt needed there).
 function hasAnyTimeEntry(){
   const hasAttendance = collectRows().some(r=>r.in && r.out);
   const hasOT = collectOTRows().length>0;
@@ -1867,10 +1872,7 @@ function hasAnyTimeEntry(){
 }
 
 function submitCutoff(){
-  if(!hasAnyTimeEntry()){
-    toast('❌ Fill in at least one day\'s Time In/Out (or an overtime entry) before submitting.','error');
-    return;
-  }
+  if(!hasAnyTimeEntry() && !confirm('This timesheet has no time entries logged. Submit anyway?')) return;
   if(!upsertSubmission('submitted')) return;
   addAudit('submission_submit',`Submitted timesheet — Cutoff ${currentCutoff}, ${MONTH_NAMES[currentMonth]} ${currentYear}`);
   toast('✅ Timesheet submitted successfully!','success');
