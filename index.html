@@ -76,6 +76,12 @@ body.empTkActive .content{padding:0;overflow:hidden;display:flex;flex-direction:
 .card .v{font-size:22px;font-weight:800;margin-top:9px;letter-spacing:-.3px}
 .card .d{font-size:11.5px;color:var(--muted2);margin-top:6px}
 .card .chip{position:absolute;top:14px;right:14px;font-size:18px;opacity:.4}
+.card.clickable{cursor:pointer}
+.card.clickable .d{color:inherit;opacity:.85;display:flex;align-items:center;gap:4px}
+.attention-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:11px 4px;border-top:1px solid var(--border);cursor:pointer}
+.attention-row:first-child{border-top:none}
+.attention-row:hover{background:var(--hover)}
+.attention-empty{padding:18px 4px;color:var(--muted);font-size:13px;text-align:center}
 .panel{background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);padding:18px;backdrop-filter:blur(14px);box-shadow:var(--shadow);margin-top:16px}
 .panel h3{font-size:14px;margin-bottom:4px;display:flex;align-items:center;gap:9px}
 .panel .hint{color:var(--muted);font-size:12px;margin-bottom:12px}
@@ -350,8 +356,13 @@ body.roleHR .empOnly{display:none!important}
       <section class="view hrOnly" id="v-hr-dashboard">
         <div class="cards" id="hrDashCards"></div>
         <div class="grid2">
-          <div class="panel"><h3>📅 Submissions by Cutoff</h3><div class="hint">Count of submitted timesheets per cutoff period</div><div class="chartbox"><canvas id="chartCutoff"></canvas></div></div>
-          <div class="panel"><h3>👥 Employee Status</h3><div class="hint">Active vs inactive employee breakdown</div><div class="chartbox"><canvas id="chartEmpStatus"></canvas></div></div>
+          <div class="panel"><h3>📈 Submissions Over Time</h3><div class="hint">Total submissions per cutoff period, last 6 periods</div><div class="chartbox"><canvas id="chartTrend"></canvas></div></div>
+          <div class="panel"><h3>📋 Submission Status</h3><div class="hint">Breakdown of every submission by current status</div><div class="chartbox"><canvas id="chartStatus"></canvas></div></div>
+        </div>
+        <div class="panel" id="attentionPanel">
+          <h3>🔔 Needs Your Attention</h3>
+          <div class="hint">Pending-review submissions, oldest first</div>
+          <div id="attentionList"></div>
         </div>
       </section>
 
@@ -362,6 +373,14 @@ body.roleHR .empOnly{display:none!important}
             <select class="inp" id="recFltMonth"><option value="">All Months</option></select>
             <select class="inp" id="recFltCutoff"><option value="">All Cutoffs</option><option value="A">Cutoff A (25–9)</option><option value="B">Cutoff B (10–24)</option></select>
             <select class="inp" id="recFltDept"><option value="">All Departments</option></select>
+            <select class="inp" id="recFltStatus" onchange="renderRecords()">
+              <option value="">All Statuses</option>
+              <option value="draft">Draft</option>
+              <option value="submitted">Pending Review</option>
+              <option value="approved">Approved</option>
+              <option value="rejected">Rejected</option>
+              <option value="lapsed">Lapsed</option>
+            </select>
             <input class="inp" id="recSearch" placeholder="Search employee…" style="min-width:160px"/>
             <div class="spacer"></div>
             <button class="btn sm primary" onclick="exportAllExcel()">⬇ Export Excel</button>
@@ -2178,40 +2197,104 @@ function exportAllExcel(){
 /* ============================================================
    HR DASHBOARD
    ============================================================ */
+// Jumps to All Records with the status filter pre-set — the click target for
+// the Pending Review / Lapsed dashboard cards below.
+function goToRecordsFilteredByStatus(status){
+  setView('hr-records');
+  const sel=document.getElementById('recFltStatus');
+  if(sel) sel.value=status;
+  renderRecords();
+}
+
+// Groups submissions into their cutoff period (year+month+cutoff) so the
+// trend chart can show real chronological periods, not just an A-vs-B split.
+function getSubmissionTrend(){
+  const counts={};
+  SUBMISSIONS.forEach(s=>{
+    const mi=MONTH_NAMES.indexOf(s.month);
+    if(mi<0||!s.year)return;
+    const key=`${s.year}-${String(mi).padStart(2,'0')}-${s.cutoff}`;
+    counts[key]=(counts[key]||0)+1;
+  });
+  const last=Object.keys(counts).sort().slice(-6);
+  return {
+    labels: last.map(k=>{ const [yr,mi,cut]=k.split('-'); return MONTH_NAMES[parseInt(mi)].slice(0,3)+' '+cut; }),
+    data: last.map(k=>counts[k])
+  };
+}
+
 function renderHRDashboard(){
   const empCount=Object.values(USERS).filter(u=>u.role==='emp').length;
   const activeEmp=Object.values(USERS).filter(u=>u.role==='emp'&&u.active).length;
   const totalSubs=SUBMISSIONS.length;
   const thisMonth=new Date().toLocaleString('en-US',{month:'long'});
   const thisMonthSubs=SUBMISSIONS.filter(s=>s.month===thisMonth).length;
+  const pendingCount=SUBMISSIONS.filter(s=>s.status==='submitted').length;
+  const lapsedCount=SUBMISSIONS.filter(s=>s.status==='lapsed').length;
+  // [label, value, subtext, icon, status-to-filter-by-on-click (null = not clickable)]
   const cards=[
-    ['Total Employees',activeEmp,'Active accounts','👥'],
-    ['Total Submissions',totalSubs,'All time','📋'],
-    ['This Month',thisMonthSubs,'Submissions','📅'],
-    ['Pending Review',SUBMISSIONS.filter(s=>s.status==='submitted').length,'Need attention','⏳'],
-    ['Approved',SUBMISSIONS.filter(s=>s.status==='approved').length,'This period','✅'],
-    ['Lapsed',SUBMISSIONS.filter(s=>s.status==='lapsed').length,'Missed review deadline','⚠️'],
+    ['Total Employees',activeEmp,'Active accounts','👥',null],
+    ['Total Submissions',totalSubs,'All time','📋',null],
+    ['This Month',thisMonthSubs,'Submissions','📅',null],
+    ['Pending Review',pendingCount,'Click to view →','⏳','submitted'],
+    ['Approved',SUBMISSIONS.filter(s=>s.status==='approved').length,'This period','✅',null],
+    ['Lapsed',lapsedCount,'Click to view →','⚠️','lapsed'],
   ];
-  document.getElementById('hrDashCards').innerHTML=cards.map(([k,v,d,ic])=>`
-    <div class="card"><div class="chip">${ic}</div><div class="k">${k}</div><div class="v">${v}</div><div class="d">${d}</div></div>`).join('');
+  document.getElementById('hrDashCards').innerHTML=cards.map(([k,v,d,ic,st])=>`
+    <div class="card${st?' clickable':''}"${st?` onclick="goToRecordsFilteredByStatus('${st}')"`:''}><div class="chip">${ic}</div><div class="k">${k}</div><div class="v">${v}</div><div class="d">${d}</div></div>`).join('');
 
-  // Chart: Submissions by cutoff
-  destroyChart('cc');
-  const cutoffA=SUBMISSIONS.filter(s=>s.cutoff==='A').length;
-  const cutoffB=SUBMISSIONS.filter(s=>s.cutoff==='B').length;
-  const acc=getComputedStyle(document.documentElement).getPropertyValue('--accent').trim();
-  const acc2=getComputedStyle(document.documentElement).getPropertyValue('--accent2').trim();
   const mut=getComputedStyle(document.documentElement).getPropertyValue('--muted').trim();
   const brd=getComputedStyle(document.documentElement).getPropertyValue('--border').trim();
-  charts.cc=new Chart(document.getElementById('chartCutoff'),{
-    type:'bar',data:{labels:['Cutoff A (25–9)','Cutoff B (10–24)'],datasets:[{label:'Submissions',data:[cutoffA,cutoffB],backgroundColor:[acc+'aa',acc2+'aa'],borderRadius:8}]},
-    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:mut},grid:{color:brd}},y:{ticks:{color:mut},grid:{color:brd},beginAtZero:true}}}});
+  const acc=getComputedStyle(document.documentElement).getPropertyValue('--accent').trim();
 
-  // Chart: active vs inactive
+  // Chart: submissions over the last several cutoff periods
+  destroyChart('cc');
+  const trend=getSubmissionTrend();
+  charts.cc=new Chart(document.getElementById('chartTrend'),{
+    type:'line',
+    data:{labels:trend.labels,datasets:[{label:'Submissions',data:trend.data,borderColor:acc,backgroundColor:acc+'22',fill:true,tension:.3,pointRadius:3,pointBackgroundColor:acc}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:mut},grid:{display:false}},y:{ticks:{color:mut},grid:{color:brd},beginAtZero:true}}}});
+
+  // Chart: every submission by current status
   destroyChart('es');
-  charts.es=new Chart(document.getElementById('chartEmpStatus'),{
-    type:'doughnut',data:{labels:['Active','Inactive'],datasets:[{data:[activeEmp,empCount-activeEmp],backgroundColor:[acc+'cc',acc2+'44'],borderWidth:0}]},
+  const statusCounts={
+    draft:SUBMISSIONS.filter(s=>s.status==='draft').length,
+    submitted:pendingCount,
+    approved:SUBMISSIONS.filter(s=>s.status==='approved').length,
+    rejected:SUBMISSIONS.filter(s=>s.status==='rejected').length,
+    lapsed:lapsedCount,
+  };
+  charts.es=new Chart(document.getElementById('chartStatus'),{
+    type:'doughnut',
+    data:{labels:['Draft','Pending Review','Approved','Rejected','Lapsed'],
+      datasets:[{data:[statusCounts.draft,statusCounts.submitted,statusCounts.approved,statusCounts.rejected,statusCounts.lapsed],
+        backgroundColor:['#fcd34d','#818cf8','#34d399','#f87171','#94a3b8'],borderWidth:0}]},
     options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:mut}}}}});
+
+  renderAttentionList();
+}
+
+// "Needs Your Attention" — the actual pending-review submissions, oldest
+// first, click straight into the same View modal HR uses from All Records.
+function renderAttentionList(){
+  const el=document.getElementById('attentionList');
+  if(!el)return;
+  const pending=SUBMISSIONS.filter(s=>s.status==='submitted')
+    .map(s=>({...s,_submittedDate:new Date(s.submittedOn)}))
+    .filter(s=>!isNaN(s._submittedDate.getTime()))
+    .sort((a,b)=>a._submittedDate-b._submittedDate);
+  if(pending.length===0){
+    el.innerHTML=`<div class="attention-empty">Nothing waiting on review right now.</div>`;
+    return;
+  }
+  const now=new Date();
+  el.innerHTML=pending.map(s=>{
+    const days=Math.max(0,Math.floor((now-s._submittedDate)/86400000));
+    return `<div class="attention-row" onclick="openRecord('${esc(s.id)}')">
+      <div><span style="font-weight:600">${esc(s.empName)}</span><span style="color:var(--muted);font-size:12.5px;margin-left:8px">Cutoff ${esc(s.cutoff)} · ${esc(s.period)}</span></div>
+      <div style="font-size:12.5px;color:#818cf8;white-space:nowrap">${days===0?'Today':days+' day'+(days!==1?'s':'')+' waiting'}</div>
+    </div>`;
+  }).join('');
 }
 
 function destroyChart(k){if(charts[k]){charts[k].destroy();delete charts[k];}}
@@ -2224,11 +2307,13 @@ function renderRecords(){
   const fltCutoff=document.getElementById('recFltCutoff')?.value||'';
   const fltMonth=document.getElementById('recFltMonth')?.value||'';
   const fltDept=document.getElementById('recFltDept')?.value||'';
+  const fltStatus=document.getElementById('recFltStatus')?.value||'';
 
   let list=SUBMISSIONS.filter(s=>{
     if(fltCutoff&&s.cutoff!==fltCutoff)return false;
     if(fltMonth&&s.month!==fltMonth)return false;
     if(fltDept&&s.dept!==fltDept)return false;
+    if(fltStatus&&s.status!==fltStatus)return false;
     if(search&&!s.empName.toLowerCase().includes(search)&&!s.empId.toLowerCase().includes(search))return false;
     return true;
   });
