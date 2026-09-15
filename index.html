@@ -387,7 +387,7 @@ body.roleHR .empOnly{display:none!important}
           </div>
           <div class="tablewrap" style="max-height:66vh">
             <table><thead><tr>
-              <th>Employee</th><th>ID</th><th>Department</th><th>Cutoff</th><th>Period</th><th>Pay Date</th><th>Submitted</th><th>Status</th><th></th>
+              <th>Employee</th><th>ID</th><th>Department</th><th>Cutoff</th><th>Period</th><th>Pay Date</th><th>Submitted</th><th>Total OT</th><th>Status</th><th></th>
             </tr></thead><tbody id="recBody"></tbody></table>
           </div>
           <div style="margin-top:10px;font-size:12px;color:var(--muted)" id="recInfo">0 records</div>
@@ -477,9 +477,12 @@ body.roleHR .empOnly{display:none!important}
           <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;padding:6px 10px;border-bottom:1px solid var(--border);background:var(--panel)">Overtime / Additional Pay</div>
           <div class="tablewrap" style="border-radius:0;border:none;border-bottom:1px solid var(--border)">
             <table class="ot-table">
-              <thead><tr><th style="text-align:left">Date</th><th>OT From</th><th>OT To</th><th>Type</th><th>OT Hours</th></tr></thead>
+              <thead><tr><th style="text-align:left">Date</th><th>Day</th><th>OT From</th><th>OT To</th><th>Type / Rate</th><th>OT Hours</th><th>OT Value (hrs)</th></tr></thead>
               <tbody id="hrPrevOtBody"></tbody>
             </table>
+          </div>
+          <div style="display:flex;align-items:center;gap:12px;padding:6px 10px;font-size:12px;color:var(--muted)">
+            <span>Total OT Hours: <b id="hrPrevOtTotal" style="color:var(--accent)">0h 0m</b></span>
           </div>
 
           <div style="padding:14px 18px;font-size:12px;color:var(--muted);display:flex;align-items:center;gap:8px">
@@ -1420,7 +1423,7 @@ function setView(v){
   if(v==='hr-dashboard') renderHRDashboard();
   if(v==='emp-tk') buildTimeTable();
   if(v==='emp-history') renderHistory();
-  if(v==='hr-records') renderRecords();
+  if(v==='hr-records'){ presetRecordsToCurrentCutoff(); renderRecords(); }
   if(v==='hr-employees') renderEmployees();
   if(v==='hr-reports') renderReports();
   if(v==='hr-audit') renderAudit();
@@ -1733,7 +1736,9 @@ function buildOTTable(){
     const dayCell=tr.querySelector('td:nth-child(2)');
     const dateTxt=dateCell?dateCell.textContent.replace('(WE)','').trim():'';
     const dayTxt=dayCell?dayCell.textContent:'';
-    const typeOpts=OT_TYPES.map((t,i)=>`<option value="${i}">${t.label}${t.rate>0?' (+'+(t.rate*100).toFixed(0)+'%)':''}</option>`).join('');
+    // OT_TYPES labels already include their own "(+N%)" text — don't append
+    // the percentage again here, or every real type shows it twice.
+    const typeOpts=OT_TYPES.map((t,i)=>`<option value="${i}">${t.label}</option>`).join('');
     otBody.insertAdjacentHTML('beforeend',`
       <tr class="${isWE?'weekend':''}" data-date="${dateKey}">
         <td style="font-size:11.5px">${dateTxt}</td>
@@ -2128,9 +2133,17 @@ async function buildTimesheetWorkbook(empInfo, periodInfo, allDates, rowsData, o
 
   // --- Grand Total row ---
   const grandRow=ws.addRow(['','','','','','','Grand Total',
-    ...rateTotals.map(v=>+v.toFixed(2)||''), +(rateTotals.reduce((a,b)=>a+b,0)).toFixed(2)]);
+    ...rateTotals.map(v=>+v.toFixed(2)||'')]);
   grandRow.eachCell(c=>{ bold(c);center(c);border(c);fill(c,'FFFFD700'); });
   grandRow.getCell(7).alignment={horizontal:'left',vertical:'middle'};
+  // TOTAL column is a live formula summing this row's own rate columns, not a
+  // pre-computed number — opening the file in Excel shows exactly how the
+  // total was derived instead of asking the reader to trust a silent value.
+  const totalCell=grandRow.getCell(COLS);
+  const rangeStart=ws.getCell(grandRow.number,RATE_COL_OFFSET).address;
+  const rangeEnd=ws.getCell(grandRow.number,COLS-1).address;
+  totalCell.value={formula:`SUM(${rangeStart}:${rangeEnd})`};
+  bold(totalCell); center(totalCell); border(totalCell); fill(totalCell,'FFFFD700');
 
   // --- Summary stats ---
   ws.addRow([]);
@@ -2228,13 +2241,46 @@ function exportAllExcel(){
 /* ============================================================
    HR DASHBOARD
    ============================================================ */
-// Jumps to All Records with the status filter pre-set — the click target for
-// the Pending Review / Lapsed dashboard cards below.
+// setView('hr-records') always resets Month/Cutoff to the current period
+// (see presetRecordsToCurrentCutoff below) — a status shortcut like "show me
+// every Lapsed record" is meant to search across all periods, not just the
+// current one, so this explicitly clears that preset back to "All" right
+// after landing on the view.
 function goToRecordsFilteredByStatus(status){
   setView('hr-records');
+  const monthSel=document.getElementById('recFltMonth');
+  const cutoffSel=document.getElementById('recFltCutoff');
+  if(monthSel) monthSel.value='';
+  if(cutoffSel) cutoffSel.value='';
   const sel=document.getElementById('recFltStatus');
   if(sel) sel.value=status;
   renderRecords();
+}
+
+// All Records defaults to the currently active cutoff period every time HR
+// navigates in fresh (matching the auto-detect already used on the employee
+// side), rather than dumping the full all-time history by default. Only sets
+// Month, since Cutoff A/B alone is ambiguous without it (e.g. "Cutoff A" could
+// mean this month's or last month's) — the Month select's own options are
+// only ever populated from months that already have a submission (see
+// renderRecords() below), so this silently no-ops if the current month has
+// none yet, rather than pointing the filter at a dead option.
+function presetRecordsToCurrentCutoff(){
+  const auto=getAutoCutoff();
+  const monthName=MONTH_NAMES[auto.month];
+  const monthSel=document.getElementById('recFltMonth');
+  const cutoffSel=document.getElementById('recFltCutoff');
+  if(monthSel){
+    // renderRecords() only adds a month option once it's seen a submission
+    // for it — the current month may have none yet, so add it here rather
+    // than silently failing to select a not-yet-existent option.
+    if(![...monthSel.options].some(o=>o.value===monthName)){
+      const o=document.createElement('option'); o.value=monthName; o.textContent=monthName;
+      monthSel.appendChild(o);
+    }
+    monthSel.value=monthName;
+  }
+  if(cutoffSel) cutoffSel.value=auto.cutoff;
 }
 
 // Groups submissions into their cutoff period (year+month+cutoff) so the
@@ -2351,18 +2397,18 @@ function renderRecords(){
 
   const tbody=document.getElementById('recBody');
   if(!tbody)return;
-  tbody.innerHTML=list.length===0?`<tr><td colspan="9"><div class="empty"><div class="big">📂</div>No records found</div></td></tr>`
-    :list.map(s=>`<tr class="clickable" onclick="hrPreviewRecord('${esc(s.id)}')">
+  tbody.innerHTML=list.length===0?`<tr><td colspan="10"><div class="empty"><div class="big">📂</div>No records found</div></td></tr>`
+    :list.map(s=>{
+      const totalOTMins=(s.otRows||[]).reduce((sum,r)=>sum+(r.rate>0?(r.mins||0):0),0);
+      return `<tr class="clickable" onclick="hrPreviewRecord('${esc(s.id)}')">
       <td>${esc(s.empName)}</td><td>${esc(s.empId)}</td><td>${esc(s.dept)}</td>
       <td>Cutoff ${esc(s.cutoff)}</td><td>${esc(s.period)}</td><td>${esc(s.payDate)}</td>
       <td>${esc(s.submittedOn)}</td>
+      <td>${totalOTMins>0?formatMinutes(totalOTMins):'—'}</td>
       <td><span class="tag ${esc(s.status)}">${esc(s.status)}</span></td>
-      <td style="display:flex;gap:6px">
-        <button class="btn sm" onclick="event.stopPropagation();hrPreviewRecord('${esc(s.id)}')">View</button>
-        ${s.status==='submitted'?`<button class="btn sm" onclick="event.stopPropagation();approveSubmission('${esc(s.id)}')" style="color:#34d399">✔ Approve</button>
-        <button class="btn sm" onclick="event.stopPropagation();rejectSubmission('${esc(s.id)}')" style="color:#f87171">✕ Reject</button>`:''}
-      </td>
-    </tr>`).join('');
+      <td><button class="btn sm" onclick="event.stopPropagation();hrPreviewRecord('${esc(s.id)}')">View</button></td>
+    </tr>`;
+    }).join('');
   const info=document.getElementById('recInfo');
   if(info)info.textContent=list.length+' record'+(list.length!==1?'s':'');
 
@@ -2511,24 +2557,57 @@ function hrPreviewRecord(id){
   tagEl.className='tag '+statusClass;
   tagEl.textContent=statusLabel;
 
+  // Rendered with the same disabled inputs/select the real editable screen
+  // uses (same classes, so the same .tk-table/.ot-table CSS applies) instead
+  // of plain text cells — this is meant to visually read as "My Timesheet,
+  // read-only," not a different, plainer table.
   const body=document.getElementById('hrPrevBody');
   if(s.rows&&s.rows.length){
     body.innerHTML=s.rows.map(r=>{
       const dt=new Date(r.date+'T12:00:00');
-      return `<tr><td>${esc(r.date)}</td><td>${DAY_NAMES[dt.getDay()]}</td><td>${esc(r['in'])||'—'}</td><td>${esc(r.out)||'—'}</td><td>${esc(r.hrs)||'—'}</td><td>${esc(r.remarks)||'—'}</td></tr>`;
+      const dow=dt.getDay();
+      const isWE=(dow===0||dow===6);
+      const dateStr=dt.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+      return `<tr class="${isWE?'weekend':''}">
+        <td>${dateStr}${isWE?` <span style="font-size:10px;color:var(--accent);opacity:.7">(WE)</span>`:''}</td>
+        <td>${DAY_NAMES[dow]}</td>
+        <td><input type="time" class="tk-in" disabled ${r['in']?`value="${r['in']}"`:''}/></td>
+        <td><input type="time" class="tk-in" disabled ${r.out?`value="${r.out}"`:''}/></td>
+        <td class="hrs-cell">${esc(r.hrs)||'—'}</td>
+        <td><input type="text" class="tk-rmk" disabled placeholder="—" value="${esc(r.remarks)||''}" style="background:var(--panel);border:1px solid var(--border);border-radius:6px;padding:3px 6px;font-size:11px;color:var(--text);outline:none;width:100%;min-width:70px"/></td>
+      </tr>`;
     }).join('');
   } else {
     body.innerHTML=`<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:20px">No time entries in this record.</td></tr>`;
   }
 
   const otBody=document.getElementById('hrPrevOtBody');
+  let otTotalMins=0;
   if(s.otRows&&s.otRows.length){
-    otBody.innerHTML=s.otRows.map(r=>
-      `<tr><td>${esc(r.date)}</td><td>${esc(r.from)||'—'}</td><td>${esc(r.to)||'—'}</td><td>${esc(r.type)||'—'}</td><td>${formatMinutes(r.mins||0)}</td></tr>`
-    ).join('');
+    otBody.innerHTML=s.otRows.map(r=>{
+      const dt=new Date(r.date+'T12:00:00');
+      const dow=dt.getDay();
+      const isWE=(dow===0||dow===6);
+      const dateStr=dt.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+      const typeIdx=OT_TYPES.findIndex(t=>t.label===r.type);
+      const typeOpts=OT_TYPES.map((t,i)=>`<option value="${i}" ${i===typeIdx?'selected':''}>${t.label}</option>`).join('');
+      const rate=r.rate||0;
+      if(rate>0) otTotalMins+=(r.mins||0);
+      return `<tr class="${isWE?'weekend':''}">
+        <td style="font-size:11.5px">${dateStr}</td>
+        <td style="font-size:11px;color:var(--muted)">${DAY_NAMES[dow]}</td>
+        <td><input type="time" class="ot-from" disabled ${r.from?`value="${r.from}"`:''}/></td>
+        <td><input type="time" class="ot-to" disabled ${r.to?`value="${r.to}"`:''}/></td>
+        <td><select class="ot-type" disabled>${typeOpts}</select></td>
+        <td class="ot-hrs">${formatMinutes(r.mins||0)}</td>
+        <td class="ot-val">${rate>0?((r.mins||0)/60*rate).toFixed(2)+' hrs':'—'}</td>
+      </tr>`;
+    }).join('');
   } else {
-    otBody.innerHTML=`<tr><td colspan="5" style="text-align:center;color:var(--muted);padding:16px">No overtime logged.</td></tr>`;
+    otBody.innerHTML=`<tr><td colspan="7" style="text-align:center;color:var(--muted);padding:16px">No overtime logged.</td></tr>`;
   }
+  const otTotalEl=document.getElementById('hrPrevOtTotal');
+  if(otTotalEl) otTotalEl.textContent=formatMinutes(otTotalMins);
 
   const canReview = s.status==='submitted';
   document.getElementById('hrPrevApproveBtn').style.display=canReview?'':'none';
