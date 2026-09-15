@@ -64,9 +64,9 @@ button,input,select,textarea{font-family:inherit;color:inherit}
 .btn.danger{color:#fff;background:linear-gradient(135deg,#ef4444,#f87171);border:none}
 .btn.success{color:#fff;background:linear-gradient(135deg,#10b981,#34d399);border:none}
 .content{padding:22px;overflow-y:auto;flex:1}
-body.empTkActive .content{padding:0;overflow:hidden;display:flex;flex-direction:column}
+body.empTkActive .content,body.hrPreviewActive .content{padding:0;overflow:hidden;display:flex;flex-direction:column}
 .view{display:none;animation:fade .3s ease}.view.active{display:block}
-#v-emp-tk.active{display:flex!important;flex-direction:column;overflow:hidden;height:100%}
+#v-emp-tk.active,#v-hr-tk-preview.active{display:flex!important;flex-direction:column;overflow:hidden;height:100%}
 @keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
 .cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:15px;margin-bottom:18px}
 .card{background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);padding:17px 18px;backdrop-filter:blur(14px);
@@ -445,6 +445,49 @@ body.roleHR .empOnly{display:none!important}
         </div>
       </section>
 
+      <!-- =========== HR TK PREVIEW (full-page read-only record review) =========== -->
+      <section class="view hrOnly" id="v-hr-tk-preview" style="padding:0">
+        <div class="cutoff-selector">
+          <span id="hrPrevBadge" class="cutoff-pill active" style="cursor:default"></span>
+          <span id="hrPrevMonthLabel" style="font-size:13px;font-weight:700;color:var(--text);padding:4px 8px;background:var(--panel);border:1px solid var(--border);border-radius:10px"></span>
+          <div style="width:1px;height:18px;background:var(--border);margin:0 4px"></div>
+          <span id="hrPrevPayLabel" style="font-size:12px;color:var(--muted)"></span>
+          <div class="spacer"></div>
+          <span id="hrPrevEmpLabel" style="font-size:12px;font-weight:700;color:var(--text);margin-right:8px"></span>
+          <span id="hrPrevStatusTag" class="tag" style="font-size:11px"></span>
+        </div>
+
+        <div class="submit-bar" style="padding:8px 18px;border-top:none;border-bottom:1px solid var(--border)">
+          <button class="btn" onclick="setView('hr-records')">← Back to All Records</button>
+          <div class="spacer"></div>
+          <button class="btn" onclick="downloadRecordExcel()" style="min-width:130px">⬇ Download Excel</button>
+          <button class="btn" id="hrPrevRejectBtn" onclick="rejectSubmission(viewRecord.id);setView('hr-records')" style="min-width:130px;color:#f87171;display:none">✕ Reject</button>
+          <button class="btn primary" id="hrPrevApproveBtn" onclick="approveSubmission(viewRecord.id);setView('hr-records')" style="min-width:130px;display:none">✔ Approve</button>
+        </div>
+
+        <div style="flex:1;overflow-y:auto;min-height:0">
+          <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;padding:6px 10px;border-bottom:1px solid var(--border)">Attendance</div>
+          <div class="tablewrap" style="border-radius:0;border:none;border-bottom:1px solid var(--border)">
+            <table class="tk-table">
+              <thead><tr><th>Date</th><th>Day</th><th>Time In</th><th>Time Out</th><th>Total Hours</th><th>Remarks</th></tr></thead>
+              <tbody id="hrPrevBody"></tbody>
+            </table>
+          </div>
+
+          <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;padding:6px 10px;border-bottom:1px solid var(--border);background:var(--panel)">Overtime / Additional Pay</div>
+          <div class="tablewrap" style="border-radius:0;border:none;border-bottom:1px solid var(--border)">
+            <table class="ot-table">
+              <thead><tr><th style="text-align:left">Date</th><th>OT From</th><th>OT To</th><th>Type</th><th>OT Hours</th></tr></thead>
+              <tbody id="hrPrevOtBody"></tbody>
+            </table>
+          </div>
+
+          <div style="padding:14px 18px;font-size:12px;color:var(--muted);display:flex;align-items:center;gap:8px">
+            <span>📎</span><span>Attachments aren't saved with submissions in this version — nothing to show here yet.</span>
+          </div>
+        </div>
+      </section>
+
       <!-- =========== EMPLOYEE DASHBOARD (within TK view top) =========== -->
       <!-- emp-tk is the combined timesheet view; header info shown above the selector -->
 
@@ -756,20 +799,6 @@ body.roleHR .empOnly{display:none!important}
   </div>
 </div>
 
-<!-- ======== VIEW RECORD MODAL ======== -->
-<div class="overlay" id="viewRecOverlay">
-  <div class="modal">
-    <h3 id="viewRecTitle">Timesheet Record</h3>
-    <div class="sub" id="viewRecSub"></div>
-    <div id="viewRecContent"></div>
-    <div class="modal-actions" id="viewRecActions">
-      <button class="btn" onclick="closeModal('viewRecOverlay')">Close</button>
-      <button class="btn sm" onclick="downloadRecordExcel()">⬇ Download Excel</button>
-      <button class="btn sm hrOnly" id="viewRecRejectBtn" style="display:none;color:#f87171" onclick="rejectSubmission(viewRecord.id);closeModal('viewRecOverlay')">✕ Reject</button>
-      <button class="btn sm primary hrOnly" id="viewRecApproveBtn" style="display:none" onclick="approveSubmission(viewRecord.id);closeModal('viewRecOverlay')">✔ Approve</button>
-    </div>
-  </div>
-</div>
 
 <!-- ======== FIRST LOGIN FLOW ======== -->
 <div class="overlay" id="firstLoginOverlay">
@@ -1367,6 +1396,7 @@ function initApp(){
 let currentView = '';
 function setView(v){
   document.body.classList.toggle('empTkActive', v==='emp-tk');
+  document.body.classList.toggle('hrPreviewActive', v==='hr-tk-preview');
   currentView = v;
   document.querySelectorAll('.view').forEach(s=>s.classList.remove('active'));
   if(v) document.getElementById('v-'+v)?.classList.add('active');
@@ -1379,6 +1409,7 @@ function setView(v){
     'hr-employees':['Employees','Manage employee accounts'],
     'hr-reports':['Reports','Hours and attendance summary by employee'],
     'hr-audit':['Audit Log','Who changed what, when'],
+    'hr-tk-preview':['Review Timesheet','Full record view — approve or reject below'],
     'emp-tk':['My Timesheet','Submit your bimonthly cutoff timesheet'],
     'emp-history':['History','Your previous submissions'],
     'settings':['Settings','Appearance, GitHub sync, and account settings'],
@@ -2290,7 +2321,7 @@ function renderAttentionList(){
   const now=new Date();
   el.innerHTML=pending.map(s=>{
     const days=Math.max(0,Math.floor((now-s._submittedDate)/86400000));
-    return `<div class="attention-row" onclick="openRecord('${esc(s.id)}')">
+    return `<div class="attention-row" onclick="hrPreviewRecord('${esc(s.id)}')">
       <div><span style="font-weight:600">${esc(s.empName)}</span><span style="color:var(--muted);font-size:12.5px;margin-left:8px">Cutoff ${esc(s.cutoff)} · ${esc(s.period)}</span></div>
       <div style="font-size:12.5px;color:#818cf8;white-space:nowrap">${days===0?'Today':days+' day'+(days!==1?'s':'')+' waiting'}</div>
     </div>`;
@@ -2321,13 +2352,13 @@ function renderRecords(){
   const tbody=document.getElementById('recBody');
   if(!tbody)return;
   tbody.innerHTML=list.length===0?`<tr><td colspan="9"><div class="empty"><div class="big">📂</div>No records found</div></td></tr>`
-    :list.map(s=>`<tr class="clickable" onclick="openRecord('${esc(s.id)}')">
+    :list.map(s=>`<tr class="clickable" onclick="hrPreviewRecord('${esc(s.id)}')">
       <td>${esc(s.empName)}</td><td>${esc(s.empId)}</td><td>${esc(s.dept)}</td>
       <td>Cutoff ${esc(s.cutoff)}</td><td>${esc(s.period)}</td><td>${esc(s.payDate)}</td>
       <td>${esc(s.submittedOn)}</td>
       <td><span class="tag ${esc(s.status)}">${esc(s.status)}</span></td>
       <td style="display:flex;gap:6px">
-        <button class="btn sm" onclick="event.stopPropagation();openRecord('${esc(s.id)}')">View</button>
+        <button class="btn sm" onclick="event.stopPropagation();hrPreviewRecord('${esc(s.id)}')">View</button>
         ${s.status==='submitted'?`<button class="btn sm" onclick="event.stopPropagation();approveSubmission('${esc(s.id)}')" style="color:#34d399">✔ Approve</button>
         <button class="btn sm" onclick="event.stopPropagation();rejectSubmission('${esc(s.id)}')" style="color:#f87171">✕ Reject</button>`:''}
       </td>
@@ -2461,37 +2492,49 @@ function renderAudit(){
   document.getElementById(id)?.addEventListener('change',renderRecords);
 });
 
-function openRecord(id){
+// Full-page, read-only review of any employee's submission — replaces the
+// old small centered modal, which was too cramped to actually review a
+// filled-in timesheet. Reuses the same viewRecord global downloadRecordExcel()
+// already reads from.
+function hrPreviewRecord(id){
   const s=SUBMISSIONS.find(r=>r.id===id);
   if(!s)return;
   viewRecord=s;
-  document.getElementById('viewRecTitle').textContent=`${s.empName} — Cutoff ${s.cutoff}`;
-  document.getElementById('viewRecSub').textContent=`${s.period} · Pay date: ${s.payDate} · Submitted: ${s.submittedOn}`;
-  // Matches the app's actual per-day data model (Date/Day/Time In/Time Out/
-  // Total Hours/Remarks) — the old markup here declared AM/PM-era headers
-  // left over from before that redesign, while only ever filling half of them.
-  let html=`<div class="tablewrap"><table class="tk-table"><thead><tr><th>Date</th><th>Day</th><th>Time In</th><th>Time Out</th><th>Total Hours</th><th>Remarks</th></tr></thead><tbody>`;
+
+  document.getElementById('hrPrevBadge').textContent = s.cutoff==='A' ? 'Cutoff A  25–9' : 'Cutoff B  10–24';
+  document.getElementById('hrPrevMonthLabel').textContent = `${s.month} ${s.year}`;
+  document.getElementById('hrPrevPayLabel').textContent = `Pay: ${s.payDate}`;
+  document.getElementById('hrPrevEmpLabel').textContent = `${s.empName} · ${s.empId} · ${s.dept}`;
+  const statusLabel={draft:'Draft',submitted:'Pending Review',approved:'Approved',rejected:'Rejected',lapsed:'Lapsed'}[s.status]||s.status;
+  const statusClass=s.status==='submitted'?'pending':s.status;
+  const tagEl=document.getElementById('hrPrevStatusTag');
+  tagEl.className='tag '+statusClass;
+  tagEl.textContent=statusLabel;
+
+  const body=document.getElementById('hrPrevBody');
   if(s.rows&&s.rows.length){
-    s.rows.forEach(r=>{
+    body.innerHTML=s.rows.map(r=>{
       const dt=new Date(r.date+'T12:00:00');
-      html+=`<tr><td>${esc(r.date)}</td><td>${DAY_NAMES[dt.getDay()]}</td><td>${esc(r['in'])||'—'}</td><td>${esc(r.out)||'—'}</td><td>${esc(r.hrs)||'—'}</td><td>${esc(r.remarks)||'—'}</td></tr>`;
-    });
+      return `<tr><td>${esc(r.date)}</td><td>${DAY_NAMES[dt.getDay()]}</td><td>${esc(r['in'])||'—'}</td><td>${esc(r.out)||'—'}</td><td>${esc(r.hrs)||'—'}</td><td>${esc(r.remarks)||'—'}</td></tr>`;
+    }).join('');
   } else {
-    html+=`<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:20px">No time entries in this record.</td></tr>`;
+    body.innerHTML=`<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:20px">No time entries in this record.</td></tr>`;
   }
-  html+=`</tbody></table></div>`;
+
+  const otBody=document.getElementById('hrPrevOtBody');
   if(s.otRows&&s.otRows.length){
-    html+=`<div class="tablewrap" style="margin-top:12px"><table class="tk-table"><thead><tr><th>Date</th><th>OT From</th><th>OT To</th><th>Type</th><th>OT Hours</th></tr></thead><tbody>`;
-    s.otRows.forEach(r=>{
-      html+=`<tr><td>${esc(r.date)}</td><td>${esc(r.from)||'—'}</td><td>${esc(r.to)||'—'}</td><td>${esc(r.type)||'—'}</td><td>${formatMinutes(r.mins||0)}</td></tr>`;
-    });
-    html+=`</tbody></table></div>`;
+    otBody.innerHTML=s.otRows.map(r=>
+      `<tr><td>${esc(r.date)}</td><td>${esc(r.from)||'—'}</td><td>${esc(r.to)||'—'}</td><td>${esc(r.type)||'—'}</td><td>${formatMinutes(r.mins||0)}</td></tr>`
+    ).join('');
+  } else {
+    otBody.innerHTML=`<tr><td colspan="5" style="text-align:center;color:var(--muted);padding:16px">No overtime logged.</td></tr>`;
   }
-  document.getElementById('viewRecContent').innerHTML=html;
-  const canReview = currentUser?.role==='hr' && s.status==='submitted';
-  document.getElementById('viewRecApproveBtn').style.display=canReview?'':'none';
-  document.getElementById('viewRecRejectBtn').style.display=canReview?'':'none';
-  document.getElementById('viewRecOverlay').classList.add('show');
+
+  const canReview = s.status==='submitted';
+  document.getElementById('hrPrevApproveBtn').style.display=canReview?'':'none';
+  document.getElementById('hrPrevRejectBtn').style.display=canReview?'':'none';
+
+  setView('hr-tk-preview');
 }
 
 function approveSubmission(id){
