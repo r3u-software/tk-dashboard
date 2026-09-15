@@ -168,6 +168,15 @@ body.loggedIn #collapseBtn{display:grid}
    style in toggleFilePreviewPanel() (JS), not here — both elements set
    display/flex inline, which beats a class selector on specificity. */
 #tkScrollArea.previewCollapsed #previewCollapseBtn{left:100%;transform:translate(calc(-100% - 10px),-50%)}
+/* Same split-boundary collapse control, duplicated for the HR TK Preview
+   screen's own scroll area/panels (separate ids so the two screens' toggle
+   state never collide) — see positionHrPrevCollapseBtn()/toggleHrPrevPanel(). */
+#hrPrevCollapseBtn{position:absolute;top:50%;left:60%;transform:translate(-50%,-50%);
+  width:28px;height:28px;border-radius:50%;background:var(--panel-solid);border:1px solid var(--border);
+  display:grid;place-items:center;cursor:pointer;font-size:12px;font-weight:700;color:var(--muted);
+  z-index:5;box-shadow:0 2px 10px rgba(0,0,0,.18);transition:left var(--transition);line-height:1}
+#hrPrevCollapseBtn:hover{background:var(--hover);color:var(--text)}
+#hrPrevScrollArea.previewCollapsed #hrPrevCollapseBtn{left:100%;transform:translate(calc(-100% - 10px),-50%)}
 #mobileMenuBtn{background:var(--panel);border:1px solid var(--border);border-radius:10px;width:34px;height:34px;cursor:pointer;font-size:16px;color:var(--muted);display:none;place-items:center;flex:0 0 auto}
 #mobileMenuBtn:hover{background:var(--hover);color:var(--text)}
 .sidebar{overflow-x:hidden}
@@ -465,28 +474,48 @@ body.roleHR .empOnly{display:none!important}
           <button class="btn primary" id="hrPrevApproveBtn" onclick="approveSubmission(viewRecord.id);setView('hr-records')" style="min-width:130px;display:none">✔ Approve</button>
         </div>
 
-        <div style="flex:1;overflow-y:auto;min-height:0">
-          <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;padding:6px 10px;border-bottom:1px solid var(--border)">Attendance</div>
-          <div class="tablewrap" style="border-radius:0;border:none;border-bottom:1px solid var(--border)">
-            <table class="tk-table">
-              <thead><tr><th>Date</th><th>Day</th><th>Time In</th><th>Time Out</th><th>Total Hours</th><th>Remarks</th></tr></thead>
-              <tbody id="hrPrevBody"></tbody>
-            </table>
+        <!-- Split layout: 60% grid + 40% "attachments" panel, matching My Timesheet -->
+        <div id="hrPrevScrollArea" style="display:flex;flex:1;overflow:hidden;min-height:0;position:relative">
+
+          <button id="hrPrevCollapseBtn" title="Hide attachments panel" onclick="toggleHrPrevPanel()">❯</button>
+
+          <!-- LEFT 60%: Attendance + OT tables -->
+          <div id="hrPrevLeftPanel" style="flex:0 0 60%;display:flex;flex-direction:column;overflow:hidden;border-right:2px solid var(--border)">
+            <div style="overflow-y:auto;flex:1">
+              <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;padding:6px 10px;border-bottom:1px solid var(--border)">Attendance</div>
+              <div class="tablewrap" style="border-radius:0;border:none;border-bottom:1px solid var(--border)">
+                <table class="tk-table">
+                  <thead><tr><th>Date</th><th>Day</th><th>Time In</th><th>Time Out</th><th>Total Hours</th><th>Remarks</th></tr></thead>
+                  <tbody id="hrPrevBody"></tbody>
+                </table>
+              </div>
+
+              <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;padding:6px 10px;border-bottom:1px solid var(--border);background:var(--panel)">Overtime / Additional Pay</div>
+              <div class="tablewrap" style="border-radius:0;border:none">
+                <table class="ot-table">
+                  <thead><tr><th style="text-align:left">Date</th><th>Day</th><th>OT From</th><th>OT To</th><th>Type / Rate</th><th>OT Hours</th><th>OT Value (hrs)</th></tr></thead>
+                  <tbody id="hrPrevOtBody"></tbody>
+                </table>
+              </div>
+              <div style="display:flex;align-items:center;gap:12px;padding:6px 10px;font-size:12px;color:var(--muted)">
+                <span>Total OT Hours: <b id="hrPrevOtTotal" style="color:var(--accent)">0h 0m</b></span>
+              </div>
+            </div>
           </div>
 
-          <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;padding:6px 10px;border-bottom:1px solid var(--border);background:var(--panel)">Overtime / Additional Pay</div>
-          <div class="tablewrap" style="border-radius:0;border:none;border-bottom:1px solid var(--border)">
-            <table class="ot-table">
-              <thead><tr><th style="text-align:left">Date</th><th>Day</th><th>OT From</th><th>OT To</th><th>Type / Rate</th><th>OT Hours</th><th>OT Value (hrs)</th></tr></thead>
-              <tbody id="hrPrevOtBody"></tbody>
-            </table>
-          </div>
-          <div style="display:flex;align-items:center;gap:12px;padding:6px 10px;font-size:12px;color:var(--muted)">
-            <span>Total OT Hours: <b id="hrPrevOtTotal" style="color:var(--accent)">0h 0m</b></span>
-          </div>
-
-          <div style="padding:14px 18px;font-size:12px;color:var(--muted);display:flex;align-items:center;gap:8px">
-            <span>📎</span><span>Attachments aren't saved with submissions in this version — nothing to show here yet.</span>
+          <!-- RIGHT 40%: Attachments — honest empty state, since attachments
+               were never persisted to submissions (see Data model), not a
+               faked preview panel with nothing real behind it. -->
+          <div id="hrPrevRightPanel" style="flex:0 0 40%;display:flex;flex-direction:column;overflow:hidden;background:var(--panel)">
+            <div style="padding:8px 12px;border-bottom:1px solid var(--border);flex-shrink:0">
+              <span style="font-size:11.5px;font-weight:700;color:var(--muted)">📎 Attachments</span>
+            </div>
+            <div style="flex:1;display:flex;align-items:center;justify-content:center;overflow:auto;padding:24px;text-align:center">
+              <div style="color:var(--muted);font-size:12px;max-width:220px">
+                <div style="font-size:32px;opacity:.35;margin-bottom:8px">📎</div>
+                Attachments aren't saved with submissions in this version — nothing to show here yet.
+              </div>
+            </div>
           </div>
         </div>
       </section>
@@ -935,6 +964,31 @@ function positionPreviewCollapseBtn(){
   btn.style.top=(window.innerHeight/2-rect.top)+'px';
 }
 window.addEventListener('resize',positionPreviewCollapseBtn);
+
+// Same two functions, duplicated for the HR TK Preview screen's own
+// scroll area/panels/button ids — see the comments above for why each part
+// exists (split-boundary toggle, viewport-centered vertical alignment).
+function toggleHrPrevPanel(){
+  const area=document.getElementById('hrPrevScrollArea');
+  const btn=document.getElementById('hrPrevCollapseBtn');
+  const left=document.getElementById('hrPrevLeftPanel');
+  const right=document.getElementById('hrPrevRightPanel');
+  const collapsed=area.classList.toggle('previewCollapsed');
+  right.style.display=collapsed?'none':'flex';
+  left.style.flex=collapsed?'1 1 100%':'0 0 60%';
+  left.style.borderRight=collapsed?'none':'2px solid var(--border)';
+  btn.textContent=collapsed?'❮':'❯';
+  btn.title=collapsed?'Show attachments panel':'Hide attachments panel';
+  positionHrPrevCollapseBtn();
+}
+function positionHrPrevCollapseBtn(){
+  const btn=document.getElementById('hrPrevCollapseBtn');
+  const area=document.getElementById('hrPrevScrollArea');
+  if(!btn||!area)return;
+  const rect=area.getBoundingClientRect();
+  btn.style.top=(window.innerHeight/2-rect.top)+'px';
+}
+window.addEventListener('resize',positionHrPrevCollapseBtn);
 
 function zoomPreview(delta){
   const img=document.getElementById('filePreviewImg');
@@ -2614,6 +2668,7 @@ function hrPreviewRecord(id){
   document.getElementById('hrPrevRejectBtn').style.display=canReview?'':'none';
 
   setView('hr-tk-preview');
+  positionHrPrevCollapseBtn();
 }
 
 function approveSubmission(id){
