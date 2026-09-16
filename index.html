@@ -899,7 +899,6 @@ body.roleHR .empOnly{display:none!important}
     <div class="note" id="forgotPwNote" style="display:none;text-align:center;background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:10px;margin-top:8px">
       There's no self-service reset yet — contact your HR Administrator and they can reset your password for you (HR: Employees → Edit → Reset Password).
     </div>
-    <div class="note" id="loginNote">Demo: EMP-001 / pass123 &nbsp;|&nbsp; HR-ADMIN / admin123</div>
   </div>
 </div>
 
@@ -916,19 +915,17 @@ body.roleHR .empOnly{display:none!important}
 /* ============================================================
    DATA STORE (in-memory; replace with GitHub API for prod)
    ============================================================ */
+// Fallback only — used when GitHub Sync isn't configured in this browser. Real
+// employee accounts and history live in the private data repo (see Backend:
+// GitHub API in CLAUDE.md), never here. HR-ADMIN stays so a fresh, unconfigured
+// browser can still log in to go set up Sync in the first place.
 let USERS = {
-  'EMP-001':{pw:'pass123',role:'emp',name:'Andreu S. Sulayao',dept:'IT',pos:'IT Support',email:'andreu@company.com',dateHired:'2022-03-01',firstLogin:false,active:true},
-  'EMP-002':{pw:'pass123',role:'emp',name:'Maria Santos',dept:'Finance',pos:'Accountant',email:'maria@company.com',dateHired:'2021-07-15',firstLogin:false,active:true},
-  'EMP-003':{pw:'temp1234',role:'emp',name:'Jose dela Cruz',dept:'Operations',pos:'Ops Lead',email:'jose@company.com',dateHired:'2023-01-10',firstLogin:true,active:true},
   'HR-ADMIN':{pw:'admin123',role:'hr',name:'HR Administrator',dept:'Human Resources',pos:'HR Admin',email:'hr@company.com',dateHired:'2020-01-01',firstLogin:false,active:true},
 };
 
-let SUBMISSIONS = [
-  {id:'sub1',empId:'EMP-001',empName:'Andreu S. Sulayao',dept:'IT',cutoff:'A',month:'August',year:2026,period:'Jul 25 – Aug 9',payDate:'Aug 15, 2026',submittedOn:'2026-08-10 09:14',status:'submitted',rows:[]},
-  {id:'sub2',empId:'EMP-002',empName:'Maria Santos',dept:'Finance',cutoff:'B',month:'August',year:2026,period:'Aug 10 – Aug 24',payDate:'Aug 31, 2026',submittedOn:'2026-08-25 14:03',status:'submitted',rows:[]},
-];
+let SUBMISSIONS = [];
 
-let COMPANY = JSON.parse(localStorage.getItem('tk_company')||'{"name":"Cummins Philippines","dept":"HR","address":"","logo":""}');
+let COMPANY = JSON.parse(localStorage.getItem('tk_company')||'{"name":"","dept":"HR","address":"","logo":""}');
 let AUDIT_LOG = [];
 let currentUser = null;
 let currentCutoff = 'A';
