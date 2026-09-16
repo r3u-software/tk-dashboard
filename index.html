@@ -612,7 +612,6 @@ body.roleHR .empOnly{display:none!important}
               <div id="attachChips" style="display:flex;gap:4px;flex-wrap:wrap;flex:1"></div>
               <button class="btn" style="font-size:11px;padding:3px 9px" onclick="document.getElementById('attachInput').click()">+ Add</button>
               <input type="file" id="attachInput" multiple style="display:none" onchange="addAttachments(this.files)" accept="image/*,.pdf,.doc,.docx,.xls,.xlsx"/>
-              <span style="font-size:10px;color:var(--muted);display:flex;align-items:center;gap:3px">🔗 GitHub</span>
             </div>
             <!-- Preview body -->
             <div id="filePreviewBody" style="flex:1;display:flex;align-items:center;justify-content:center;overflow:auto;position:relative;background:var(--panel)">
@@ -672,7 +671,7 @@ body.roleHR .empOnly{display:none!important}
           <!-- My Profile -->
           <div class="panel" id="empProfilePanel" style="flex:1;margin-right:8px">
             <h3>👤 My Profile</h3>
-            <div class="hint">Update your personal details. Saves to GitHub automatically.</div>
+            <div class="hint">Update your personal details. Saves to the backend automatically.</div>
             <div class="formgrid" style="margin-top:10px">
               <label>Full Name<input class="inp" id="profName" placeholder="Your full name" style="max-width:260px"/></label>
               <label>Work Email<input class="inp" id="profEmail" type="email" placeholder="you@company.com" style="max-width:260px"/></label>
@@ -723,25 +722,23 @@ body.roleHR .empOnly{display:none!important}
           </div>
         </div>
 
-        <!-- GitHub Sync -->
+        <!-- Backend (Google Apps Script + Sheets) -->
         <div class="panel hrOnly">
-          <h3>🐙 GitHub Sync</h3>
-          <div class="hint">Connect a private GitHub repo to store users, submissions and settings — the app's backend. All calls run directly from the browser, no server required.</div>
+          <h3>🔌 Backend</h3>
+          <div class="hint">Connect the Google Apps Script Web App that stores users, submissions and settings — the app's backend. All calls run directly from the browser, no server required.</div>
           <div class="formgrid" style="margin-top:10px">
-            <label>Repo Owner<input class="inp" id="ghOwner" placeholder="your-org-or-username"/></label>
-            <label>Repo Name<input class="inp" id="ghRepo" placeholder="tk-dashboard-data"/></label>
-            <label>Branch<input class="inp" id="ghBranch" placeholder="main"/></label>
-            <label>Personal Access Token
+            <label>Backend URL<input class="inp" id="gasUrl" placeholder="https://script.google.com/macros/s/…/exec"/></label>
+            <label>Backend Token
               <div style="position:relative">
-                <input class="inp" type="password" id="ghPat" placeholder="ghp_… (repo scope)" style="width:100%;padding-right:42px"/>
-                <button onclick="togglePw('ghPat',this)" type="button" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--muted);cursor:pointer;font-size:16px">👁</button>
+                <input class="inp" type="password" id="gasToken" placeholder="shared token from Code.gs" style="width:100%;padding-right:42px"/>
+                <button onclick="togglePw('gasToken',this)" type="button" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--muted);cursor:pointer;font-size:16px">👁</button>
               </div>
             </label>
           </div>
           <div class="row" style="margin-top:14px">
-            <span id="ghStatus" style="font-size:12px;color:var(--muted)">Not connected</span>
+            <span id="gasStatus" style="font-size:12px;color:var(--muted)">Not connected</span>
             <div class="spacer"></div>
-            <button class="btn sm primary" onclick="saveGithubConfig()">🔌 Save &amp; Test Connection</button>
+            <button class="btn sm primary" onclick="saveBackendConfig()">🔌 Save &amp; Test Connection</button>
           </div>
         </div>
 
@@ -913,12 +910,12 @@ body.roleHR .empOnly{display:none!important}
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script>
 /* ============================================================
-   DATA STORE (in-memory; replace with GitHub API for prod)
+   DATA STORE (in-memory; populated from the backend on boot)
    ============================================================ */
-// Fallback only — used when GitHub Sync isn't configured in this browser. Real
-// employee accounts and history live in the private data repo (see Backend:
-// GitHub API in CLAUDE.md), never here. HR-ADMIN stays so a fresh, unconfigured
-// browser can still log in to go set up Sync in the first place.
+// Fallback only — used when the backend isn't configured in this browser.
+// Real employee accounts and history live in the Google Sheet behind the
+// Apps Script Web App (see Backend in CLAUDE.md), never here. HR-ADMIN stays
+// so a fresh, unconfigured browser can still log in to go set up the connection.
 let USERS = {
   'HR-ADMIN':{pw:'admin123',role:'hr',name:'HR Administrator',dept:'Human Resources',pos:'HR Admin',email:'hr@company.com',dateHired:'2020-01-01',firstLogin:false,active:true},
 };
@@ -1079,7 +1076,7 @@ const DAY_NAMES = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
 let currentMonth = new Date().getMonth(); // 0-based
 let currentYear  = new Date().getFullYear();
 
-// Escapes text pulled from shared data (GitHub-sourced USERS/SUBMISSIONS, user input)
+// Escapes text pulled from shared data (backend-sourced USERS/SUBMISSIONS, user input)
 // before it's interpolated into innerHTML template strings, to prevent stored XSS.
 function escapeHtml(str){
   return String(str??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -1087,128 +1084,118 @@ function escapeHtml(str){
 const esc = escapeHtml;
 
 /* ============================================================
-   GITHUB BACKEND
-   Data lives in a private repo: data/users.json, data/submissions.json,
-   data/settings.json (= {company}), data/audit.json. Connection config
-   (owner/repo/branch/PAT) is per-browser, stored in localStorage — see CLAUDE.md.
+   BACKEND — Google Apps Script + Sheets
+   Data lives in a Google Sheet; every read/write goes through a deployed
+   Apps Script Web App (gas-backend/Code.gs). Connection config (URL +
+   shared token) is per-browser, stored in localStorage — see CLAUDE.md.
    ============================================================ */
-let GH_SHA = {users:null, submissions:null, settings:null, audit:null};
-let ghStatus = 'unconfigured'; // unconfigured | connecting | connected | error
+let backendStatus = 'unconfigured'; // unconfigured | connecting | connected | error
 
-function getGhConfig(){
+function getBackendConfig(){
   return {
-    owner: localStorage.getItem('tk_gh_owner')||'r3u-software',
-    repo: localStorage.getItem('tk_gh_repo')||'tk-dashboard-data',
-    branch: localStorage.getItem('tk_gh_branch')||'main',
-    pat: localStorage.getItem('tk_gh_pat')||'',
+    url: localStorage.getItem('tk_gas_url')||'',
+    token: localStorage.getItem('tk_gas_token')||'',
   };
 }
 
-function ghConfigured(){
-  const c = getGhConfig();
-  return !!(c.owner && c.repo && c.pat);
+function backendConfigured(){
+  const c = getBackendConfig();
+  return !!(c.url && c.token);
 }
 
-function b64EncodeUnicode(str){
-  return btoa(encodeURIComponent(str).replace(/%([0-9A-F]{2})/g,(_,p1)=>String.fromCharCode('0x'+p1)));
+// Raw call — resolves with whatever the backend returns, ok:false included,
+// so callers that expect a legitimate "not ok" response (login with a wrong
+// password) can handle it themselves instead of it being thrown as an error.
+async function gasCallRaw(action, payload){
+  const {url, token} = getBackendConfig();
+  const res = await fetch(url, {
+    method:'POST',
+    // text/plain avoids a CORS preflight the Apps Script Web App can't answer.
+    headers:{'Content-Type':'text/plain;charset=utf-8'},
+    body: JSON.stringify({action, token, ...(payload||{})}),
+  });
+  if(!res.ok) throw new Error(`${action} failed (${res.status})`);
+  return res.json();
 }
-function b64DecodeUnicode(str){
-  return decodeURIComponent(atob(str.replace(/\n/g,'')).split('').map(c=>'%'+('00'+c.charCodeAt(0).toString(16)).slice(-2)).join(''));
-}
-
-async function ghGetFile(path){
-  const {owner,repo,branch,pat} = getGhConfig();
-  const url = `https://api.github.com/repos/${owner}/${repo}/contents/${path}?ref=${encodeURIComponent(branch)}`;
-  const res = await fetch(url,{headers:{Authorization:`token ${pat}`,Accept:'application/vnd.github+json'}});
-  if(res.status===404) return {content:null, sha:null};
-  if(!res.ok){
-    const body = await res.text().catch(()=> '');
-    throw new Error(`GET ${path} failed (${res.status}): ${body.slice(0,200)}`);
-  }
-  const data = await res.json();
-  return {content: JSON.parse(b64DecodeUnicode(data.content)), sha: data.sha};
-}
-
-async function ghPutFile(path,obj,message,sha){
-  const {owner,repo,branch,pat} = getGhConfig();
-  const url = `https://api.github.com/repos/${owner}/${repo}/contents/${path}`;
-  const body = {message, content: b64EncodeUnicode(JSON.stringify(obj,null,2)), branch};
-  if(sha) body.sha = sha;
-  const res = await fetch(url,{method:'PUT',headers:{Authorization:`token ${pat}`,Accept:'application/vnd.github+json','Content-Type':'application/json'},body:JSON.stringify(body)});
-  if(!res.ok){
-    const errBody = await res.text().catch(()=> '');
-    throw new Error(`PUT ${path} failed (${res.status}): ${errBody.slice(0,200)}`);
-  }
-  const data = await res.json();
-  return data.content.sha;
+// Throwing call — for every action where ok:false really does mean something
+// went wrong server-side (not a normal "no" answer).
+async function gasCall(action, payload){
+  const data = await gasCallRaw(action, payload);
+  if(!data.ok) throw new Error(data.error||`${action} failed`);
+  return data;
 }
 
-async function saveUsersToGitHub(){
-  if(!ghConfigured()) return;
+async function saveUsersToBackend(){
+  if(!backendConfigured()) return;
   try{
-    GH_SHA.users = await ghPutFile('data/users.json', USERS, 'Update users.json', GH_SHA.users);
+    await gasCall('saveAllUsers', {users:USERS});
   }catch(e){
     console.error(e);
-    toast('⚠️ Failed to sync users to GitHub: '+e.message,'error');
+    toast('⚠️ Failed to sync users: '+e.message,'error');
   }
 }
 
-async function saveSubmissionsToGitHub(){
-  if(!ghConfigured()) return;
+async function saveSubmissionsToBackend(){
+  if(!backendConfigured()) return;
   try{
-    GH_SHA.submissions = await ghPutFile('data/submissions.json', SUBMISSIONS, 'Update submissions.json', GH_SHA.submissions);
+    await gasCall('saveAllSubmissions', {submissions:SUBMISSIONS});
   }catch(e){
     console.error(e);
-    toast('⚠️ Failed to sync submissions to GitHub: '+e.message,'error');
+    toast('⚠️ Failed to sync submissions: '+e.message,'error');
   }
 }
 
-async function saveSettingsToGitHub(){
-  if(!ghConfigured()) return;
+async function saveSettingsToBackend(){
+  if(!backendConfigured()) return;
   try{
-    const payload = {company:COMPANY};
-    GH_SHA.settings = await ghPutFile('data/settings.json', payload, 'Update settings.json', GH_SHA.settings);
+    await gasCall('saveSettings', {settings:COMPANY});
   }catch(e){
     console.error(e);
-    toast('⚠️ Failed to sync settings to GitHub: '+e.message,'error');
+    toast('⚠️ Failed to sync settings: '+e.message,'error');
   }
 }
 
-async function saveAuditToGitHub(){
-  if(!ghConfigured()) return;
-  try{
-    GH_SHA.audit = await ghPutFile('data/audit.json', AUDIT_LOG, 'Update audit.json', GH_SHA.audit);
-  }catch(e){
-    console.error(e);
-    toast('⚠️ Failed to sync audit log to GitHub: '+e.message,'error');
-  }
-}
-
-// Appends one audit entry (newest first) and persists it — call this at every
-// meaningful state change (auth, employee CRUD, submissions, settings).
+// Appends one audit entry (newest first locally) and schedules a sync — call
+// this at every meaningful state change (auth, employee CRUD, submissions,
+// settings). The actual network write is debounced: sweepExpiredSubmissions()
+// can call this dozens of times in one synchronous loop (one call per expired
+// record), and firing an individual backend request per call serialized on
+// the backend's write lock and timed out under that kind of burst. Batching
+// any calls that land within the same short window into one bulk write fixes
+// that without losing entries — the debounce only delays when it's sent, not
+// whether it's sent.
+let _auditFlushTimer = null;
 function addAudit(action,detail){
-  AUDIT_LOG.unshift({
-    ts: new Date().toISOString(),
+  const entry = {
+    timestamp: new Date().toISOString(),
     actor: currentUser ? `${currentUser.id} (${currentUser.name})` : 'system',
     action, detail: detail||''
-  });
-  if(AUDIT_LOG.length>500) AUDIT_LOG.length=500; // cap growth
-  saveAuditToGitHub();
+  };
+  AUDIT_LOG.unshift(entry);
+  if(AUDIT_LOG.length>500) AUDIT_LOG.length=500; // cap growth locally too
+  if(backendConfigured()){
+    clearTimeout(_auditFlushTimer);
+    _auditFlushTimer = setTimeout(()=>{
+      gasCall('saveAllAuditLog', {entries:AUDIT_LOG}).catch(e=>{
+        console.error(e);
+        toast('⚠️ Failed to sync audit log: '+e.message,'error');
+      });
+    }, 800);
+  }
   if(document.getElementById('v-hr-audit')?.classList.contains('active')) renderAudit();
 }
 
-function loadGithubUI(){
-  const c = getGhConfig();
-  const own=document.getElementById('ghOwner'), rep=document.getElementById('ghRepo'),
-        br=document.getElementById('ghBranch'), pat=document.getElementById('ghPat');
-  if(!own) return; // settings view not in DOM yet
-  own.value=c.owner; rep.value=c.repo; br.value=c.branch; pat.value=c.pat;
-  updateGhStatusUI(ghStatus);
+function loadBackendUI(){
+  const c = getBackendConfig();
+  const urlEl=document.getElementById('gasUrl'), tokEl=document.getElementById('gasToken');
+  if(!urlEl) return; // settings view not in DOM yet
+  urlEl.value=c.url; tokEl.value=c.token;
+  updateBackendStatusUI(backendStatus);
 }
 
-function updateGhStatusUI(status){
-  ghStatus = status;
-  const el = document.getElementById('ghStatus');
+function updateBackendStatusUI(status){
+  backendStatus = status;
+  const el = document.getElementById('gasStatus');
   if(!el) return;
   const map = {
     unconfigured: ['Not connected','var(--muted)'],
@@ -1221,69 +1208,55 @@ function updateGhStatusUI(status){
   el.style.color = color;
 }
 
-async function saveGithubConfig(){
-  const owner=document.getElementById('ghOwner').value.trim();
-  const repo=document.getElementById('ghRepo').value.trim();
-  const branch=document.getElementById('ghBranch').value.trim()||'main';
-  const pat=document.getElementById('ghPat').value.trim();
-  if(!owner||!repo||!pat){toast('Owner, repo and PAT are required.','error');return;}
-  localStorage.setItem('tk_gh_owner',owner);
-  localStorage.setItem('tk_gh_repo',repo);
-  localStorage.setItem('tk_gh_branch',branch);
-  localStorage.setItem('tk_gh_pat',pat);
-  updateGhStatusUI('connecting');
+// Fetches all four collections and replaces the in-memory state wholesale —
+// shared by both the initial page-load boot and the Settings "Save & Test
+// Connection" button, so there's exactly one place that defines what a
+// successful load actually populates.
+async function loadAllFromBackend(){
+  const [u,s,st,au] = await Promise.all([
+    gasCall('getUsers',{}),
+    gasCall('getSubmissions',{}),
+    gasCall('getSettings',{}),
+    gasCall('getAuditLog',{}),
+  ]);
+  const usersObj={};
+  u.users.forEach(usr=>{ usersObj[usr.empId]=usr; });
+  USERS=usersObj;
+  SUBMISSIONS=s.submissions;
+  COMPANY={name:st.settings.name||'', address:st.settings.address||'', logo:st.settings.logo||''};
+  AUDIT_LOG=au.entries;
+}
+
+async function saveBackendConfig(){
+  const url=document.getElementById('gasUrl').value.trim();
+  const token=document.getElementById('gasToken').value.trim();
+  if(!url||!token){toast('Backend URL and token are required.','error');return;}
+  localStorage.setItem('tk_gas_url',url);
+  localStorage.setItem('tk_gas_token',token);
+  updateBackendStatusUI('connecting');
   try{
-    const u = await ghGetFile('data/users.json');
-    GH_SHA.users = u.sha;
-    if(u.content===null){
-      // Repo reachable but data files don't exist yet — push current data as the first commit.
-      // Use ghPutFile directly (not the saveXToGitHub wrappers) so a failed write here
-      // throws into the catch below instead of being swallowed and reported as success.
-      GH_SHA.users = await ghPutFile('data/users.json', USERS, 'Initialize users.json', null);
-      GH_SHA.submissions = await ghPutFile('data/submissions.json', SUBMISSIONS, 'Initialize submissions.json', null);
-      GH_SHA.settings = await ghPutFile('data/settings.json', {company:COMPANY}, 'Initialize settings.json', null);
-      GH_SHA.audit = await ghPutFile('data/audit.json', AUDIT_LOG, 'Initialize audit.json', null);
-      toast('✅ Connected! Initialized data files in the repo.','success');
-    }else{
-      USERS = u.content;
-      if(currentUser && USERS[currentUser.id]) currentUser = {...USERS[currentUser.id], id: currentUser.id};
-      const [s,st,au] = await Promise.all([ghGetFile('data/submissions.json'), ghGetFile('data/settings.json'), ghGetFile('data/audit.json')]);
-      if(s.content){SUBMISSIONS=s.content; GH_SHA.submissions=s.sha;}
-      if(st.content){COMPANY=st.content.company||COMPANY; GH_SHA.settings=st.sha;}
-      if(au.content){AUDIT_LOG=au.content; GH_SHA.audit=au.sha;}
-      loadCompanyUI(); renderEmployees(); renderRecords(); renderHistory();
-      toast('✅ Connected to GitHub! Data loaded.','success');
-    }
-    updateGhStatusUI('connected');
+    await loadAllFromBackend();
+    if(currentUser && USERS[currentUser.id]) currentUser = {...USERS[currentUser.id], id: currentUser.id};
+    loadCompanyUI(); renderEmployees(); renderRecords(); renderHistory();
+    updateBackendStatusUI('connected');
+    toast('✅ Connected! Data loaded.','success');
   }catch(e){
     console.error(e);
-    updateGhStatusUI('error');
+    updateBackendStatusUI('error');
     toast('❌ Connection failed: '+e.message,'error');
   }
 }
 
 async function bootLoad(){
-  if(!ghConfigured()){ ghStatus='unconfigured'; return; }
-  ghStatus='connecting';
+  if(!backendConfigured()){ backendStatus='unconfigured'; return; }
+  backendStatus='connecting';
   try{
-    const [u,s,st,au] = await Promise.all([
-      ghGetFile('data/users.json'),
-      ghGetFile('data/submissions.json'),
-      ghGetFile('data/settings.json'),
-      ghGetFile('data/audit.json'),
-    ]);
-    if(u.content){USERS=u.content; GH_SHA.users=u.sha;}
-    if(s.content){SUBMISSIONS=s.content; GH_SHA.submissions=s.sha;}
-    if(st.content){
-      COMPANY = st.content.company||COMPANY;
-      GH_SHA.settings = st.sha;
-    }
-    if(au.content){AUDIT_LOG=au.content; GH_SHA.audit=au.sha;}
-    ghStatus='connected';
+    await loadAllFromBackend();
+    backendStatus='connected';
   }catch(e){
     console.error(e);
-    ghStatus='error';
-    toast('⚠️ Could not reach GitHub — using local/demo data. '+e.message,'error');
+    backendStatus='error';
+    toast('⚠️ Could not reach backend — using local/demo data. '+e.message,'error');
   }
 }
 
@@ -1295,12 +1268,31 @@ function toggleForgotPw(){
   el.style.display=el.style.display==='none'?'block':'none';
 }
 
-function doLogin(){
+async function doLogin(){
   const id = document.getElementById('loginId').value.trim().toUpperCase();
   const pw = document.getElementById('loginPass').value;
-  const u = USERS[id];
   document.getElementById('loginErr').textContent = '';
-  if(!u || u.pw !== pw){ document.getElementById('loginErr').textContent = 'Invalid Employee ID or password.'; return; }
+  let u;
+  if(backendConfigured()){
+    // Server-side login: the password check happens in Code.gs, and the
+    // response never includes pw — this browser only ever sees plaintext
+    // passwords for the one account that's actually signing in, not the
+    // whole roster (unlike the old GitHub version, which fetched every
+    // employee's password into every logged-in browser's memory).
+    try{
+      const res = await gasCallRaw('login', {empId:id, pw});
+      if(!res.ok || !res.user){ document.getElementById('loginErr').textContent = 'Invalid Employee ID or password.'; return; }
+      u = res.user;
+      USERS[id] = u; // keep the local cache in sync for screens that read USERS[currentUser.id]
+    }catch(e){
+      console.error(e);
+      document.getElementById('loginErr').textContent = 'Could not reach backend: '+e.message;
+      return;
+    }
+  } else {
+    u = USERS[id];
+    if(!u || u.pw !== pw){ document.getElementById('loginErr').textContent = 'Invalid Employee ID or password.'; return; }
+  }
   currentUser = {...u, id};
   localStorage.setItem('tk_session_uid', id);
   addAudit('login','Signed in');
@@ -1324,7 +1316,7 @@ function firstLoginStep1(){
   if(p1.length<6){err.textContent='Password must be at least 6 characters.';return;}
   if(p1!==p2){err.textContent='Passwords do not match.';return;}
   USERS[currentUser.id].pw = p1;
-  saveUsersToGitHub();
+  saveUsersToBackend();
   addAudit('password_change','Changed own password (first login)');
   err.textContent='';
   document.getElementById('firstStep1').style.display='none';
@@ -1344,22 +1336,57 @@ function firstLoginStep2(){
   const photo=USERS[currentUser.id].profilePhoto||null;
   USERS[currentUser.id] = {...USERS[currentUser.id], name,email,dept,pos,firstLogin:false,profilePhoto:photo};
   currentUser = {...currentUser,name,email,dept,pos,firstLogin:false,profilePhoto:photo};
-  saveUsersToGitHub();
+  saveUsersToBackend();
   addAudit('profile_complete','Completed first-login profile setup');
   document.getElementById('firstLoginOverlay').classList.remove('show');
   initApp();
 }
 
-function flPhotoSelected(input){
+function fileToDataUrl(file){
+  return new Promise((resolve,reject)=>{
+    const reader=new FileReader();
+    reader.onload=()=>resolve(reader.result);
+    reader.onerror=reject;
+    reader.readAsDataURL(file);
+  });
+}
+// Fetches a Drive-hosted image URL and converts it back to a data: URL —
+// used at Excel-export time, since ExcelJS needs raw base64, not a URL.
+async function urlToDataUrl(url){
+  const res = await fetch(url);
+  if(!res.ok) throw new Error('logo fetch failed ('+res.status+')');
+  const blob = await res.blob();
+  return new Promise((resolve,reject)=>{
+    const reader=new FileReader();
+    reader.onload=()=>resolve(reader.result);
+    reader.onerror=reject;
+    reader.readAsDataURL(blob);
+  });
+}
+// Uploads to Drive via the backend when one's configured, so the photo
+// survives page reload and shows up for other browsers/HR too; falls back to
+// an in-memory data URL otherwise — same graceful degradation as the rest of
+// the app when no backend is configured (see USERS fallback near the top).
+async function uploadPhoto(file, kind, empId){
+  const dataUrl = await fileToDataUrl(file);
+  if(!backendConfigured()) return dataUrl;
+  const base64 = dataUrl.split(',')[1];
+  const res = await gasCall('uploadImage', {kind, empId, base64, mimeType:file.type});
+  return res.url;
+}
+
+async function flPhotoSelected(input){
   const file=input.files&&input.files[0];
   if(!file)return;
-  const reader=new FileReader();
-  reader.onload=()=>{
-    USERS[currentUser.id].profilePhoto=reader.result;
-    document.getElementById('flPhotoPreview').src=reader.result;
+  try{
+    const url = await uploadPhoto(file, 'profilePhoto', currentUser.id);
+    USERS[currentUser.id].profilePhoto=url;
+    document.getElementById('flPhotoPreview').src=url;
     document.getElementById('flPhotoPreview').style.display='block';
-  };
-  reader.readAsDataURL(file);
+  }catch(e){
+    console.error(e);
+    toast('⚠️ Failed to upload photo: '+e.message,'error');
+  }
 }
 
 function logout(){
@@ -1384,19 +1411,20 @@ function renderAvatar(){
   });
 }
 
-function updateProfilePhoto(input){
+async function updateProfilePhoto(input){
   const file=input.files&&input.files[0];
   if(!file||!currentUser)return;
-  const reader=new FileReader();
-  reader.onload=()=>{
-    USERS[currentUser.id].profilePhoto=reader.result;
-    currentUser.profilePhoto=reader.result;
+  try{
+    const url = await uploadPhoto(file, 'profilePhoto', currentUser.id);
+    USERS[currentUser.id].profilePhoto=url;
+    currentUser.profilePhoto=url;
     renderAvatar();
-    saveUsersToGitHub();
     addAudit('profile_photo_update','Updated own profile photo');
     toast('✅ Profile photo updated!','success');
-  };
-  reader.readAsDataURL(file);
+  }catch(e){
+    console.error(e);
+    toast('⚠️ Failed to upload photo: '+e.message,'error');
+  }
 }
 
 /* ============================================================
@@ -1435,7 +1463,7 @@ function initApp(){
   if(mlEl) mlEl.textContent = MONTH_NAMES[currentMonth] + ' ' + currentYear;
 
   // Load settings UI
-  loadGithubUI();
+  loadBackendUI();
   loadCompanyUI();
   loadProfileUI();
   loadDefaultScheduleUI();
@@ -1470,7 +1498,7 @@ function setView(v){
     'hr-tk-preview':['Review Timesheet','Full record view — approve or reject below'],
     'emp-tk':['My Timesheet','Submit your bimonthly cutoff timesheet'],
     'emp-history':['History','Your previous submissions'],
-    'settings':['Settings','Appearance, GitHub sync, and account settings'],
+    'settings':['Settings','Appearance, backend connection, and account settings'],
   };
   const [t,s] = titles[v]||['',''];
   document.getElementById('viewTitle').textContent = t;
@@ -1482,7 +1510,7 @@ function setView(v){
   if(v==='hr-employees') renderEmployees();
   if(v==='hr-reports') renderReports();
   if(v==='hr-audit') renderAudit();
-  if(v==='settings'){ loadGithubUI(); loadCompanyUI(); loadProfileUI(); loadDefaultScheduleUI(); }
+  if(v==='settings'){ loadBackendUI(); loadCompanyUI(); loadProfileUI(); loadDefaultScheduleUI(); }
   document.getElementById('userPop').classList.remove('show');
 }
 
@@ -1600,7 +1628,7 @@ function sweepExpiredSubmissions(){
     changed=true;
   });
   if(toDelete.length) SUBMISSIONS=SUBMISSIONS.filter(s=>!toDelete.includes(s.id));
-  if(changed) saveSubmissionsToGitHub();
+  if(changed) saveSubmissionsToBackend();
   return changed;
 }
 
@@ -1977,7 +2005,7 @@ function upsertSubmission(status){
   };
   if(existing) Object.assign(existing,sub);
   else SUBMISSIONS.unshift(sub);
-  saveSubmissionsToGitHub();
+  saveSubmissionsToBackend();
   renderHistory();
   renderRecords();
   return true;
@@ -2025,7 +2053,7 @@ function discardDraft(){
   if(!existing || (existing.status!=='draft' && existing.status!=='rejected')) return;
   if(!confirm(`Discard this ${existing.status} timesheet for Cutoff ${existing.cutoff}, ${existing.period}? This can't be undone.`)) return;
   SUBMISSIONS=SUBMISSIONS.filter(s=>s.id!==existing.id);
-  saveSubmissionsToGitHub();
+  saveSubmissionsToBackend();
   addAudit('draft_discard',`Discarded ${existing.status} — Cutoff ${existing.cutoff}, ${existing.period}`);
   toast('🗑 Discarded.','success');
   renderHistory();
@@ -2260,13 +2288,22 @@ async function buildTimesheetWorkbook(empInfo, periodInfo, allDates, rowsData, o
 
   // --- Embed company logo (PNG/JPEG/GIF only) ---
   if(COMPANY.logo){
-    const m=COMPANY.logo.match(/^data:image\/(png|jpe?g|gif);base64,(.+)$/i);
-    if(m){
-      const ext=m[1].toLowerCase()==='jpg'?'jpeg':m[1].toLowerCase();
-      const imgId=wb.addImage({base64:COMPANY.logo,extension:ext});
-      ws.addImage(imgId,{tl:{col:COLS-4,row:0},ext:{width:120,height:45}});
-    } else {
-      toast('⚠️ Logo format not supported in Excel (PNG/JPEG/GIF only) — omitted.','error');
+    try{
+      // COMPANY.logo is a data: URL only in the no-backend fallback case;
+      // once uploaded through the backend it's a Drive URL instead, which
+      // ExcelJS can't embed directly — fetch it and convert back to base64.
+      const logoDataUrl = COMPANY.logo.startsWith('data:') ? COMPANY.logo : await urlToDataUrl(COMPANY.logo);
+      const m=logoDataUrl.match(/^data:image\/(png|jpe?g|gif);base64,(.+)$/i);
+      if(m){
+        const ext=m[1].toLowerCase()==='jpg'?'jpeg':m[1].toLowerCase();
+        const imgId=wb.addImage({base64:logoDataUrl,extension:ext});
+        ws.addImage(imgId,{tl:{col:COLS-4,row:0},ext:{width:120,height:45}});
+      } else {
+        toast('⚠️ Logo format not supported in Excel (PNG/JPEG/GIF only) — omitted.','error');
+      }
+    }catch(e){
+      console.error(e);
+      toast('⚠️ Could not load company logo for this export — omitted.','error');
     }
   }
   return wb;
@@ -2716,7 +2753,7 @@ function approveSubmission(id){
     return;
   }
   s.status='approved';
-  saveSubmissionsToGitHub();
+  saveSubmissionsToBackend();
   addAudit('submission_approve',`Approved ${s.empName} (${s.empId}) — Cutoff ${s.cutoff}, ${s.period}`);
   renderRecords(); renderHRDashboard();
   toast(`✅ ${s.empName}'s timesheet approved.`,'success');
@@ -2731,7 +2768,7 @@ function rejectSubmission(id){
     return;
   }
   s.status='rejected';
-  saveSubmissionsToGitHub();
+  saveSubmissionsToBackend();
   addAudit('submission_reject',`Rejected ${s.empName} (${s.empId}) — Cutoff ${s.cutoff}, ${s.period}`);
   renderRecords(); renderHRDashboard();
   toast(`❌ ${s.empName}'s timesheet rejected.`,'error');
@@ -2766,7 +2803,7 @@ function toggleActive(id){
   if(!USERS[id])return;
   USERS[id].active=!USERS[id].active;
   renderEmployees();
-  saveUsersToGitHub();
+  saveUsersToBackend();
   addAudit('employee_'+(USERS[id].active?'activate':'deactivate'),`${USERS[id].name} (${id})`);
   toast(USERS[id].active?'Employee activated.':'Employee deactivated.');
 }
@@ -2813,7 +2850,7 @@ function saveEditEmployee(){
     pwReset=true;
   }
   renderEmployees();
-  saveUsersToGitHub();
+  saveUsersToBackend();
   addAudit('employee_update',`Updated ${name} (${id})`+(pwReset?' and reset password':''));
   if(pwReset){
     document.getElementById('editRevealId').textContent=id;
@@ -2864,7 +2901,7 @@ function saveNewEmployee(){
   document.getElementById('newCredsReveal').style.display='block';
   document.getElementById('saveEmpBtn').style.display='none';
   renderEmployees();
-  saveUsersToGitHub();
+  saveUsersToBackend();
   addAudit('employee_create',`Created ${name} (${id})`);
   toast('✅ Employee created!','success');
 }
@@ -2987,7 +3024,7 @@ function saveMyProfile(){
   currentUser = {...currentUser, name, email, dept, pos, dateHired:hired};
   renderAvatar();
   document.getElementById('uName').textContent = currentUser.name;
-  saveUsersToGitHub();
+  saveUsersToBackend();
   addAudit('profile_update','Updated own profile details');
   toast('✅ Profile saved!','success');
 }
@@ -3007,7 +3044,7 @@ function saveDefaultSchedule(){
   const g=id=>(document.getElementById(id)||{}).value||'';
   const sched={inAM:g('schedInAM'),outPM:g('schedOutPM')};
   USERS[currentUser.id]={...USERS[currentUser.id],defaultSchedule:sched};
-  saveUsersToGitHub();
+  saveUsersToBackend();
   addAudit('schedule_save','Saved default schedule');
   toast('✅ Default schedule saved! Timesheet will auto-fill on next open.','success');
 }
@@ -3016,7 +3053,7 @@ function clearDefaultSchedule(){
   if(!currentUser) return;
   USERS[currentUser.id]={...USERS[currentUser.id],defaultSchedule:{}};
   ['schedInAM','schedOutAM','schedInPM','schedOutPM'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
-  saveUsersToGitHub();
+  saveUsersToBackend();
   toast('🗑 Default schedule cleared.','success');
 }
 
@@ -3032,7 +3069,7 @@ function loadCompanyUI(){
   else prev.style.display='none';
 }
 
-function companyLogoSelected(input){
+async function companyLogoSelected(input){
   const file=input.files&&input.files[0];
   if(!file)return;
   // The `accept` attribute is only a picker hint, not enforcement — validate
@@ -3043,13 +3080,15 @@ function companyLogoSelected(input){
     input.value='';
     return;
   }
-  const reader=new FileReader();
-  reader.onload=()=>{
-    COMPANY.logo=reader.result;
+  try{
+    const url = await uploadPhoto(file, 'logo', null);
+    COMPANY.logo=url;
     const prev=document.getElementById('compLogoPreview');
-    prev.src=reader.result; prev.style.display='inline-block';
-  };
-  reader.readAsDataURL(file);
+    prev.src=url; prev.style.display='inline-block';
+  }catch(e){
+    console.error(e);
+    toast('⚠️ Failed to upload logo: '+e.message,'error');
+  }
 }
 
 function saveCompany(){
@@ -3060,7 +3099,7 @@ function saveCompany(){
     logo:COMPANY.logo||''
   };
   localStorage.setItem('tk_company',JSON.stringify(COMPANY));
-  saveSettingsToGitHub();
+  saveSettingsToBackend();
   addAudit('settings_update','Saved company information');
   toast('✅ Company info saved!','success');
 }
@@ -3077,7 +3116,7 @@ function changePassword(){
   document.getElementById('pwCurrent').value='';
   document.getElementById('pwNew').value='';
   document.getElementById('pwConfirm').value='';
-  saveUsersToGitHub();
+  saveUsersToBackend();
   addAudit('password_change','Changed own password');
   toast('✅ Password updated!','success');
 }
@@ -3165,7 +3204,7 @@ document.querySelectorAll('.overlay').forEach(o=>{
   if(mode)document.documentElement.dataset.mode=mode;
 
   const msgEl=document.getElementById('loadMsg');
-  if(ghConfigured()&&msgEl) msgEl.textContent='Connecting to GitHub…';
+  if(backendConfigured()&&msgEl) msgEl.textContent='Connecting to backend…';
 
   let p=0;const bar=document.getElementById('loadBar');
   const tick=setInterval(()=>{p=Math.min(p+Math.random()*10+4,90);bar.style.width=p+'%';},120);
