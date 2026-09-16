@@ -233,6 +233,8 @@ body.loggedIn #collapseBtn{display:grid}
 .tk-table tbody td:first-child{text-align:left;padding-left:10px}
 .tk-table tbody tr.weekend td:first-child,.tk-table tbody tr.weekend td:nth-child(2){opacity:.5}
 .tk-table tbody tr.weekend{background:color-mix(in srgb,var(--accent) 4%,transparent)}
+.ot-table tbody tr.ot-flag{background:rgba(245,158,11,.12);box-shadow:inset 3px 0 0 #f59e0b}
+.ot-table tbody tr.ot-flag td.ot-hrs::after{content:'⚠';margin-left:4px;color:#f59e0b;font-size:10px}
 .tk-table input[type=time]{background:var(--panel);border:1px solid var(--border);border-radius:7px;padding:5px 7px;font-size:12px;color:var(--text);outline:none;width:118px}
 .tk-table input[type=time]:focus{border-color:var(--accent)}
 .submit-bar{display:flex;gap:10px;padding:14px 22px;border-top:1px solid var(--border);background:var(--glass);backdrop-filter:blur(14px)}
@@ -499,6 +501,7 @@ body.roleHR .empOnly{display:none!important}
               </div>
               <div style="display:flex;align-items:center;gap:12px;padding:6px 10px;font-size:12px;color:var(--muted)">
                 <span>Total OT Hours: <b id="hrPrevOtTotal" style="color:var(--accent)">0h 0m</b></span>
+                <span style="font-size:11px"><span style="color:#f59e0b">⚠</span> = no attendance logged that day</span>
               </div>
             </div>
           </div>
@@ -596,6 +599,7 @@ body.roleHR .empOnly{display:none!important}
               </div><!-- end OT section -->
               <div style="display:flex;align-items:center;gap:12px;padding:6px 10px;font-size:12px;color:var(--muted)">
                 <span>Total OT Hours: <b id="otTotalHrs" style="color:var(--accent)">0h 0m</b></span>
+                <span style="font-size:11px"><span style="color:#f59e0b">⚠</span> = no attendance logged that day</span>
               </div>
             </div><!-- end scroll -->
           </div><!-- end left 60% -->
@@ -1745,6 +1749,9 @@ function computeHours(tr){
   else if(total>=300) total-=60;
   const cell=tr.querySelector('.hrs-cell');
   if(cell) cell.textContent=total>0?`${Math.floor(total/60)}h ${total%60}m`:'—';
+  // Attendance and OT are separate tables — editing this day's Time In/Out
+  // can flip whether that day's OT row still counts as "no matching attendance".
+  refreshOTFlag(document.querySelector(`#otBody tr[data-date="${tr.dataset.date}"]`));
 }
 
 const OT_TYPES=[
@@ -1837,7 +1844,27 @@ function computeOT(tr){
   }
   tr.dataset.otMins=mins;
   tr.dataset.otRate=t.rate;
+  refreshOTFlag(tr);
   updateOTTotal();
+}
+
+// OT is allowed on a day with no regular attendance (e.g. weekend/holiday
+// call-in) — this never blocks save or submit. It only marks the row so HR
+// can see, during review, which OT entries have no matching Time In/Out
+// that day and decide case-by-case whether that's expected.
+function hasAttendanceForDate(date){
+  const tr=document.querySelector(`#tkBody tr[data-date="${date}"]`);
+  if(!tr) return false;
+  return !!(tr.querySelector('[data-col="in"]')?.value && tr.querySelector('[data-col="out"]')?.value);
+}
+function refreshOTFlag(tr){
+  if(!tr) return;
+  const isRealOT = parseInt(tr.dataset.otMins||0)>0 && parseFloat(tr.dataset.otRate||0)>0;
+  const flagged = isRealOT && !hasAttendanceForDate(tr.dataset.date);
+  tr.classList.toggle('ot-flag', flagged);
+  tr.dataset.otFlag = flagged ? '1' : '';
+  const hrsCell=tr.querySelector('.ot-hrs');
+  if(hrsCell) hrsCell.title = flagged ? 'No attendance logged for this day — flagged for HR review, not blocked' : '';
 }
 
 function updateOTTotal(){
@@ -1863,7 +1890,7 @@ function collectOTRows(){
     // filled time range, or this becomes phantom overtime with no rate column
     // to land in (RATE_COLS has no 0 entry) yet still inflating the total.
     if(mins>0 && OT_TYPES[typeIdx].rate>0){
-      rows.push({date:tr.dataset.date,from,to,type:OT_TYPES[typeIdx].label,rate:OT_TYPES[typeIdx].rate,mins});
+      rows.push({date:tr.dataset.date,from,to,type:OT_TYPES[typeIdx].label,rate:OT_TYPES[typeIdx].rate,mins,flagged:tr.dataset.otFlag==='1'});
     }
   });
   return rows;
@@ -1980,7 +2007,15 @@ function hasAnyTimeEntry(){
   return hasAttendance || hasOT;
 }
 
+// Attachments aren't persisted anywhere yet (session memory only — see the
+// Attachments panel), so this only guarantees "a file was attached in this
+// browser session before clicking Submit," not that HR can see it later.
+// That gap closes once attachments move to real backend storage.
 function submitCutoff(){
+  if(attachFiles.length===0){
+    toast('❌ Attach at least one supporting file before submitting.','error');
+    return;
+  }
   if(!hasAnyTimeEntry() && !confirm('This timesheet has no time entries logged. Submit anyway?')) return;
   if(!upsertSubmission('submitted')) return;
   addAudit('submission_submit',`Submitted timesheet — Cutoff ${currentCutoff}, ${MONTH_NAMES[currentMonth]} ${currentYear}`);
@@ -2647,13 +2682,13 @@ function hrPreviewRecord(id){
       const typeOpts=OT_TYPES.map((t,i)=>`<option value="${i}" ${i===typeIdx?'selected':''}>${t.label}</option>`).join('');
       const rate=r.rate||0;
       if(rate>0) otTotalMins+=(r.mins||0);
-      return `<tr class="${isWE?'weekend':''}">
+      return `<tr class="${isWE?'weekend':''}${r.flagged?' ot-flag':''}">
         <td style="font-size:11.5px">${dateStr}</td>
         <td style="font-size:11px;color:var(--muted)">${DAY_NAMES[dow]}</td>
         <td><input type="time" class="ot-from" disabled ${r.from?`value="${r.from}"`:''}/></td>
         <td><input type="time" class="ot-to" disabled ${r.to?`value="${r.to}"`:''}/></td>
         <td><select class="ot-type" disabled>${typeOpts}</select></td>
-        <td class="ot-hrs">${formatMinutes(r.mins||0)}</td>
+        <td class="ot-hrs" title="${r.flagged?'No attendance logged for this day':''}">${formatMinutes(r.mins||0)}</td>
         <td class="ot-val">${rate>0?((r.mins||0)/60*rate).toFixed(2)+' hrs':'—'}</td>
       </tr>`;
     }).join('');
