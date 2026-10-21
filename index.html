@@ -1,0 +1,3234 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="crimson" data-mode="light">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>TK Dashboard — Timekeeping System</title>
+<style>
+:root{--radius:16px;--radius-sm:10px;--sidebar-w:240px;
+ --font:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+ --transition:.22s cubic-bezier(.4,0,.2,1);--grid-density:8px;}
+[data-theme="ocean"]{--accent:#2f8fff;--accent2:#00d4ff;}
+[data-theme="royal"]{--accent:#3a56ff;--accent2:#6b8cff;}
+[data-theme="emerald"]{--accent:#10b981;--accent2:#34e0a1;}
+[data-theme="forest"]{--accent:#2f9e44;--accent2:#94d82d;}
+[data-theme="purple"]{--accent:#8b5cf6;--accent2:#c084fc;}
+[data-theme="crimson"]{--accent:#ef4444;--accent2:#ff7a7a;}
+[data-theme="amber"]{--accent:#f59e0b;--accent2:#fcd34d;}
+[data-theme="rose"]{--accent:#f43f8e;--accent2:#fda4d0;}
+[data-theme="teal"]{--accent:#14b8a6;--accent2:#5eead4;}
+[data-theme="sunset"]{--accent:#ff6b6b;--accent2:#ffd166;}
+[data-mode="dark"]{--bg:#0b1020;--bg2:#0e1428;--panel:rgba(255,255,255,.045);--panel-solid:#141b30;
+ --border:rgba(255,255,255,.09);--text:#eaf0ff;--muted:#9aa6c4;--muted2:#6b7796;--glass:rgba(20,27,48,.6);
+ --shadow:0 10px 40px rgba(0,0,0,.45);--grid-head:#18233f;--row-alt:rgba(255,255,255,.025);--hover:rgba(255,255,255,.06);}
+[data-mode="light"]{--bg:#eef2fb;--bg2:#e6ecf8;--panel:rgba(255,255,255,.75);--panel-solid:#ffffff;
+ --border:rgba(15,30,70,.12);--text:#0e1730;--muted:#5a6b8c;--muted2:#8391ad;--glass:rgba(255,255,255,.7);
+ --shadow:0 10px 30px rgba(30,50,110,.12);--grid-head:#eef2fb;--row-alt:rgba(20,40,90,.03);--hover:rgba(20,40,90,.05);}
+[data-mode="oled"]{--bg:#000;--bg2:#000;--panel:rgba(255,255,255,.04);--panel-solid:#0a0a0a;
+ --border:rgba(255,255,255,.1);--text:#f2f2f2;--muted:#9aa;--muted2:#667;--glass:rgba(8,8,8,.7);
+ --shadow:0 10px 40px rgba(0,0,0,.7);--grid-head:#0d0d0d;--row-alt:rgba(255,255,255,.02);--hover:rgba(255,255,255,.06);}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{font-family:var(--font);color:var(--text);overflow:hidden;
+ background:radial-gradient(1200px 600px at 10% -10%,color-mix(in srgb,var(--accent) 22%,transparent),transparent 60%),
+ radial-gradient(1000px 500px at 110% 10%,color-mix(in srgb,var(--accent2) 16%,transparent),transparent 55%),
+ linear-gradient(160deg,var(--bg),var(--bg2));transition:background var(--transition);}
+button,input,select,textarea{font-family:inherit;color:inherit}
+::-webkit-scrollbar{width:10px;height:10px}
+::-webkit-scrollbar-thumb{background:color-mix(in srgb,var(--accent) 40%,transparent);border-radius:20px}
+.app{display:grid;grid-template-columns:var(--sidebar-w) 1fr;height:100vh}
+.sidebar{background:var(--glass);backdrop-filter:blur(22px) saturate(160%);border-right:1px solid var(--border);
+ display:flex;flex-direction:column;padding:18px 12px;gap:4px;overflow-y:auto}
+.brand{display:flex;align-items:center;gap:11px;padding:6px 10px 16px}
+.brand .logo{width:38px;height:38px;border-radius:11px;flex:0 0 auto;background:linear-gradient(135deg,var(--accent),var(--accent2));
+ display:grid;place-items:center;font-weight:800;color:#fff;font-size:18px;box-shadow:0 6px 18px color-mix(in srgb,var(--accent) 45%,transparent)}
+.brand b{font-size:15px;letter-spacing:.2px;line-height:1.1}.brand small{color:var(--muted);font-size:11px}
+.nav-group{color:var(--muted2);font-size:10.5px;text-transform:uppercase;letter-spacing:1.4px;padding:12px 12px 5px}
+.nav a{display:flex;align-items:center;gap:11px;padding:9px 12px;border-radius:11px;color:var(--muted);cursor:pointer;
+ font-size:13.5px;font-weight:500;text-decoration:none;transition:var(--transition);position:relative;min-height:40px}
+.nav a .ic{width:18px;height:18px;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;opacity:.85}
+.nav a .ic svg{width:18px;height:18px;stroke:currentColor;stroke-width:1.6;fill:none;stroke-linecap:round;stroke-linejoin:round}
+.nav a .nav-label{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis}
+.nav a:hover{background:var(--hover);color:var(--text)}
+.nav a.active{background:linear-gradient(135deg,color-mix(in srgb,var(--accent) 28%,transparent),color-mix(in srgb,var(--accent2) 18%,transparent));
+ color:var(--text);box-shadow:inset 0 0 0 1px var(--border)}
+.nav a.active::before{content:"";position:absolute;left:-12px;top:20%;height:60%;width:4px;border-radius:4px;background:linear-gradient(var(--accent),var(--accent2))}
+.main{display:flex;flex-direction:column;min-width:0;overflow:hidden}
+.topbar{display:flex;align-items:center;gap:14px;padding:14px 22px;border-bottom:1px solid var(--border);background:var(--glass);backdrop-filter:blur(14px)}
+.topbar h1{font-size:17px;font-weight:700}.topbar .sub{color:var(--muted);font-size:12px;margin-top:1px}
+.btn{border:1px solid var(--border);background:var(--panel);color:var(--text);padding:9px 15px;border-radius:11px;cursor:pointer;
+ font-size:13px;font-weight:600;display:inline-flex;align-items:center;gap:8px;transition:var(--transition);white-space:nowrap}
+.btn:hover{background:var(--hover);transform:translateY(-1px)}
+.btn.primary{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;border:none;box-shadow:0 6px 18px color-mix(in srgb,var(--accent) 40%,transparent)}
+.btn.ghost{background:transparent}.btn.sm{padding:6px 10px;font-size:12px;border-radius:9px}
+.btn.danger{color:#fff;background:linear-gradient(135deg,#ef4444,#f87171);border:none}
+.btn.success{color:#fff;background:linear-gradient(135deg,#10b981,#34d399);border:none}
+.content{padding:22px;overflow-y:auto;flex:1}
+body.empTkActive .content,body.hrPreviewActive .content{padding:0;overflow:hidden;display:flex;flex-direction:column}
+.view{display:none;animation:fade .3s ease}.view.active{display:block}
+#v-emp-tk.active,#v-hr-tk-preview.active{display:flex!important;flex-direction:column;overflow:hidden;height:100%}
+@keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:15px;margin-bottom:18px}
+.card{background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);padding:17px 18px;backdrop-filter:blur(14px);
+ box-shadow:var(--shadow);transition:var(--transition);position:relative;overflow:hidden}
+.card:hover{transform:translateY(-3px);border-color:color-mix(in srgb,var(--accent) 40%,var(--border))}
+.card .k{color:var(--muted);font-size:12px;font-weight:600;display:flex;align-items:center;gap:8px}
+.card .v{font-size:22px;font-weight:800;margin-top:9px;letter-spacing:-.3px}
+.card .d{font-size:11.5px;color:var(--muted2);margin-top:6px}
+.card .chip{position:absolute;top:14px;right:14px;font-size:18px;opacity:.4}
+.card.clickable{cursor:pointer}
+.card.clickable .d{color:inherit;opacity:.85;display:flex;align-items:center;gap:4px}
+.attention-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:11px 4px;border-top:1px solid var(--border);cursor:pointer}
+.attention-row:first-child{border-top:none}
+.attention-row:hover{background:var(--hover)}
+.attention-empty{padding:18px 4px;color:var(--muted);font-size:13px;text-align:center}
+.panel{background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);padding:18px;backdrop-filter:blur(14px);box-shadow:var(--shadow);margin-top:16px}
+.panel h3{font-size:14px;margin-bottom:4px;display:flex;align-items:center;gap:9px}
+.panel .hint{color:var(--muted);font-size:12px;margin-bottom:12px}
+.row{display:flex;gap:12px;flex-wrap:wrap;align-items:center}.spacer{flex:1}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media(max-width:1100px){.grid2{grid-template-columns:1fr}}
+.tablewrap{overflow:auto;border:1px solid var(--border);border-radius:var(--radius);background:var(--panel-solid)}
+table{border-collapse:collapse;width:100%;font-size:12.5px;white-space:nowrap}
+thead th{position:sticky;top:0;background:var(--grid-head);text-align:left;padding:calc(var(--grid-density)) 12px;font-weight:700;color:var(--muted);
+ border-bottom:1px solid var(--border);z-index:2}
+tbody td{padding:calc(var(--grid-density)) 12px;border-bottom:1px solid var(--border)}
+tbody tr:nth-child(even){background:var(--row-alt)}tbody tr:hover{background:var(--hover)}
+tbody tr.clickable{cursor:pointer}
+.clock{margin-left:auto;display:flex;flex-direction:column;align-items:flex-end;line-height:1.25;user-select:none;white-space:nowrap}
+.clock .ck-time{font-weight:700;font-size:17px;color:var(--accent);letter-spacing:.5px;font-variant-numeric:tabular-nums}
+.clock .ck-date{font-size:11.5px;color:var(--muted);font-weight:500;letter-spacing:.2px}
+select.inp,input.inp,textarea.inp{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:8px 11px;font-size:12.5px;outline:none;color:var(--text)}
+input.inp:focus,select.inp:focus,textarea.inp:focus{border-color:var(--accent)}
+label.fld{display:flex;flex-direction:column;gap:5px;font-size:11.5px;color:var(--muted)}
+.swatches{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px;align-items:center}
+.sw{width:40px;height:40px;border-radius:50%;border:2px solid transparent;cursor:pointer;transition:var(--transition);position:relative;flex:0 0 auto}
+.sw:hover{transform:scale(1.12)}.sw.active{box-shadow:0 0 0 3px var(--accent),0 0 0 5px var(--bg)}
+.toggle{display:inline-flex;background:var(--panel);border:1px solid var(--border);border-radius:40px;overflow:hidden;gap:4px;padding:4px}
+.toggle button{background:none;border:none;width:36px;height:36px;border-radius:50%;cursor:pointer;color:var(--muted);font-size:14px;display:grid;place-items:center;transition:var(--transition)}
+.toggle button.on{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;box-shadow:0 3px 10px color-mix(in srgb,var(--accent) 40%,transparent)}
+.empty{text-align:center;color:var(--muted);padding:50px 20px}.empty .big{font-size:46px;opacity:.5;margin-bottom:12px}
+.toast{position:fixed;bottom:22px;right:22px;background:var(--panel-solid);border:1px solid var(--border);border-radius:12px;padding:13px 17px;box-shadow:var(--shadow);font-size:13px;z-index:120;opacity:0;transform:translateY(10px);transition:var(--transition)}
+.toast.show{opacity:1;transform:none}
+.pill{display:inline-flex;align-items:center;gap:6px;background:var(--panel);border:1px solid var(--border);border-radius:20px;padding:4px 10px;font-size:12px;margin:3px}
+.pill button{background:none;border:none;color:var(--muted);cursor:pointer;font-size:13px}
+.tag{padding:2px 9px;border-radius:20px;font-size:10.5px;font-weight:700;display:inline-block}
+.tag.submitted{background:rgba(16,185,129,.18);color:#34d399}
+.tag.draft{background:rgba(245,158,11,.18);color:#fcd34d}
+.tag.pending{background:rgba(99,102,241,.18);color:#818cf8}
+.tag.approved{background:rgba(16,185,129,.18);color:#34d399}
+.tag.rejected{background:rgba(239,68,68,.18);color:#f87171}
+.tag.notstarted{background:rgba(148,163,184,.18);color:#94a3b8}
+.tag.lapsed{background:rgba(51,65,85,.35);color:#94a3b8;text-decoration:line-through}
+.navbadge{background:#ef4444;color:#fff;border-radius:20px;font-size:10px;font-weight:700;padding:1px 7px;min-width:16px;text-align:center;flex-shrink:0;align-self:center}
+.avatar-photo{width:100%;height:100%;object-fit:cover;border-radius:inherit}
+/* modal */
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.55);backdrop-filter:blur(4px);display:none;align-items:center;justify-content:center;z-index:100}
+.overlay.show{display:flex}
+.modal{width:min(700px,94vw);max-height:90vh;overflow:auto;background:var(--panel-solid);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);padding:24px}
+.modal h3{font-size:16px;margin-bottom:2px}.modal .sub{color:var(--muted);font-size:12px;margin-bottom:16px}
+.formgrid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media(max-width:640px){.formgrid{grid-template-columns:1fr}}
+.formgrid label{display:flex;flex-direction:column;gap:5px;font-size:11.5px;color:var(--muted)}
+.formgrid input,.formgrid select,.formgrid textarea{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:9px 11px;font-size:13px;outline:none;color:var(--text)}
+.formgrid input:focus,.formgrid select:focus,.formgrid textarea:focus{border-color:var(--accent)}
+.modal-actions{display:flex;gap:10px;justify-content:flex-end;margin-top:18px}
+.sectionlabel{grid-column:1/-1;font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--muted2);margin-top:6px;padding-bottom:4px;border-bottom:1px solid var(--border)}
+/* login */
+.login-overlay{position:fixed;inset:0;z-index:200;display:none;align-items:center;justify-content:center;
+  background:radial-gradient(1000px 600px at 20% -10%,color-mix(in srgb,var(--accent) 30%,transparent),transparent 60%),linear-gradient(160deg,var(--bg),var(--bg2))}
+.login-overlay.show{display:flex}
+.login-card{width:min(420px,92vw);background:var(--panel-solid);border:1px solid var(--border);border-radius:20px;box-shadow:var(--shadow);padding:30px}
+.login-card .logo{width:52px;height:52px;border-radius:14px;background:linear-gradient(135deg,var(--accent),var(--accent2));display:grid;place-items:center;font-weight:800;color:#fff;font-size:24px;margin-bottom:16px}
+.login-card h2{font-size:20px;margin-bottom:3px}.login-card p{color:var(--muted);font-size:12.5px;margin-bottom:18px}
+.login-card label{display:block;font-size:11.5px;color:var(--muted);margin:12px 0 5px}
+.login-card select,.login-card input{width:100%;background:var(--panel);border:1px solid var(--border);border-radius:11px;padding:11px 13px;font-size:14px;outline:none;color:var(--text)}
+.login-card select:focus,.login-card input:focus{border-color:var(--accent)}
+.login-card .err{color:#ff8080;font-size:12px;margin-top:10px;min-height:16px}
+.login-card .note{color:var(--muted2);font-size:11.5px;margin-top:14px;line-height:1.5}
+/* collapsible sidebar */
+#collapseBtn{position:fixed;left:calc(var(--sidebar-w) - 14px);top:50%;transform:translateY(-50%);
+  width:28px;height:28px;border-radius:50%;background:var(--panel-solid);border:1px solid var(--border);
+  display:none;place-items:center;cursor:pointer;font-size:12px;font-weight:700;color:var(--muted);
+  z-index:300;box-shadow:0 2px 10px rgba(0,0,0,.18);transition:left var(--transition);line-height:1}
+body.loggedIn #collapseBtn{display:grid}
+#collapseBtn:hover{background:var(--hover);color:var(--text)}
+/* Attachments/file-preview panel collapse toggle — sits on the split boundary,
+   same visual language as the sidebar's own #collapseBtn but a separate control.
+   Vertical position is viewport-centered to match #collapseBtn's height exactly;
+   #tkScrollArea's own 50% isn't the same point since content (topbar, cutoff
+   badge, action bar, the history banner) sits above it and shifts its top edge.
+   positionPreviewCollapseBtn() computes the matching "top" in px — see JS. */
+#previewCollapseBtn{position:absolute;top:50%;left:60%;transform:translate(-50%,-50%);
+  width:28px;height:28px;border-radius:50%;background:var(--panel-solid);border:1px solid var(--border);
+  display:grid;place-items:center;cursor:pointer;font-size:12px;font-weight:700;color:var(--muted);
+  z-index:5;box-shadow:0 2px 10px rgba(0,0,0,.18);transition:left var(--transition);line-height:1}
+#previewCollapseBtn:hover{background:var(--hover);color:var(--text)}
+/* tkPreviewPanel/tkLeftPanel visibility and sizing are toggled via inline
+   style in toggleFilePreviewPanel() (JS), not here — both elements set
+   display/flex inline, which beats a class selector on specificity. */
+#tkScrollArea.previewCollapsed #previewCollapseBtn{left:100%;transform:translate(calc(-100% - 10px),-50%)}
+/* Same split-boundary collapse control, duplicated for the HR TK Preview
+   screen's own scroll area/panels (separate ids so the two screens' toggle
+   state never collide) — see positionHrPrevCollapseBtn()/toggleHrPrevPanel(). */
+#hrPrevCollapseBtn{position:absolute;top:50%;left:60%;transform:translate(-50%,-50%);
+  width:28px;height:28px;border-radius:50%;background:var(--panel-solid);border:1px solid var(--border);
+  display:grid;place-items:center;cursor:pointer;font-size:12px;font-weight:700;color:var(--muted);
+  z-index:5;box-shadow:0 2px 10px rgba(0,0,0,.18);transition:left var(--transition);line-height:1}
+#hrPrevCollapseBtn:hover{background:var(--hover);color:var(--text)}
+#hrPrevScrollArea.previewCollapsed #hrPrevCollapseBtn{left:100%;transform:translate(calc(-100% - 10px),-50%)}
+#mobileMenuBtn{background:var(--panel);border:1px solid var(--border);border-radius:10px;width:34px;height:34px;cursor:pointer;font-size:16px;color:var(--muted);display:none;place-items:center;flex:0 0 auto}
+#mobileMenuBtn:hover{background:var(--hover);color:var(--text)}
+.sidebar{overflow-x:hidden}
+.mobile-backdrop{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:140}
+/* Desktop-only: ☰ shrinks the sidebar to icon-only. Scoped to >768px so it can
+   never bleed into the mobile drawer below — collapsed+mobileNavOpen used to be
+   able to combine (e.g. collapse on desktop, then resize down) and render the
+   drawer with font-size:0 labels. Keep every "collapsed" rule inside this block. */
+@media(min-width:769px){
+  body.collapsed{--sidebar-w:66px}
+  body.collapsed .brand>div:last-child{display:none}
+  body.collapsed .brand{justify-content:center}
+  body.collapsed .nav-group{font-size:0;height:8px}
+  body.collapsed .nav a{justify-content:center;font-size:0}
+  body.collapsed .nav a .nav-label{display:none}
+  body.collapsed .nav a .ic{width:20px;height:20px}
+  body.collapsed .nav a .ic svg{width:20px;height:20px}
+  body.collapsed .nav a.active::before{display:none}
+  body.collapsed #userMenu .label,body.collapsed #userMenu .caret{display:none}
+  body.collapsed #userMenu .userchip{justify-content:center}
+  body.collapsed #collapseBtn{left:calc(66px - 14px)}
+}
+/* Mobile: sidebar becomes an off-canvas drawer instead of the icon-only "collapsed" mode */
+@media(max-width:768px){
+  .app{grid-template-columns:1fr}
+  .sidebar{position:fixed;inset:0 auto 0 0;width:min(80vw,260px);z-index:150;
+   transform:translateX(-100%);transition:transform var(--transition)}
+  body.mobileNavOpen .sidebar{transform:translateX(0)}
+  body.mobileNavOpen .mobile-backdrop{display:block}
+  .topbar h1{font-size:18px}
+  .clock{display:none}
+  #mobileMenuBtn{display:grid}
+  #collapseBtn{display:none}
+
+}
+/* user menu */
+#userMenu{position:relative;padding:8px 12px}
+.userchip{width:100%;display:flex;align-items:center;gap:9px;background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:7px 10px;cursor:pointer;color:var(--text);font-size:12.5px;font-weight:600}
+.userchip:hover{background:var(--hover)}
+.uava{width:26px;height:26px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;display:grid;place-items:center;font-weight:800;font-size:12px;flex:0 0 auto}
+.userpop{position:fixed;bottom:auto;left:0;right:auto;background:var(--panel-solid);border:1px solid var(--border);border-radius:12px;box-shadow:var(--shadow);padding:6px;display:none;z-index:2000;min-width:190px}
+.userpop.show{display:block}
+.userpop a{display:flex;align-items:center;gap:9px;padding:9px 11px;border-radius:9px;font-size:13px;color:var(--text);cursor:pointer;text-decoration:none}
+.userpop a:hover{background:var(--hover)}
+#filePreviewImg{transition:transform 0.18s cubic-bezier(.4,0,.2,1);transform-origin:center center}
+.userpop .sep{height:1px;background:var(--border);margin:4px 2px}
+.userpop .who{padding:8px 11px;font-size:11.5px;color:var(--muted)}
+/* TK-specific */
+.tk-table{width:100%;border-collapse:collapse;font-size:12.5px}
+.tk-table thead th{background:color-mix(in srgb,var(--accent) 18%,var(--grid-head));padding:5px 7px;text-align:center;font-weight:700;color:var(--muted);border-bottom:1px solid var(--border);white-space:nowrap}
+.tk-table th[data-col-time]{min-width:130px}
+.tk-table thead th:first-child{text-align:left}
+.tk-table tbody td{padding:3px 5px;border-bottom:1px solid var(--border);text-align:center;vertical-align:middle}
+.tk-table tbody td:first-child{text-align:left;padding-left:10px}
+.tk-table tbody tr.weekend td:first-child,.tk-table tbody tr.weekend td:nth-child(2){opacity:.5}
+.tk-table tbody tr.weekend{background:color-mix(in srgb,var(--accent) 4%,transparent)}
+.ot-table tbody tr.ot-flag{background:rgba(245,158,11,.12);box-shadow:inset 3px 0 0 #f59e0b}
+.ot-table tbody tr.ot-flag td.ot-hrs::after{content:'⚠';margin-left:4px;color:#f59e0b;font-size:10px}
+.tk-table input[type=time]{background:var(--panel);border:1px solid var(--border);border-radius:7px;padding:5px 7px;font-size:12px;color:var(--text);outline:none;width:118px}
+.tk-table input[type=time]:focus{border-color:var(--accent)}
+.submit-bar{display:flex;gap:10px;padding:14px 22px;border-top:1px solid var(--border);background:var(--glass);backdrop-filter:blur(14px)}
+[data-theme="dark"] #histBanner,[data-theme="auto"] #histBanner{--hist-banner-bg:#451a03;}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]) #histBanner{--hist-banner-bg:#451a03;color:#fde68a}}
+.cutoff-selector{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:14px 22px;border-bottom:1px solid var(--border);background:var(--panel);backdrop-filter:blur(10px)}
+.cutoff-selector select.inp{padding:7px 10px}
+.cutoff-pill{padding:4px 14px;border-radius:20px;font-size:12px;font-weight:700;border:1px solid var(--border);background:var(--panel);cursor:pointer;transition:var(--transition)}
+.cutoff-pill.active{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;border:none;box-shadow:0 4px 12px color-mix(in srgb,var(--accent) 40%,transparent)}
+.attach-area{border:2px dashed color-mix(in srgb,var(--accent) 40%,var(--border));border-radius:12px;padding:8px 14px;text-align:center;cursor:pointer;transition:var(--transition);background:var(--panel)}
+.attach-area:hover{border-color:var(--accent);background:var(--hover)}
+.attach-chip.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+.attach-chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.email-chips{display:flex;flex-wrap:wrap;gap:6px;align-items:center;background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:6px 8px;cursor:text}
+.email-chips input{background:none;border:none;outline:none;font-size:12.5px;min-width:160px;color:var(--text)}
+.step-bar{display:flex;align-items:center;gap:0;margin-bottom:20px}
+.step{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--muted);font-weight:600}
+.step .dot{width:28px;height:28px;border-radius:50%;border:2px solid var(--border);display:grid;place-items:center;font-size:13px;font-weight:800;background:var(--panel)}
+.step.done .dot{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;border:none}
+.step.active .dot{border-color:var(--accent);color:var(--accent)}
+.step-line{flex:1;height:2px;background:var(--border);margin:0 8px}
+.step-line.done{background:linear-gradient(90deg,var(--accent),var(--accent2))}
+.badge-role{display:inline-flex;align-items:center;gap:6px;background:var(--panel);border:1px solid var(--border);border-radius:20px;padding:4px 11px;font-size:12px;font-weight:600}
+.cutoff-info-box{background:color-mix(in srgb,var(--accent) 12%,var(--panel));border:1px solid color-mix(in srgb,var(--accent) 30%,var(--border));border-radius:12px;padding:12px 15px;font-size:12.5px;margin-bottom:12px}
+.cutoff-info-box b{color:var(--accent)}
+/* OT table */
+.ot-table{width:100%;border-collapse:collapse;font-size:11.5px;white-space:nowrap}
+.ot-table thead th{background:color-mix(in srgb,var(--accent) 18%,var(--grid-head));padding:5px 7px;text-align:center;font-weight:700;color:var(--muted);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:2}
+.ot-table thead th:first-child{text-align:left;min-width:110px}
+.ot-table tbody td{padding:2px 4px;border-bottom:1px solid var(--border);text-align:center;vertical-align:middle}
+.ot-table tbody td:first-child{text-align:left;padding-left:10px}
+.ot-table tbody tr.weekend td{opacity:.45}
+.ot-table input[type=time]{background:var(--panel);border:1px solid var(--border);border-radius:7px;padding:4px 8px;font-size:12px;color:var(--text);outline:none;width:108px}
+.ot-table input[type=time]:focus{border-color:var(--accent)}
+.ot-table select.ot-type{background:var(--panel);border:1px solid var(--border);border-radius:7px;padding:4px 8px;font-size:11.5px;color:var(--text);outline:none;width:280px}
+.ot-table select.ot-type:focus{border-color:var(--accent)}
+.ot-table td.ot-hrs{font-weight:700;color:var(--accent);font-size:12px}
+.ot-table td.ot-val{font-weight:700;color:var(--text);font-size:12px}
+/* chart */
+.chartbox{position:relative;height:280px}
+canvas{max-width:100%}
+/* load overlay */
+.load-overlay{position:fixed;inset:0;z-index:9999;display:none;align-items:center;justify-content:center;
+  background:radial-gradient(800px 600px at 30% 20%,color-mix(in srgb,var(--accent) 25%,transparent),transparent 60%),linear-gradient(160deg,var(--bg),var(--bg2))}
+.load-overlay.show{display:flex}
+.load-card{display:flex;flex-direction:column;align-items:center;gap:16px;padding:34px 40px}
+.load-logo{width:58px;height:58px;border-radius:16px;background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:28px;box-shadow:0 10px 30px color-mix(in srgb,var(--accent) 40%,transparent)}
+.load-spin{width:34px;height:34px;border:4px solid color-mix(in srgb,var(--accent) 25%,transparent);border-top-color:var(--accent);border-radius:50%;animation:loadspin .8s linear infinite}
+@keyframes loadspin{to{transform:rotate(360deg)}}
+.load-msg{font-size:14px;font-weight:600;color:var(--text)}
+.load-track{width:240px;height:8px;background:color-mix(in srgb,var(--accent) 15%,transparent);border-radius:999px;overflow:hidden}
+.load-bar{height:100%;width:0;background:linear-gradient(90deg,var(--accent),var(--accent2));border-radius:999px;transition:width .2s ease}
+/* empOnly / hrOnly visibility */
+body.roleEmp .hrOnly{display:none!important}
+body.roleHR .empOnly{display:none!important}
+@media print{
+  .sidebar,.topbar,.submit-bar,.toast,.overlay,.no-print{display:none!important}
+  .main,.content{overflow:visible!important;height:auto!important}
+  body,.app{background:#fff!important}
+}
+</style>
+</head>
+<body>
+
+<!-- Load overlay -->
+<div class="load-overlay show" id="loadOverlay">
+  <div class="load-card">
+    <div class="load-logo">⏱</div>
+    <div class="load-spin"></div>
+    <div class="load-msg" id="loadMsg">Loading TK Dashboard…</div>
+    <div class="load-track"><div class="load-bar" id="loadBar"></div></div>
+  </div>
+</div>
+
+<div class="app">
+  <!-- Mobile off-canvas backdrop — click to close the sidebar drawer -->
+  <div class="mobile-backdrop" id="mobileBackdrop" onclick="closeMobileNav()"></div>
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="logo"><svg viewBox="0 0 24 24" width="26" height="26" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div>
+      <div><b>TK Dashboard</b><br><small>Timekeeping System</small></div>
+    </div>
+    <nav class="nav" id="nav">
+      <!-- HR nav -->
+      <div class="nav-group hrOnly">Overview</div>
+      <a data-view="hr-dashboard" class="hrOnly active"><span class="ic"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg></span><span class="nav-label">Dashboard</span></a>
+      <a data-view="hr-records" class="hrOnly"><span class="ic"><svg viewBox="0 0 24 24"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg></span><span class="nav-label">All Records</span><span class="navbadge" id="recBadge" style="display:none"></span></a>
+      <div class="nav-group hrOnly">Management</div>
+      <a data-view="hr-employees" class="hrOnly"><span class="ic"><svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></span><span class="nav-label">Employees</span></a>
+      <a data-view="hr-reports" class="hrOnly"><span class="ic"><svg viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg></span><span class="nav-label">Reports</span></a>
+      <a data-view="hr-audit" class="hrOnly"><span class="ic"><svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></span><span class="nav-label">Audit Log</span></a>
+      <!-- Employee nav -->
+      <div class="nav-group empOnly">Timekeeping</div>
+      <a data-view="emp-tk" class="empOnly active"><span class="ic"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></span><span class="nav-label">My Timesheet</span></a>
+      <a data-view="emp-history" class="empOnly"><span class="ic"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></span><span class="nav-label">History</span></a>
+      <!-- Shared -->
+      <div class="nav-group">System</div>
+      <a data-view="settings"><span class="ic"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></span><span class="nav-label">Settings</span></a>
+    </nav>
+    <div style="flex:1"></div>
+    <div id="userMenu">
+      <button class="userchip" id="userChip">
+        <span class="uava" id="uAva">?</span>
+        <span class="label" id="uName">User</span>
+        <span class="caret" style="margin-left:auto;color:var(--muted)">▴</span>
+      </button>
+      
+    </div>
+  </aside>
+  <div class="userpop" id="userPop">
+        <div class="who" id="uWho">Signed in</div>
+        <a onclick="setView('settings')"><span>⚙</span> Settings</a>
+        <div class="sep"></div>
+        <a id="logoutBtn"><span style="display:inline-flex;align-items:center;width:16px;height:16px"><svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg></span> Sign out</a>
+      </div>
+  <button id="collapseBtn" title="Collapse sidebar">❯</button>
+
+  <!-- MAIN -->
+  <div class="main">
+    <div class="topbar">
+      <button id="mobileMenuBtn" title="Open menu">☰</button>
+      <div><h1 id="viewTitle">Dashboard</h1><div class="sub" id="viewSub"></div></div>
+      <div class="clock" id="clock"><div class="ck-time" id="ckTime">—</div><div class="ck-date" id="ckDate">—</div></div>
+    </div>
+
+    <div class="content" id="mainContent">
+
+      <!-- =========== HR DASHBOARD =========== -->
+      <section class="view hrOnly" id="v-hr-dashboard">
+        <div class="cards" id="hrDashCards"></div>
+        <div class="grid2">
+          <div class="panel"><h3>📈 Submissions Over Time</h3><div class="hint">Total submissions per cutoff period, last 6 periods</div><div class="chartbox"><canvas id="chartTrend"></canvas></div></div>
+          <div class="panel"><h3>📋 Submission Status</h3><div class="hint">Breakdown of every submission by current status</div><div class="chartbox"><canvas id="chartStatus"></canvas></div></div>
+        </div>
+        <div class="panel" id="attentionPanel">
+          <h3>🔔 Needs Your Attention</h3>
+          <div class="hint">Pending-review submissions, oldest first</div>
+          <div id="attentionList"></div>
+        </div>
+      </section>
+
+      <!-- =========== HR ALL RECORDS =========== -->
+      <section class="view hrOnly" id="v-hr-records">
+        <div class="panel" style="margin-top:0">
+          <div class="row" style="margin-bottom:12px">
+            <select class="inp" id="recFltMonth"><option value="">All Months</option></select>
+            <select class="inp" id="recFltCutoff"><option value="">All Cutoffs</option><option value="A">Cutoff A (25–9)</option><option value="B">Cutoff B (10–24)</option></select>
+            <select class="inp" id="recFltDept"><option value="">All Departments</option></select>
+            <select class="inp" id="recFltStatus" onchange="renderRecords()">
+              <option value="">All Statuses</option>
+              <option value="draft">Draft</option>
+              <option value="submitted">Pending Review</option>
+              <option value="approved">Approved</option>
+              <option value="rejected">Rejected</option>
+              <option value="lapsed">Lapsed</option>
+            </select>
+            <input class="inp" id="recSearch" placeholder="Search employee…" style="min-width:160px"/>
+            <div class="spacer"></div>
+            <button class="btn sm primary" onclick="exportAllExcel()">⬇ Export Excel</button>
+          </div>
+          <div class="tablewrap" style="max-height:66vh">
+            <table><thead><tr>
+              <th>Employee</th><th>ID</th><th>Department</th><th>Cutoff</th><th>Period</th><th>Pay Date</th><th>Submitted</th><th>Total OT</th><th>Status</th><th></th>
+            </tr></thead><tbody id="recBody"></tbody></table>
+          </div>
+          <div style="margin-top:10px;font-size:12px;color:var(--muted)" id="recInfo">0 records</div>
+        </div>
+      </section>
+
+      <!-- =========== HR EMPLOYEES =========== -->
+      <section class="view hrOnly" id="v-hr-employees">
+        <div class="panel" style="margin-top:0">
+          <div class="row" style="margin-bottom:12px">
+            <input class="inp" id="empSearch" placeholder="Search…" style="min-width:180px" oninput="renderEmployees()"/>
+            <div class="spacer"></div>
+            <button class="btn sm primary" onclick="openAddEmployee()">＋ Add Employee</button>
+          </div>
+          <div class="tablewrap" style="max-height:68vh">
+            <table><thead><tr>
+              <th>Name</th><th>Employee ID</th><th>Department</th><th>Position</th><th>Date Hired</th><th>Status</th><th></th>
+            </tr></thead><tbody id="empBody"></tbody></table>
+          </div>
+        </div>
+      </section>
+
+      <!-- =========== HR REPORTS =========== -->
+      <section class="view hrOnly" id="v-hr-reports">
+        <div class="panel" style="margin-top:0">
+          <div class="row no-print" style="margin-bottom:12px">
+            <label style="font-size:12px;color:var(--muted)">From <input class="inp" type="date" id="repFrom" onchange="renderReports()" style="padding:7px 10px"/></label>
+            <label style="font-size:12px;color:var(--muted)">To <input class="inp" type="date" id="repTo" onchange="renderReports()" style="padding:7px 10px"/></label>
+            <select class="inp" id="repDept" onchange="renderReports()"><option value="">All Departments</option></select>
+            <div class="spacer"></div>
+            <button class="btn sm" onclick="printReport()">🖨 Print</button>
+            <button class="btn sm primary" onclick="exportReportExcel()">⬇ Export Excel</button>
+          </div>
+          <div class="tablewrap" style="max-height:66vh">
+            <table><thead><tr>
+              <th>Employee</th><th>Department</th><th>Total Hours</th><th>Days Present</th><th>Days Absent</th>
+            </tr></thead><tbody id="repBody"></tbody></table>
+          </div>
+        </div>
+      </section>
+
+      <!-- =========== HR AUDIT LOG =========== -->
+      <section class="view hrOnly" id="v-hr-audit">
+        <div class="panel" style="margin-top:0">
+          <div class="row no-print" style="margin-bottom:12px">
+            <input class="inp" id="auditSearch" placeholder="Search actor or action…" style="min-width:220px" oninput="renderAudit()"/>
+            <div class="spacer"></div>
+            <span style="font-size:12px;color:var(--muted)" id="auditInfo"></span>
+          </div>
+          <div class="tablewrap" style="max-height:68vh">
+            <table><thead><tr>
+              <th>Timestamp</th><th>Actor</th><th>Action</th><th>Detail</th>
+            </tr></thead><tbody id="auditBody"></tbody></table>
+          </div>
+        </div>
+      </section>
+
+      <!-- =========== HR TK PREVIEW (full-page read-only record review) =========== -->
+      <section class="view hrOnly" id="v-hr-tk-preview" style="padding:0">
+        <div class="cutoff-selector">
+          <span id="hrPrevBadge" class="cutoff-pill active" style="cursor:default"></span>
+          <span id="hrPrevMonthLabel" style="font-size:13px;font-weight:700;color:var(--text);padding:4px 8px;background:var(--panel);border:1px solid var(--border);border-radius:10px"></span>
+          <div style="width:1px;height:18px;background:var(--border);margin:0 4px"></div>
+          <span id="hrPrevPayLabel" style="font-size:12px;color:var(--muted)"></span>
+          <div class="spacer"></div>
+          <span id="hrPrevEmpLabel" style="font-size:12px;font-weight:700;color:var(--text);margin-right:8px"></span>
+          <span id="hrPrevStatusTag" class="tag" style="font-size:11px"></span>
+        </div>
+
+        <div class="submit-bar" style="padding:8px 18px;border-top:none;border-bottom:1px solid var(--border)">
+          <button class="btn" onclick="setView('hr-records')">← Back to All Records</button>
+          <div class="spacer"></div>
+          <button class="btn" onclick="downloadRecordExcel()" style="min-width:130px">⬇ Download Excel</button>
+          <button class="btn" id="hrPrevRejectBtn" onclick="rejectSubmission(viewRecord.id);setView('hr-records')" style="min-width:130px;color:#f87171;display:none">✕ Reject</button>
+          <button class="btn primary" id="hrPrevApproveBtn" onclick="approveSubmission(viewRecord.id);setView('hr-records')" style="min-width:130px;display:none">✔ Approve</button>
+        </div>
+
+        <!-- Split layout: 60% grid + 40% "attachments" panel, matching My Timesheet -->
+        <div id="hrPrevScrollArea" style="display:flex;flex:1;overflow:hidden;min-height:0;position:relative">
+
+          <button id="hrPrevCollapseBtn" title="Hide attachments panel" onclick="toggleHrPrevPanel()">❯</button>
+
+          <!-- LEFT 60%: Attendance + OT tables -->
+          <div id="hrPrevLeftPanel" style="flex:0 0 60%;display:flex;flex-direction:column;overflow:hidden;border-right:2px solid var(--border)">
+            <div style="overflow-y:auto;flex:1">
+              <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;padding:6px 10px;border-bottom:1px solid var(--border)">Attendance</div>
+              <div class="tablewrap" style="border-radius:0;border:none;border-bottom:1px solid var(--border)">
+                <table class="tk-table">
+                  <thead><tr><th>Date</th><th>Day</th><th>Time In</th><th>Time Out</th><th>Total Hours</th><th>Remarks</th></tr></thead>
+                  <tbody id="hrPrevBody"></tbody>
+                </table>
+              </div>
+
+              <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;padding:6px 10px;border-bottom:1px solid var(--border);background:var(--panel)">Overtime / Additional Pay</div>
+              <div class="tablewrap" style="border-radius:0;border:none">
+                <table class="ot-table">
+                  <thead><tr><th style="text-align:left">Date</th><th>Day</th><th>OT From</th><th>OT To</th><th>Type / Rate</th><th>OT Hours</th><th>OT Value (hrs)</th></tr></thead>
+                  <tbody id="hrPrevOtBody"></tbody>
+                </table>
+              </div>
+              <div style="display:flex;align-items:center;gap:12px;padding:6px 10px;font-size:12px;color:var(--muted)">
+                <span>Total OT Hours: <b id="hrPrevOtTotal" style="color:var(--accent)">0h 0m</b></span>
+                <span style="font-size:11px"><span style="color:#f59e0b">⚠</span> = no attendance logged that day</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- RIGHT 40%: Attachments — honest empty state, since attachments
+               were never persisted to submissions (see Data model), not a
+               faked preview panel with nothing real behind it. -->
+          <div id="hrPrevRightPanel" style="flex:0 0 40%;display:flex;flex-direction:column;overflow:hidden;background:var(--panel)">
+            <div style="padding:8px 12px;border-bottom:1px solid var(--border);flex-shrink:0">
+              <span style="font-size:11.5px;font-weight:700;color:var(--muted)">📎 Attachments</span>
+            </div>
+            <div style="flex:1;display:flex;align-items:center;justify-content:center;overflow:auto;padding:24px;text-align:center">
+              <div style="color:var(--muted);font-size:12px;max-width:220px">
+                <div style="font-size:32px;opacity:.35;margin-bottom:8px">📎</div>
+                Attachments aren't saved with submissions in this version — nothing to show here yet.
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- =========== EMPLOYEE DASHBOARD (within TK view top) =========== -->
+      <!-- emp-tk is the combined timesheet view; header info shown above the selector -->
+
+      <!-- =========== EMPLOYEE TIMESHEET =========== -->
+      <section class="view empOnly" id="v-emp-tk" style="padding:0">
+        <!-- Cutoff selector bar — auto-detected from today's date, not user-selectable -->
+        <div class="cutoff-selector">
+          <span id="cutoffBadge" class="cutoff-pill active" style="cursor:default">Cutoff A &nbsp;25–9</span>
+          <span id="cutoffMonthLabel" style="font-size:13px;font-weight:700;color:var(--text);padding:4px 8px;background:var(--panel);border:1px solid var(--border);border-radius:10px"></span>
+          <div style="width:1px;height:18px;background:var(--border);margin:0 4px"></div>
+          <span id="cutoffPayLabel" style="font-size:12px;color:var(--muted)"></span>
+          <div class="spacer"></div>
+          <span id="tkStatusBadge" class="tag notstarted" style="font-size:11px">Not Started</span>
+        </div>
+
+        <!-- History read-only banner (hidden by default) -->
+        <div id="histBanner" style="display:none;align-items:center;gap:10px;padding:6px 18px;background:var(--hist-banner-bg,#fef3c7);border-bottom:1px solid #f59e0b;font-size:12px;font-weight:600;color:#92400e">
+          <span>👁</span>
+          <span id="histBannerText">Viewing history record</span>
+          <div class="spacer"></div>
+          <button class="btn sm" id="histBannerBackBtn" onclick="exitHistoryView()" style="background:#f59e0b;color:#fff;border:none;min-width:130px">← Back to Current</button>
+        </div>
+
+        <!-- Action bar -->
+        <div class="submit-bar" style="padding:8px 18px;border-top:none;border-bottom:1px solid var(--border)">
+          <div class="spacer"></div>
+          <button class="btn" onclick="downloadExcel()" style="min-width:130px">⬇ Download Excel</button>
+          <button class="btn" id="tkDiscardBtn" onclick="discardDraft()" style="min-width:130px;color:#f87171;display:none">🗑 Discard</button>
+          <button class="btn" id="tkSaveDraftBtn" onclick="saveDraft()" style="min-width:130px">💾 Save Draft</button>
+          <button class="btn primary" id="tkSubmitBtn" onclick="submitCutoff()" style="min-width:130px">✅ Submit</button>
+        </div>
+
+        <!-- Split layout: 60% grid + 40% file preview -->
+        <div id="tkScrollArea" style="display:flex;flex:1;overflow:hidden;min-height:0;position:relative">
+
+          <!-- Collapse/expand the attachments panel -->
+          <button id="previewCollapseBtn" title="Hide attachments panel" onclick="toggleFilePreviewPanel()">❯</button>
+
+          <!-- LEFT 60%: Attendance + OT tables -->
+          <div id="tkLeftPanel" style="flex:0 0 60%;display:flex;flex-direction:column;overflow:hidden;border-right:2px solid var(--border)">
+            <div style="overflow-y:auto;flex:1">
+              <div class="cutoff-info-box" id="cutoffInfoBox" style="display:none"></div>
+              <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;padding:6px 10px;border-bottom:1px solid var(--border)">Attendance</div>
+              <div class="tablewrap" id="tkTableWrap" style="border-radius:0;border:none;border-bottom:1px solid var(--border)">
+                <table class="tk-table">
+                  <thead><tr>
+                    <th>Date</th><th>Day</th>
+                    <th data-col-time>Time In</th>
+                    <th data-col-time>Time Out</th>
+                    <th>Total Hours</th>
+                    <th>Remarks</th>
+                  </tr></thead>
+                  <tbody id="tkBody"></tbody>
+                </table>
+              </div>
+
+              <!-- Overtime table -->
+              <div style="margin-top:0">
+                <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;padding:6px 10px;border-bottom:1px solid var(--border);background:var(--panel)">Overtime / Additional Pay</div>
+                <div class="tablewrap" style="border-radius:0;border:none">
+                  <table class="ot-table">
+                <thead><tr>
+                  <th style="text-align:left">Date</th>
+                  <th>Day</th>
+                  <th>OT From</th>
+                  <th>OT To</th>
+                  <th>Type / Rate</th>
+                  <th>OT Hours</th>
+                  <th>OT Value (hrs)</th>
+                </tr></thead>
+                <tbody id="otBody"></tbody>
+              </table>
+                </div><!-- end OT tablewrap -->
+              </div><!-- end OT section -->
+              <div style="display:flex;align-items:center;gap:12px;padding:6px 10px;font-size:12px;color:var(--muted)">
+                <span>Total OT Hours: <b id="otTotalHrs" style="color:var(--accent)">0h 0m</b></span>
+                <span style="font-size:11px"><span style="color:#f59e0b">⚠</span> = no attendance logged that day</span>
+              </div>
+            </div><!-- end scroll -->
+          </div><!-- end left 60% -->
+
+          <!-- RIGHT 40%: File preview panel -->
+          <div id="tkPreviewPanel" style="flex:0 0 40%;display:flex;flex-direction:column;overflow:hidden;background:var(--panel)">
+            <!-- Header: file chips -->
+            <div style="padding:8px 12px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px;flex-shrink:0;flex-wrap:wrap">
+              <span style="font-size:11.5px;font-weight:700;color:var(--muted)">📎 Attachments</span>
+              <div id="attachChips" style="display:flex;gap:4px;flex-wrap:wrap;flex:1"></div>
+              <button class="btn" style="font-size:11px;padding:3px 9px" onclick="document.getElementById('attachInput').click()">+ Add</button>
+              <input type="file" id="attachInput" multiple style="display:none" onchange="addAttachments(this.files)" accept="image/*,.pdf,.doc,.docx,.xls,.xlsx"/>
+            </div>
+            <!-- Preview body -->
+            <div id="filePreviewBody" style="flex:1;display:flex;align-items:center;justify-content:center;overflow:auto;position:relative;background:var(--panel)">
+              <div id="filePreviewPlaceholder" style="display:flex;flex-direction:column;align-items:center;gap:10px;color:var(--muted);padding:24px;text-align:center">
+                <div style="font-size:40px;opacity:.4">📎</div>
+                <div id="attachArea" onclick="document.getElementById('attachInput').click()" ondragover="event.preventDefault()" ondrop="handleDrop(event)"
+                  style="border:2px dashed color-mix(in srgb,var(--accent) 40%,var(--border));border-radius:12px;padding:20px 28px;cursor:pointer;transition:var(--transition)">
+                  <p style="font-size:12px;color:var(--muted)">Click or drag &amp; drop<br><span style="font-size:11px;opacity:.7">JPG, PNG, PDF, DOCX, XLSX</span></p>
+                </div>
+              </div>
+              <img id="filePreviewImg" style="display:none;max-width:100%;max-height:100%;object-fit:contain" />
+              <iframe id="filePreviewFrame" style="display:none;width:100%;height:100%;border:none"></iframe>
+              <!-- Zoom controls -->
+              <div id="zoomBar" style="display:none;position:absolute;bottom:10px;right:10px;display:none;gap:4px;background:var(--panel-solid);border:1px solid var(--border);border-radius:8px;padding:3px 6px">
+                <button onclick="zoomPreview(-0.2)" style="border:none;background:none;font-size:16px;cursor:pointer;color:var(--text);width:24px;height:24px;border-radius:4px">−</button>
+                <button onclick="zoomPreview(0)" style="border:none;background:none;font-size:13px;cursor:pointer;color:var(--text);width:24px;height:24px;border-radius:4px">⊡</button>
+                <button onclick="zoomPreview(0.2)" style="border:none;background:none;font-size:16px;cursor:pointer;color:var(--text);width:24px;height:24px;border-radius:4px">+</button>
+              </div>
+            </div>
+          </div><!-- end right 40% -->
+
+        </div><!-- end tkScrollArea split -->
+      </section>
+
+      <!-- =========== EMPLOYEE HISTORY =========== -->
+      <section class="view empOnly" id="v-emp-history">
+        <div class="panel" style="margin-top:0">
+          <h3 style="margin-bottom:12px">🕐 My Submission History</h3>
+          <div class="tablewrap">
+            <table><thead><tr>
+              <th>Cutoff</th><th>Period</th><th>Pay Date</th><th>Submitted On</th><th>Status</th><th></th>
+            </tr></thead><tbody id="histBody"></tbody></table>
+          </div>
+          <div id="histEmpty" class="empty" style="display:none"><div class="big">📂</div>No submissions yet</div>
+        </div>
+      </section>
+
+      <!-- =========== SETTINGS =========== -->
+      <section class="view" id="v-settings">
+        <!-- Appearance -->
+        <div class="panel" style="margin-top:0">
+          <h3>🎨 Appearance</h3>
+          <div class="hint">Theme and display mode — saved automatically.</div>
+          <div class="row" style="margin:8px 0 4px;flex-wrap:wrap;gap:8px;align-items:center">
+            <span style="font-size:12px;color:var(--muted)">Mode:</span>
+            <div class="toggle" id="modeToggle">
+              <button data-mode="light" title="Light">☀️</button>
+              <button data-mode="dark" class="on" title="Dark">🌙</button>
+              <button data-mode="oled" title="OLED Black">⬛</button>
+            </div>
+            <div class="swatches" id="swatches" style="margin-top:0;flex:1;justify-content:flex-end"></div>
+          </div>
+        </div>
+
+        <!-- Row 1: My Profile (50%) + Change Password (50%) -->
+        <div class="empOnly" style="display:flex;gap:0;align-items:stretch">
+          <!-- My Profile -->
+          <div class="panel" id="empProfilePanel" style="flex:1;margin-right:8px">
+            <h3>👤 My Profile</h3>
+            <div class="hint">Update your personal details. Saves to the backend automatically.</div>
+            <div class="formgrid" style="margin-top:10px">
+              <label>Full Name<input class="inp" id="profName" placeholder="Your full name" style="max-width:260px"/></label>
+              <label>Work Email<input class="inp" id="profEmail" type="email" placeholder="you@company.com" style="max-width:260px"/></label>
+              <label>Department<input class="inp" id="profDept" placeholder="Department" style="max-width:260px"/></label>
+              <label>Position<input class="inp" id="profPos" placeholder="Your position" style="max-width:260px"/></label>
+              <label>Date Hired<input class="inp" type="date" id="profHired" style="max-width:260px"/></label>
+              <div></div>
+            </div>
+            <div class="row" style="margin-top:12px">
+              <button class="btn sm primary" onclick="saveMyProfile()">💾 Save Profile</button>
+            </div>
+          </div>
+          <!-- Change Password -->
+          <div class="panel" style="flex:1">
+            <h3>🔑 Change Password</h3>
+            <div style="display:flex;flex-direction:column;gap:12px;margin-top:10px">
+              <label class="fld">Current Password<input class="inp" type="password" id="pwCurrent" placeholder="Current password"/></label>
+              <label class="fld">New Password<input class="inp" type="password" id="pwNew" placeholder="New password"/></label>
+              <label class="fld">Confirm New Password<input class="inp" type="password" id="pwConfirm" placeholder="Repeat new password"/></label>
+            </div>
+            <div class="row" style="margin-top:12px">
+              <button class="btn sm primary" onclick="changePassword()">🔐 Update Password</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Row 2: Profile Photo (50%) + Default Schedule (50%) -->
+        <div class="empOnly" style="display:flex;gap:0;align-items:stretch">
+          <!-- Profile Photo -->
+          <div class="panel" style="flex:1;margin-right:8px">
+            <h3>🖼 Profile Photo</h3>
+            <div class="hint">Shown in your account menu.</div>
+            <div class="row" style="margin-top:10px">
+              <span class="uava" id="settingsAvaPreview" style="width:56px;height:56px;font-size:18px"></span>
+              <input class="inp" type="file" accept="image/*" onchange="updateProfilePhoto(this)" style="max-width:260px"/>
+            </div>
+          </div>
+          <!-- Default Schedule -->
+          <div class="panel" id="defaultSchedPanel" style="flex:1">
+            <h3>⏰ Default Schedule</h3>
+            <div class="hint">Auto-fills weekday rows on My Timesheet.</div>
+            <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end;margin-top:10px">
+              <label style="display:flex;flex-direction:column;gap:4px;font-size:11px;color:var(--muted)">Time In<input class="inp" type="time" id="schedInAM" style="width:130px"/></label>
+              <label style="display:flex;flex-direction:column;gap:4px;font-size:11px;color:var(--muted)">Time Out<input class="inp" type="time" id="schedOutPM" style="width:130px"/></label>
+              <button class="btn sm" onclick="clearDefaultSchedule()" title="Clear">🗑</button>
+              <button class="btn sm primary" onclick="saveDefaultSchedule()">💾 Save</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Backend (Google Apps Script + Sheets) -->
+        <div class="panel hrOnly">
+          <h3>🔌 Backend</h3>
+          <div class="hint">Connect the Google Apps Script Web App that stores users, submissions and settings — the app's backend. All calls run directly from the browser, no server required.</div>
+          <div class="formgrid" style="margin-top:10px">
+            <label>Backend URL<input class="inp" id="gasUrl" placeholder="https://script.google.com/macros/s/…/exec"/></label>
+            <label>Backend Token
+              <div style="position:relative">
+                <input class="inp" type="password" id="gasToken" placeholder="shared token from Code.gs" style="width:100%;padding-right:42px"/>
+                <button onclick="togglePw('gasToken',this)" type="button" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--muted);cursor:pointer;font-size:16px">👁</button>
+              </div>
+            </label>
+          </div>
+          <div class="row" style="margin-top:14px">
+            <span id="gasStatus" style="font-size:12px;color:var(--muted)">Not connected</span>
+            <div class="spacer"></div>
+            <button class="btn sm primary" onclick="saveBackendConfig()">🔌 Save &amp; Test Connection</button>
+          </div>
+        </div>
+
+        <!-- Company info (HR only) -->
+        <div class="panel hrOnly">
+          <h3>🏢 Company Information</h3>
+          <div class="formgrid" style="margin-top:10px">
+            <label>Company Name<input class="inp" id="compName" placeholder="Your Company, Inc."/></label>
+            <label>Department<input class="inp" id="compDept" placeholder="Human Resources"/></label>
+            <label style="grid-column:1/-1">Address<input class="inp" id="compAddress" placeholder="123 Main St, City, Country"/></label>
+            <label>Checked by (HR Admin) — printed on the Excel<input class="inp" id="compCheckedBy" placeholder="Full name"/></label>
+            <label>Verified by (HR Director) — printed on the Excel<input class="inp" id="compVerifiedBy" placeholder="Full name"/></label>
+            <label style="grid-column:1/-1">Logo (used on Excel export headers — PNG, JPEG or GIF only)
+              <div class="row" style="margin-top:6px">
+                <img id="compLogoPreview" style="display:none;max-height:44px;max-width:120px;border-radius:6px;border:1px solid var(--border)"/>
+                <input class="inp" type="file" accept="image/png,image/jpeg,image/gif" onchange="companyLogoSelected(this)" style="max-width:260px"/>
+              </div>
+            </label>
+          </div>
+          <div class="row" style="margin-top:12px">
+            <div class="spacer"></div>
+            <button class="btn sm primary" onclick="saveCompany()">💾 Save</button>
+          </div>
+        </div>
+
+        <!-- Change password moved to 50/50 row above alongside My Profile -->
+      </section>
+
+    </div><!-- /content -->
+
+    <!-- Employee TK submit bar is inside its section, not here -->
+
+  </div><!-- /main -->
+</div><!-- /app -->
+
+<!-- ======== EDIT EMPLOYEE MODAL ======== -->
+<div class="overlay" id="editEmpOverlay">
+  <div class="modal">
+    <h3>✏️ Edit Employee</h3>
+    <div class="sub" id="editEmpSub">Update employee details</div>
+    <div class="formgrid">
+      <div class="sectionlabel">Basic Info</div>
+      <label>Full Name<input class="inp" id="editEmpName" placeholder="Juan dela Cruz"/></label>
+      <label>Employee ID<input class="inp" id="editEmpId" disabled style="opacity:.5"/></label>
+      <label>Department<input class="inp" id="editEmpDept" placeholder="Department"/></label>
+      <label>Position<input class="inp" id="editEmpPos" placeholder="Position"/></label>
+      <label>Date Hired<input class="inp" type="date" id="editEmpHired"/></label>
+      <label>Work Email<input class="inp" id="editEmpEmail" type="email" placeholder="emp@company.com"/></label>
+      <div class="sectionlabel">Reset Password (optional)</div>
+      <label>New Temp Password<input class="inp" id="editEmpPw" placeholder="Leave blank to keep current"/></label>
+      <div></div>
+    </div>
+    <div id="editPwReveal" style="display:none;background:color-mix(in srgb,var(--accent) 12%,var(--panel));border:1px solid color-mix(in srgb,var(--accent) 30%,var(--border));border-radius:12px;padding:14px;margin-top:12px">
+      <div style="font-size:12px;color:var(--muted);margin-bottom:8px;font-weight:600">🔑 Password reset — share this with the employee:</div>
+      <div style="font-size:13px"><b>Employee ID:</b> <span id="editRevealId" style="color:var(--accent)"></span></div>
+      <div style="font-size:13px;margin-top:4px"><b>Temp Password:</b> <span id="editRevealPw" style="color:var(--accent)"></span></div>
+      <div style="font-size:11px;color:var(--muted2);margin-top:8px">Employee will be prompted to change it on next login.</div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn" onclick="closeModal('editEmpOverlay')">Cancel</button>
+      <button class="btn primary" id="saveEditEmpBtn" onclick="saveEditEmployee()">💾 Save Changes</button>
+    </div>
+  </div>
+</div>
+
+<!-- ======== ADD EMPLOYEE MODAL ======== -->
+<div class="overlay" id="addEmpOverlay">
+  <div class="modal">
+    <h3>➕ Add New Employee</h3>
+    <div class="sub">HR will create temporary credentials. Employee must complete profile on first login.</div>
+    <div class="formgrid">
+      <div class="sectionlabel">Basic Info</div>
+      <label>Full Name<input class="inp" id="newEmpName" placeholder="Juan dela Cruz"/></label>
+      <label>Employee ID<input class="inp" id="newEmpId" placeholder="EMP-005"/></label>
+      <label>Department<input class="inp" id="newEmpDept" placeholder="Operations"/></label>
+      <label>Position<input class="inp" id="newEmpPos" placeholder="Staff"/></label>
+      <label>Date Hired<input class="inp" type="date" id="newEmpHired"/></label>
+      <label>Work Email<input class="inp" id="newEmpEmail" placeholder="emp@company.com" type="email"/></label>
+      <div class="sectionlabel">Temporary Credentials</div>
+      <label>Temp Password<input class="inp" id="newEmpPw" placeholder="Auto-generated"/></label>
+      <div></div>
+    </div>
+    <div id="newCredsReveal" style="display:none;background:color-mix(in srgb,var(--accent) 12%,var(--panel));border:1px solid color-mix(in srgb,var(--accent) 30%,var(--border));border-radius:12px;padding:14px;margin-top:12px">
+      <div style="font-size:12px;color:var(--muted);margin-bottom:8px;font-weight:600">✅ Employee created — share these credentials:</div>
+      <div style="font-size:13px"><b>Employee ID:</b> <span id="revealId" style="color:var(--accent)"></span></div>
+      <div style="font-size:13px;margin-top:4px"><b>Temp Password:</b> <span id="revealPw" style="color:var(--accent)"></span></div>
+      <div style="font-size:11px;color:var(--muted2);margin-top:8px">Employee will be prompted to change password on first login.</div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn" onclick="closeModal('addEmpOverlay')">Close</button>
+      <button class="btn primary" id="saveEmpBtn" onclick="saveNewEmployee()">Create Employee</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- ======== FIRST LOGIN FLOW ======== -->
+<div class="overlay" id="firstLoginOverlay">
+  <div class="modal" style="max-width:500px">
+    <div class="step-bar" id="firstStepBar">
+      <div class="step active" id="step1"><div class="dot">1</div> Change Password</div>
+      <div class="step-line" id="stepLine1"></div>
+      <div class="step" id="step2"><div class="dot">2</div> Complete Profile</div>
+    </div>
+    <!-- Step 1 -->
+    <div id="firstStep1">
+      <h3>🔐 Set Your New Password</h3>
+      <div class="sub">Your account requires a password change before you can continue.</div>
+      <div style="display:flex;flex-direction:column;gap:12px;margin-top:14px">
+        <label class="fld">New Password<input class="inp" type="password" id="fl_pw1" placeholder="New password" style="margin-top:4px"/></label>
+        <label class="fld">Confirm Password<input class="inp" type="password" id="fl_pw2" placeholder="Repeat password" style="margin-top:4px"/></label>
+      </div>
+      <div class="err" id="fl_err1" style="color:#ff8080;font-size:12px;margin-top:10px;min-height:16px"></div>
+      <div style="display:flex;justify-content:flex-end;margin-top:16px">
+        <button class="btn primary" onclick="firstLoginStep1()">Next →</button>
+      </div>
+    </div>
+    <!-- Step 2 -->
+    <div id="firstStep2" style="display:none">
+      <h3>👤 Complete Your Profile</h3>
+      <div class="sub">Fill in your personal details to finish setup.</div>
+      <div class="formgrid" style="margin-top:14px">
+        <label>Full Name<input class="inp" id="fl_name" placeholder="Your full name"/></label>
+        <label>Work Email<input class="inp" id="fl_email" type="email" placeholder="you@company.com"/></label>
+        <label>Department<input class="inp" id="fl_dept" placeholder="Department"/></label>
+        <label>Position<input class="inp" id="fl_pos" placeholder="Your position"/></label>
+        <label style="grid-column:1/-1">Profile Photo (optional)
+          <div style="display:flex;align-items:center;gap:12px;margin-top:6px">
+            <img id="flPhotoPreview" style="display:none;width:48px;height:48px;border-radius:50%;object-fit:cover;border:1px solid var(--border)"/>
+            <input class="inp" type="file" accept="image/*" onchange="flPhotoSelected(this)"/>
+          </div>
+        </label>
+      </div>
+      <div class="err" id="fl_err2" style="color:#ff8080;font-size:12px;margin-top:10px;min-height:16px"></div>
+      <div style="display:flex;justify-content:flex-end;margin-top:16px">
+        <button class="btn primary" onclick="firstLoginStep2()">✓ Finish Setup</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ======== LOGIN ======== -->
+<div class="login-overlay show" id="loginOverlay">
+  <div class="login-card">
+    <div class="logo">⏱</div>
+    <h2>TK Dashboard</h2>
+    <p>Sign in to access your timekeeping portal</p>
+    <label>Employee ID</label>
+    <input id="loginId" placeholder="EMP-001 or HR-ADMIN" autocomplete="username" onkeydown="if(event.key==='Enter')doLogin()"/>
+    <label>Password</label>
+    <input type="password" id="loginPass" placeholder="Enter password" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()"/>
+    <div class="err" id="loginErr"></div>
+    <button class="btn primary" onclick="doLogin()" style="width:100%;justify-content:center;margin-top:14px">Sign In</button>
+    <div style="text-align:center;margin-top:10px">
+      <a onclick="toggleForgotPw()" style="font-size:12px;color:var(--accent);cursor:pointer;text-decoration:underline">Forgot password?</a>
+    </div>
+    <div class="note" id="forgotPwNote" style="display:none;text-align:center;background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:10px;margin-top:8px">
+      There's no self-service reset yet — contact your HR Administrator and they can reset your password for you (HR: Employees → Edit → Reset Password).
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<!-- ExcelJS: used only for the templated timesheet downloads (downloadExcel/downloadRecordExcel)
+     because they need to embed the company logo image — SheetJS's free build (above) can't draw
+     images into cells. The flat list exports (exportAllExcel/exportReportExcel) stay on SheetJS,
+     it's lighter and they don't need a logo. -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script>
+/* ============================================================
+   DATA STORE (in-memory; populated from the backend on boot)
+   ============================================================ */
+// Fallback only — used when the backend isn't configured in this browser.
+// Real employee accounts and history live in the Google Sheet behind the
+// Apps Script Web App (see Backend in CLAUDE.md), never here. HR-ADMIN stays
+// so a fresh, unconfigured browser can still log in to go set up the connection.
+let USERS = {
+  'HR-ADMIN':{pw:'admin123',role:'hr',name:'HR Administrator',dept:'Human Resources',pos:'HR Admin',email:'hr@company.com',dateHired:'2020-01-01',firstLogin:false,active:true},
+};
+
+let SUBMISSIONS = [];
+
+let COMPANY = JSON.parse(localStorage.getItem('tk_company')||'{"name":"","dept":"HR","address":"","logo":""}');
+let AUDIT_LOG = [];
+let currentUser = null;
+let currentCutoff = 'A';
+let attachFiles = [];
+let previewScale = 1;
+let _previewToken = 0; // guards against a stale async xlsx render landing after a newer preview request
+
+function toggleFilePreviewPanel(){
+  const area=document.getElementById('tkScrollArea');
+  const btn=document.getElementById('previewCollapseBtn');
+  const left=document.getElementById('tkLeftPanel');
+  const preview=document.getElementById('tkPreviewPanel');
+  const collapsed=area.classList.toggle('previewCollapsed');
+  // Both panels set their layout via inline style="", which beats the
+  // .previewCollapsed CSS rules on specificity — set the inline styles
+  // directly instead of relying on the class alone to do the visual work.
+  preview.style.display=collapsed?'none':'flex';
+  left.style.flex=collapsed?'1 1 100%':'0 0 60%';
+  left.style.borderRight=collapsed?'none':'2px solid var(--border)';
+  btn.textContent=collapsed?'❮':'❯';
+  btn.title=collapsed?'Show attachments panel':'Hide attachments panel';
+  positionPreviewCollapseBtn();
+}
+
+// #collapseBtn (sidebar) is position:fixed, so its top:50% centers on the
+// whole viewport. #previewCollapseBtn is position:absolute inside
+// #tkScrollArea, whose own top edge shifts depending on what's stacked above
+// it (topbar, cutoff badge row, action bar, the history banner) — its own
+// top:50% is centered on a shorter, differently-positioned box, so the two
+// buttons land at different heights. This computes the same viewport-center
+// point in #tkScrollArea's own coordinate space so both buttons line up.
+function positionPreviewCollapseBtn(){
+  const btn=document.getElementById('previewCollapseBtn');
+  const area=document.getElementById('tkScrollArea');
+  if(!btn||!area)return;
+  const rect=area.getBoundingClientRect();
+  btn.style.top=(window.innerHeight/2-rect.top)+'px';
+}
+window.addEventListener('resize',positionPreviewCollapseBtn);
+
+// Same two functions, duplicated for the HR TK Preview screen's own
+// scroll area/panels/button ids — see the comments above for why each part
+// exists (split-boundary toggle, viewport-centered vertical alignment).
+function toggleHrPrevPanel(){
+  const area=document.getElementById('hrPrevScrollArea');
+  const btn=document.getElementById('hrPrevCollapseBtn');
+  const left=document.getElementById('hrPrevLeftPanel');
+  const right=document.getElementById('hrPrevRightPanel');
+  const collapsed=area.classList.toggle('previewCollapsed');
+  right.style.display=collapsed?'none':'flex';
+  left.style.flex=collapsed?'1 1 100%':'0 0 60%';
+  left.style.borderRight=collapsed?'none':'2px solid var(--border)';
+  btn.textContent=collapsed?'❮':'❯';
+  btn.title=collapsed?'Show attachments panel':'Hide attachments panel';
+  positionHrPrevCollapseBtn();
+}
+function positionHrPrevCollapseBtn(){
+  const btn=document.getElementById('hrPrevCollapseBtn');
+  const area=document.getElementById('hrPrevScrollArea');
+  if(!btn||!area)return;
+  const rect=area.getBoundingClientRect();
+  btn.style.top=(window.innerHeight/2-rect.top)+'px';
+}
+window.addEventListener('resize',positionHrPrevCollapseBtn);
+
+function zoomPreview(delta){
+  const img=document.getElementById('filePreviewImg');
+  if(!img||img.style.display==='none')return;
+  if(delta===0){previewScale=1;}else{previewScale=Math.min(5,Math.max(0.2,previewScale+delta));}
+  img.style.transform=`scale(${previewScale})`;
+}
+
+// Mouse wheel zoom on preview
+document.addEventListener('wheel',function(e){
+  const pb=document.getElementById('filePreviewBody');
+  const img=document.getElementById('filePreviewImg');
+  if(!pb||!img||img.style.display==='none')return;
+  if(!pb.contains(e.target))return;
+  e.preventDefault();
+  const delta=e.deltaY<0?0.15:-0.15;
+  previewScale=Math.min(5,Math.max(0.2,previewScale+delta));
+  img.style.transform=`scale(${previewScale})`;
+},{passive:false});
+
+function showFilePreview(file){
+  const myToken=++_previewToken; // if a newer preview starts before this xlsx read finishes, its result is discarded
+  const img=document.getElementById('filePreviewImg');
+  const frame=document.getElementById('filePreviewFrame');
+  const ph=document.getElementById('filePreviewPlaceholder');
+  const zb=document.getElementById('zoomBar');
+  const ext=file.name.split('.').pop().toLowerCase();
+  ph.style.display='none';
+  img.style.display='none';
+  frame.style.display='none';
+  if(zb)zb.style.display='none';
+  // The xlsx branch below injects its own extra <div> into the preview body —
+  // clear it out unconditionally, not just when the NEXT file happens to also
+  // be xlsx, otherwise it lingers behind whatever preview comes after it.
+  const oldXls=document.getElementById('xlsPreviewContainer');
+  if(oldXls)oldXls.remove();
+  if(['jpg','jpeg','png','gif','webp','bmp'].includes(ext)){
+    const url=URL.createObjectURL(file);
+    img.src=url; img.style.display='block'; img.style.transform='scale(1)'; previewScale=1;
+    if(zb)zb.style.display='flex';
+  } else if(ext==='pdf'){
+    const url=URL.createObjectURL(file);
+    frame.src=url; frame.style.display='block';
+  } else if(['xls','xlsx'].includes(ext)){
+    // Render Excel via SheetJS
+    const reader=new FileReader();
+    reader.onload=function(e){
+      if(myToken!==_previewToken)return; // a different attachment was selected while this was reading
+      try{
+        const wb=XLSX.read(e.target.result,{type:'array'});
+        const ws=wb.Sheets[wb.SheetNames[0]];
+        const html=XLSX.utils.sheet_to_html(ws,{header:'',editable:false});
+        const wrap=document.createElement('div');
+        wrap.style.cssText='width:100%;height:100%;overflow:auto;padding:8px;font-size:11px';
+        wrap.innerHTML=`<style>.xlspreview table{border-collapse:collapse;font-size:11px}.xlspreview td,.xlspreview th{border:1px solid var(--border);padding:3px 7px;white-space:nowrap;color:var(--text)}.xlspreview tr:nth-child(even){background:var(--row-alt)}</style><div class="xlspreview">${html}</div>`;
+        frame.style.display='none';
+        ph.style.display='none';
+        // Replace old xls container if exists
+        const old=document.getElementById('xlsPreviewContainer');
+        if(old)old.remove();
+        wrap.id='xlsPreviewContainer';
+        document.getElementById('filePreviewBody').appendChild(wrap);
+      }catch(err){
+        ph.innerHTML=`<div style="font-size:32px">⚠️</div><div style="font-size:12px;color:var(--muted)">Could not parse Excel file</div>`;
+        ph.style.display='flex';
+      }
+    };
+    reader.readAsArrayBuffer(file);
+  } else {
+    ph.style.display='flex';
+    ph.innerHTML=`<div style="font-size:32px">📄</div><div style="font-size:13px;font-weight:700;color:var(--text);margin-top:6px">${file.name}</div><div style="font-size:11px;color:var(--muted);margin-top:4px">${(file.size/1024).toFixed(1)} KB · No preview available</div>`;
+  }
+}
+
+function setActiveChip(name){
+  document.querySelectorAll('.attach-chip').forEach(c=>c.classList.toggle('active',c.dataset.name===name));
+  const f=attachFiles.find(f=>f.name===name);
+  if(f)showFilePreview(f);
+}
+let viewRecord = null;
+let charts = {};
+
+const MONTH_NAMES = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+const DAY_NAMES = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+
+// Month/year for the TK selector — auto-detected from current date, not user-selectable.
+let currentMonth = new Date().getMonth(); // 0-based
+let currentYear  = new Date().getFullYear();
+
+// Escapes text pulled from shared data (backend-sourced USERS/SUBMISSIONS, user input)
+// before it's interpolated into innerHTML template strings, to prevent stored XSS.
+function escapeHtml(str){
+  return String(str??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+const esc = escapeHtml;
+
+/* ============================================================
+   BACKEND — Google Apps Script + Sheets
+   Data lives in a Google Sheet; every read/write goes through a deployed
+   Apps Script Web App (gas-backend/Code.gs). Connection config (URL +
+   shared token) is per-browser, stored in localStorage — see CLAUDE.md.
+   ============================================================ */
+let backendStatus = 'unconfigured'; // unconfigured | connecting | connected | error
+
+function getBackendConfig(){
+  return {
+    url: localStorage.getItem('tk_gas_url')||'',
+    token: localStorage.getItem('tk_gas_token')||'',
+  };
+}
+
+function backendConfigured(){
+  const c = getBackendConfig();
+  return !!(c.url && c.token);
+}
+
+// Raw call — resolves with whatever the backend returns, ok:false included,
+// so callers that expect a legitimate "not ok" response (login with a wrong
+// password) can handle it themselves instead of it being thrown as an error.
+async function gasCallRaw(action, payload){
+  const {url, token} = getBackendConfig();
+  const res = await fetch(url, {
+    method:'POST',
+    // text/plain avoids a CORS preflight the Apps Script Web App can't answer.
+    headers:{'Content-Type':'text/plain;charset=utf-8'},
+    body: JSON.stringify({action, token, ...(payload||{})}),
+  });
+  if(!res.ok) throw new Error(`${action} failed (${res.status})`);
+  return res.json();
+}
+// Throwing call — for every action where ok:false really does mean something
+// went wrong server-side (not a normal "no" answer).
+async function gasCall(action, payload){
+  const data = await gasCallRaw(action, payload);
+  if(!data.ok) throw new Error(data.error||`${action} failed`);
+  return data;
+}
+
+async function saveUsersToBackend(){
+  if(!backendConfigured()) return;
+  try{
+    await gasCall('saveAllUsers', {users:USERS});
+  }catch(e){
+    console.error(e);
+    toast('⚠️ Failed to sync users: '+e.message,'error');
+  }
+}
+
+async function saveSubmissionsToBackend(){
+  if(!backendConfigured()) return;
+  try{
+    await gasCall('saveAllSubmissions', {submissions:SUBMISSIONS});
+  }catch(e){
+    console.error(e);
+    toast('⚠️ Failed to sync submissions: '+e.message,'error');
+  }
+}
+
+async function saveSettingsToBackend(){
+  if(!backendConfigured()) return;
+  try{
+    await gasCall('saveSettings', {settings:COMPANY});
+  }catch(e){
+    console.error(e);
+    toast('⚠️ Failed to sync settings: '+e.message,'error');
+  }
+}
+
+// Appends one audit entry (newest first locally) and schedules a sync — call
+// this at every meaningful state change (auth, employee CRUD, submissions,
+// settings). The actual network write is debounced: sweepExpiredSubmissions()
+// can call this dozens of times in one synchronous loop (one call per expired
+// record), and firing an individual backend request per call serialized on
+// the backend's write lock and timed out under that kind of burst. Batching
+// any calls that land within the same short window into one bulk write fixes
+// that without losing entries — the debounce only delays when it's sent, not
+// whether it's sent.
+let _auditFlushTimer = null;
+function addAudit(action,detail){
+  const entry = {
+    timestamp: new Date().toISOString(),
+    actor: currentUser ? `${currentUser.id} (${currentUser.name})` : 'system',
+    action, detail: detail||''
+  };
+  AUDIT_LOG.unshift(entry);
+  if(AUDIT_LOG.length>500) AUDIT_LOG.length=500; // cap growth locally too
+  if(backendConfigured()){
+    clearTimeout(_auditFlushTimer);
+    _auditFlushTimer = setTimeout(()=>{
+      gasCall('saveAllAuditLog', {entries:AUDIT_LOG}).catch(e=>{
+        console.error(e);
+        toast('⚠️ Failed to sync audit log: '+e.message,'error');
+      });
+    }, 800);
+  }
+  if(document.getElementById('v-hr-audit')?.classList.contains('active')) renderAudit();
+}
+
+function loadBackendUI(){
+  const c = getBackendConfig();
+  const urlEl=document.getElementById('gasUrl'), tokEl=document.getElementById('gasToken');
+  if(!urlEl) return; // settings view not in DOM yet
+  urlEl.value=c.url; tokEl.value=c.token;
+  updateBackendStatusUI(backendStatus);
+}
+
+function updateBackendStatusUI(status){
+  backendStatus = status;
+  const el = document.getElementById('gasStatus');
+  if(!el) return;
+  const map = {
+    unconfigured: ['Not connected','var(--muted)'],
+    connecting: ['Connecting…','var(--muted)'],
+    connected: ['✅ Connected','#10b981'],
+    error: ['❌ Connection failed','#ef4444'],
+  };
+  const [text,color] = map[status]||map.unconfigured;
+  el.textContent = text;
+  el.style.color = color;
+}
+
+// Fetches all four collections and replaces the in-memory state wholesale —
+// shared by both the initial page-load boot and the Settings "Save & Test
+// Connection" button, so there's exactly one place that defines what a
+// successful load actually populates.
+async function loadAllFromBackend(){
+  const [u,s,st,au] = await Promise.all([
+    gasCall('getUsers',{}),
+    gasCall('getSubmissions',{}),
+    gasCall('getSettings',{}),
+    gasCall('getAuditLog',{}),
+  ]);
+  const usersObj={};
+  u.users.forEach(usr=>{ usersObj[usr.empId]=usr; });
+  USERS=usersObj;
+  SUBMISSIONS=s.submissions;
+  COMPANY={name:st.settings.name||'', address:st.settings.address||'', logo:st.settings.logo||'',
+           checkedBy:st.settings.checkedBy||'', verifiedBy:st.settings.verifiedBy||''};
+  AUDIT_LOG=au.entries;
+}
+
+async function saveBackendConfig(){
+  const url=document.getElementById('gasUrl').value.trim();
+  const token=document.getElementById('gasToken').value.trim();
+  if(!url||!token){toast('Backend URL and token are required.','error');return;}
+  localStorage.setItem('tk_gas_url',url);
+  localStorage.setItem('tk_gas_token',token);
+  updateBackendStatusUI('connecting');
+  try{
+    await loadAllFromBackend();
+    if(currentUser && USERS[currentUser.id]) currentUser = {...USERS[currentUser.id], id: currentUser.id};
+    loadCompanyUI(); renderEmployees(); renderRecords(); renderHistory();
+    updateBackendStatusUI('connected');
+    toast('✅ Connected! Data loaded.','success');
+  }catch(e){
+    console.error(e);
+    updateBackendStatusUI('error');
+    toast('❌ Connection failed: '+e.message,'error');
+  }
+}
+
+async function bootLoad(){
+  if(!backendConfigured()){ backendStatus='unconfigured'; return; }
+  backendStatus='connecting';
+  try{
+    await loadAllFromBackend();
+    backendStatus='connected';
+  }catch(e){
+    console.error(e);
+    backendStatus='error';
+    toast('⚠️ Could not reach backend — using local/demo data. '+e.message,'error');
+  }
+}
+
+/* ============================================================
+   AUTH
+   ============================================================ */
+function toggleForgotPw(){
+  const el=document.getElementById('forgotPwNote');
+  el.style.display=el.style.display==='none'?'block':'none';
+}
+
+async function doLogin(){
+  const id = document.getElementById('loginId').value.trim().toUpperCase();
+  const pw = document.getElementById('loginPass').value;
+  document.getElementById('loginErr').textContent = '';
+  let u;
+  if(backendConfigured()){
+    // Server-side login: the password check happens in Code.gs, and the
+    // response never includes pw — this browser only ever sees plaintext
+    // passwords for the one account that's actually signing in, not the
+    // whole roster (unlike the old GitHub version, which fetched every
+    // employee's password into every logged-in browser's memory).
+    try{
+      const res = await gasCallRaw('login', {empId:id, pw});
+      if(!res.ok || !res.user){ document.getElementById('loginErr').textContent = 'Invalid Employee ID or password.'; return; }
+      u = res.user;
+      USERS[id] = u; // keep the local cache in sync for screens that read USERS[currentUser.id]
+    }catch(e){
+      console.error(e);
+      document.getElementById('loginErr').textContent = 'Could not reach backend: '+e.message;
+      return;
+    }
+  } else {
+    u = USERS[id];
+    if(!u || u.pw !== pw){ document.getElementById('loginErr').textContent = 'Invalid Employee ID or password.'; return; }
+  }
+  currentUser = {...u, id};
+  localStorage.setItem('tk_session_uid', id);
+  addAudit('login','Signed in');
+  document.getElementById('loginOverlay').classList.remove('show');
+  if(u.firstLogin){ openFirstLogin(); return; }
+  initApp();
+}
+
+function openFirstLogin(){
+  document.getElementById('firstStep1').style.display='block';
+  document.getElementById('firstStep2').style.display='none';
+  document.getElementById('step1').className='step active';
+  document.getElementById('step2').className='step';
+  document.getElementById('stepLine1').className='step-line';
+  document.getElementById('firstLoginOverlay').classList.add('show');
+}
+
+function firstLoginStep1(){
+  const p1=document.getElementById('fl_pw1').value, p2=document.getElementById('fl_pw2').value;
+  const err=document.getElementById('fl_err1');
+  if(p1.length<6){err.textContent='Password must be at least 6 characters.';return;}
+  if(p1!==p2){err.textContent='Passwords do not match.';return;}
+  USERS[currentUser.id].pw = p1;
+  saveUsersToBackend();
+  addAudit('password_change','Changed own password (first login)');
+  err.textContent='';
+  document.getElementById('firstStep1').style.display='none';
+  document.getElementById('firstStep2').style.display='block';
+  document.getElementById('step1').className='step done';
+  document.getElementById('step2').className='step active';
+  document.getElementById('stepLine1').className='step-line done';
+}
+
+function firstLoginStep2(){
+  const name=document.getElementById('fl_name').value.trim();
+  const email=document.getElementById('fl_email').value.trim();
+  const dept=document.getElementById('fl_dept').value.trim();
+  const pos=document.getElementById('fl_pos').value.trim();
+  const err=document.getElementById('fl_err2');
+  if(!name||!email){err.textContent='Name and email are required.';return;}
+  const photo=USERS[currentUser.id].profilePhoto||null;
+  USERS[currentUser.id] = {...USERS[currentUser.id], name,email,dept,pos,firstLogin:false,profilePhoto:photo};
+  currentUser = {...currentUser,name,email,dept,pos,firstLogin:false,profilePhoto:photo};
+  saveUsersToBackend();
+  addAudit('profile_complete','Completed first-login profile setup');
+  document.getElementById('firstLoginOverlay').classList.remove('show');
+  initApp();
+}
+
+function fileToDataUrl(file){
+  return new Promise((resolve,reject)=>{
+    const reader=new FileReader();
+    reader.onload=()=>resolve(reader.result);
+    reader.onerror=reject;
+    reader.readAsDataURL(file);
+  });
+}
+// Fetches a Drive-hosted image URL and converts it back to a data: URL —
+// used at Excel-export time, since ExcelJS needs raw base64, not a URL.
+async function urlToDataUrl(url){
+  const res = await fetch(url);
+  if(!res.ok) throw new Error('logo fetch failed ('+res.status+')');
+  const blob = await res.blob();
+  return new Promise((resolve,reject)=>{
+    const reader=new FileReader();
+    reader.onload=()=>resolve(reader.result);
+    reader.onerror=reject;
+    reader.readAsDataURL(blob);
+  });
+}
+// Uploads to Drive via the backend when one's configured, so the photo
+// survives page reload and shows up for other browsers/HR too; falls back to
+// an in-memory data URL otherwise — same graceful degradation as the rest of
+// the app when no backend is configured (see USERS fallback near the top).
+async function uploadPhoto(file, kind, empId){
+  const dataUrl = await fileToDataUrl(file);
+  if(!backendConfigured()) return dataUrl;
+  const base64 = dataUrl.split(',')[1];
+  const res = await gasCall('uploadImage', {kind, empId, base64, mimeType:file.type});
+  return res.url;
+}
+
+async function flPhotoSelected(input){
+  const file=input.files&&input.files[0];
+  if(!file)return;
+  try{
+    const url = await uploadPhoto(file, 'profilePhoto', currentUser.id);
+    USERS[currentUser.id].profilePhoto=url;
+    document.getElementById('flPhotoPreview').src=url;
+    document.getElementById('flPhotoPreview').style.display='block';
+  }catch(e){
+    console.error(e);
+    toast('⚠️ Failed to upload photo: '+e.message,'error');
+  }
+}
+
+function logout(){
+  currentUser=null;
+  localStorage.removeItem('tk_session_uid');
+  document.getElementById('loginId').value='';
+  document.getElementById('loginPass').value='';
+  document.getElementById('loginErr').textContent='';
+  document.getElementById('loginOverlay').classList.add('show');
+  document.getElementById('userPop').classList.remove('show');
+  document.body.className=''; // clears loggedIn too
+  setView(''); // blank so nothing is highlighted
+}
+
+function renderAvatar(){
+  if(!currentUser)return;
+  const ini=currentUser.name.split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2);
+  [document.getElementById('uAva'),document.getElementById('settingsAvaPreview')].forEach(el=>{
+    if(!el)return;
+    if(currentUser.profilePhoto) el.innerHTML=`<img class="avatar-photo" src="${currentUser.profilePhoto}" alt=""/>`;
+    else el.textContent=ini;
+  });
+}
+
+async function updateProfilePhoto(input){
+  const file=input.files&&input.files[0];
+  if(!file||!currentUser)return;
+  try{
+    const url = await uploadPhoto(file, 'profilePhoto', currentUser.id);
+    USERS[currentUser.id].profilePhoto=url;
+    currentUser.profilePhoto=url;
+    renderAvatar();
+    addAudit('profile_photo_update','Updated own profile photo');
+    toast('✅ Profile photo updated!','success');
+  }catch(e){
+    console.error(e);
+    toast('⚠️ Failed to upload photo: '+e.message,'error');
+  }
+}
+
+/* ============================================================
+   APP INIT
+   ============================================================ */
+function initApp(){
+  const isHR = currentUser.role === 'hr';
+  document.body.classList.add('loggedIn');
+  document.body.classList.toggle('roleHR', isHR);
+  document.body.classList.toggle('roleEmp', !isHR);
+  // Sidebar starts collapsed (icon-only) by default on every fresh login.
+  document.body.classList.add('collapsed');
+  _syncCollapseArrow();
+
+  // Update user chip
+  renderAvatar();
+  document.getElementById('uName').textContent = currentUser.name;
+  document.getElementById('uWho').textContent = currentUser.id + ' · ' + (isHR?'HR Admin':'Employee');
+
+  // Nav: activate first item for role
+  document.querySelectorAll('.nav a').forEach(a=>a.classList.remove('active'));
+  const firstView = isHR ? 'hr-dashboard' : 'emp-tk';
+  const firstLink = document.querySelector(`[data-view="${firstView}"]`);
+  if(firstLink) firstLink.classList.add('active');
+
+  // No server/cron here, so this is the only place stale drafts/submissions
+  // ever actually get swept — the next time anyone (employee or HR) logs in
+  // after a deadline has passed.
+  sweepExpiredSubmissions();
+
+  // Set current month/year (auto-detected, not user-selectable)
+  const now = new Date();
+  currentMonth = now.getMonth();
+  currentYear  = now.getFullYear();
+  const mlEl = document.getElementById('cutoffMonthLabel');
+  if(mlEl) mlEl.textContent = MONTH_NAMES[currentMonth] + ' ' + currentYear;
+
+  // Load settings UI
+  loadBackendUI();
+  loadCompanyUI();
+  loadProfileUI();
+  loadDefaultScheduleUI();
+  renderSwatches();
+  buildModeToggle();
+  renderEmployees();
+  renderRecords();
+  renderHistory();
+
+  setView(firstView);
+}
+
+/* ============================================================
+   NAVIGATION
+   ============================================================ */
+let currentView = '';
+function setView(v){
+  document.body.classList.toggle('empTkActive', v==='emp-tk');
+  document.body.classList.toggle('hrPreviewActive', v==='hr-tk-preview');
+  currentView = v;
+  document.querySelectorAll('.view').forEach(s=>s.classList.remove('active'));
+  if(v) document.getElementById('v-'+v)?.classList.add('active');
+  document.querySelectorAll('.nav a').forEach(a=>{
+    a.classList.toggle('active', a.dataset.view===v);
+  });
+  const titles = {
+    'hr-dashboard':['Dashboard','Overview of all timekeeping activity'],
+    'hr-records':['All Records','Browse and export all employee timesheets'],
+    'hr-employees':['Employees','Manage employee accounts'],
+    'hr-reports':['Reports','Hours and attendance summary by employee'],
+    'hr-audit':['Audit Log','Who changed what, when'],
+    'hr-tk-preview':['Review Timesheet','Full record view — approve or reject below'],
+    'emp-tk':['My Timesheet','Submit your bimonthly cutoff timesheet'],
+    'emp-history':['History','Your previous submissions'],
+    'settings':['Settings','Appearance, backend connection, and account settings'],
+  };
+  const [t,s] = titles[v]||['',''];
+  document.getElementById('viewTitle').textContent = t;
+  document.getElementById('viewSub').textContent = s;
+  if(v==='hr-dashboard') renderHRDashboard();
+  if(v==='emp-tk') buildTimeTable();
+  if(v==='emp-history') renderHistory();
+  if(v==='hr-records'){ presetRecordsToCurrentCutoff(); renderRecords(); }
+  if(v==='hr-employees') renderEmployees();
+  if(v==='hr-reports') renderReports();
+  if(v==='hr-audit') renderAudit();
+  if(v==='settings'){ loadBackendUI(); loadCompanyUI(); loadProfileUI(); loadDefaultScheduleUI(); }
+  document.getElementById('userPop').classList.remove('show');
+}
+
+document.getElementById('nav').addEventListener('click',e=>{
+  const a = e.target.closest('[data-view]');
+  // Navigating anywhere via the sidebar backs out of "viewing a past record"
+  // mode automatically — otherwise clicking away and back to My Timesheet left
+  // you stuck looking at that historical period, now re-enabled for editing
+  // (buildTimeTable() doesn't know about history-view state on its own).
+  if(a){ exitHistoryView(); setView(a.dataset.view); closeMobileNav(); }
+});
+
+/* ============================================================
+   CLOCK
+   ============================================================ */
+function tickClock(){
+  const now=new Date();
+  document.getElementById('ckTime').textContent=now.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+  document.getElementById('ckDate').textContent=now.toLocaleDateString('en-US',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+}
+setInterval(tickClock,1000);tickClock();
+
+/* ============================================================
+   SIDEBAR COLLAPSE
+   Desktop (>768px): ☰ toggles the icon-only "collapsed" mode.
+   Mobile (<=768px): the sidebar is off-canvas by default; ☰ toggles it
+   open as a drawer over the content, closed by the backdrop or a nav click.
+   ============================================================ */
+function isMobileWidth(){ return window.innerWidth<=768; }
+function closeMobileNav(){ document.body.classList.remove('mobileNavOpen'); }
+// collapseBtn floats on the sidebar's right edge (desktop only)
+const _colBtn = document.getElementById('collapseBtn');
+function _syncCollapseArrow(){
+  _colBtn.textContent = document.body.classList.contains('collapsed') ? '❮' : '❯';
+}
+_colBtn.addEventListener('click',()=>{
+  document.body.classList.toggle('collapsed');
+  _syncCollapseArrow();
+});
+// mobileMenuBtn is in the topbar, only visible on mobile — opens the off-canvas drawer
+document.getElementById('mobileMenuBtn').addEventListener('click',()=>{
+  document.body.classList.toggle('mobileNavOpen');
+});
+// Resizing across the breakpoint shouldn't leave a drawer pre-opened (narrow→wide→
+// narrow without touching ☰) or a stray backdrop showing on desktop.
+window.addEventListener('resize',()=>{ if(!isMobileWidth()) closeMobileNav(); });
+document.getElementById('userChip').addEventListener('click',()=>{
+  const pop=document.getElementById('userPop');
+  const chip=document.getElementById('userChip');
+  const r=chip.getBoundingClientRect();
+  pop.style.left=r.left+'px';
+  pop.style.top=(r.top-8)+'px';
+  pop.style.transform='translateY(-100%)';
+  pop.classList.toggle('show');
+});
+document.addEventListener('click',e=>{
+  if(!e.target.closest('#userMenu')&&!e.target.closest('#userPop'))
+    document.getElementById('userPop').classList.remove('show');
+});
+document.getElementById('logoutBtn').addEventListener('click',logout);
+
+/* ============================================================
+   CUTOFF LOGIC
+   ============================================================ */
+function getMonthIdx(){ return currentMonth; }
+
+// Employees can't pick a cutoff anymore — this decides which one the screen
+// shows, purely from today's real date. The 15th/16th split doesn't line up
+// exactly with the 9th/10th or 24th/25th period boundaries on purpose: it
+// gives someone through the 15th to still finish Cutoff A's timesheet (which
+// covers work through the 9th) before the screen moves on to Cutoff B.
+function getAutoCutoff(){
+  const now=new Date();
+  return { cutoff: now.getDate()<=15 ? 'A' : 'B', month: now.getMonth(), year: now.getFullYear() };
+}
+
+// The hard deadline for a submission still sitting in 'draft'/'submitted'/
+// 'rejected' — the same 15th/last-day boundary the auto-detect above uses.
+// Past this, draft/rejected get deleted and submitted flips to 'lapsed'
+// (see sweepExpiredSubmissions). Returns null for a record with a
+// missing/unrecognized month or year rather than silently computing a
+// garbage date — the delete path below is irreversible, so a record that
+// can't be dated with confidence must never be swept.
+function getSubmissionDeadline(sub){
+  const mi=MONTH_NAMES.indexOf(sub.month), yr=sub.year;
+  if(mi<0 || !Number.isInteger(yr)) return null;
+  const d = sub.cutoff==='A' ? new Date(yr,mi,15,23,59,59) : new Date(yr,mi+1,0,23,59,59);
+  return isNaN(d.getTime()) ? null : d;
+}
+
+// Runs once per login (any user) — there's no server/cron in this app, so
+// "deleted at 11:59:59pm" really means "swept the next time anyone opens the
+// app after that moment." A draft/rejected item past its deadline is the
+// employee's own responsibility to have resolved, so it's deleted outright.
+// A submitted item past its deadline is HR's responsibility — it isn't
+// deleted (the employee did their part on time), it's flipped to 'lapsed':
+// a dead end, no further Approve/Reject possible, kept only as a visible,
+// timestamped record that HR didn't act in time.
+function sweepExpiredSubmissions(){
+  const now=new Date();
+  let changed=false;
+  const toDelete=[];
+  SUBMISSIONS.forEach(s=>{
+    if(!['draft','submitted','rejected'].includes(s.status)) return;
+    const deadline=getSubmissionDeadline(s);
+    if(!deadline) return; // can't confidently date this record — never sweep it
+    if(now<=deadline) return;
+    if(s.status==='submitted'){
+      s.status='lapsed';
+      addAudit('submission_lapsed',`${s.empName} (${s.empId}) — Cutoff ${s.cutoff}, ${s.period} — HR did not act before the deadline`);
+    } else {
+      toDelete.push(s.id);
+      addAudit(s.status==='draft'?'draft_expired':'rejected_expired',`${s.empName} (${s.empId}) — Cutoff ${s.cutoff}, ${s.period} — auto-deleted, unresolved past deadline`);
+    }
+    changed=true;
+  });
+  if(toDelete.length) SUBMISSIONS=SUBMISSIONS.filter(s=>!toDelete.includes(s.id));
+  if(changed) saveSubmissionsToBackend();
+  return changed;
+}
+
+function getCutoffInfo(){
+  const mi = currentMonth, yr = currentYear;
+  const mn = MONTH_NAMES[mi];
+  if(currentCutoff==='A'){
+    const pm=(mi-1+12)%12, py=mi===0?yr-1:yr;
+    const pmn=MONTH_NAMES[pm];
+    return {
+      period:`${pmn} 25 – ${mn} 9, ${yr}`,
+      payDate:`${mn} 15, ${yr}`,
+      desc:`Cutoff A covers the 25th of ${pmn} through the 9th of ${mn}.`
+    };
+  } else {
+    const lastDay=new Date(yr,mi+1,0).getDate();
+    return {
+      period:`${mn} 10 – ${mn} 24, ${yr}`,
+      payDate:`${mn} ${lastDay}, ${yr}`,
+      desc:`Cutoff B covers the 10th through the 24th of ${mn}.`
+    };
+  }
+}
+
+function buildTimeTable(){
+  // Re-sync to today's actual current cutoff every time this runs, EXCEPT
+  // while History has deliberately pointed currentCutoff/month/year at a past
+  // record — that's the one case this must not clobber.
+  if(!window._histViewActive){
+    const auto=getAutoCutoff();
+    currentCutoff=auto.cutoff; currentMonth=auto.month; currentYear=auto.year;
+  }
+  const mi=currentMonth, yr=currentYear;
+  const info = getCutoffInfo();
+
+  // Keep the month label in step with whatever period this call resolved to — it was only
+  // ever set at login and when opening a History record, so "Back to Current" left it stale.
+  const monthLblEl=document.getElementById('cutoffMonthLabel');
+  if(monthLblEl) monthLblEl.textContent = MONTH_NAMES[mi]+' '+yr;
+
+  const badgeEl=document.getElementById('cutoffBadge');
+  if(badgeEl) badgeEl.textContent = currentCutoff==='A' ? 'Cutoff A  25–9' : 'Cutoff B  10–24';
+
+  const existing=findExistingSubmission();
+  const statusLabel={draft:'Draft',submitted:'Pending Review',approved:'Approved',rejected:'Rejected',lapsed:'Lapsed'}[existing?.status]||'Not Started';
+  const statusClass=existing?(existing.status==='submitted'?'pending':existing.status):'notstarted';
+  // status badge
+  const statusBadgeEl=document.getElementById('tkStatusBadge');
+  if(statusBadgeEl){statusBadgeEl.className='tag '+statusClass;statusBadgeEl.textContent=statusLabel;}
+  document.getElementById('cutoffInfoBox').innerHTML=
+    `<div class="row" style="justify-content:space-between"><div><b>Period:</b> ${info.period} &nbsp;·&nbsp; <b>Pay Date:</b> <span style="color:var(--accent)">${info.payDate}</span><br/><span style="color:var(--muted);font-size:11px">${info.desc}</span></div><span class="tag ${statusClass}">${statusLabel}</span></div>`;
+  document.getElementById('cutoffPayLabel').textContent='Pay: '+info.payDate;
+
+  let days=[];
+  if(currentCutoff==='A'){
+    const pm=(mi-1+12)%12,py=mi===0?yr-1:yr,lastPrev=new Date(py,pm+1,0).getDate();
+    for(let d=25;d<=lastPrev;d++) days.push(new Date(py,pm,d));
+    for(let d=1;d<=9;d++) days.push(new Date(yr,mi,d));
+  } else {
+    for(let d=10;d<=24;d++) days.push(new Date(yr,mi,d));
+  }
+
+  // Load default schedule if set by the employee
+  const sched = (currentUser && USERS[currentUser.id]?.defaultSchedule) || {};
+
+  // If a draft/submitted record already exists for this cutoff+month+year,
+  // its saved rows take priority over the default schedule — otherwise
+  // reopening a draft (switching cutoffs and back, or just navigating away
+  // and back) would show a blank grid, and the next Save Draft would
+  // overwrite the real saved data with that blank state.
+  const savedRowMap={};
+  (existing?.rows||[]).forEach(r=>{ if(r.date) savedRowMap[r.date]=r; });
+
+  const tbody=document.getElementById('tkBody');
+  tbody.innerHTML='';
+  days.forEach(dt=>{
+    const dow=dt.getDay();
+    const isWE=(dow===0||dow===6);
+    const dateStr=dt.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+    const key=localDateStr(dt.getFullYear(),dt.getMonth(),dt.getDate());
+    const cls=isWE?'weekend':'';
+    const saved=savedRowMap[key];
+    const inVal  = saved ? saved.in  : (!isWE && sched.inAM  ? sched.inAM  : '');
+    const outVal = saved ? saved.out : (!isWE && sched.outPM ? sched.outPM : '');
+    const rmkVal = saved ? (saved.remarks||'') : '';
+    tbody.insertAdjacentHTML('beforeend',`
+      <tr class="${cls}" data-date="${key}">
+        <td>${dateStr}${isWE?` <span style="font-size:10px;color:var(--accent);opacity:.7">(WE)</span>`:''}</td>
+        <td>${DAY_NAMES[dow]}</td>
+        <td><input type="time" class="tk-in" data-col="in"  ${inVal?`value="${inVal}"`:''}/></td>
+        <td><input type="time" class="tk-in" data-col="out" ${outVal?`value="${outVal}"`:''}/></td>
+        <td class="hrs-cell" data-date="${key}">—</td>
+        <td><input type="text" class="tk-rmk" data-col="rmk" placeholder="—" value="${esc(rmkVal)}" style="background:var(--panel);border:1px solid var(--border);border-radius:6px;padding:3px 6px;font-size:11px;color:var(--text);outline:none;width:100%;min-width:70px"/></td>
+      </tr>`);
+  });
+
+  // Auto-compute hours on time input change, and run once now for pre-filled rows
+  tbody.querySelectorAll('tr').forEach(tr=>{
+    tr.querySelectorAll('.tk-in').forEach(inp=>{
+      inp.addEventListener('change',()=>computeHours(tr));
+    });
+    computeHours(tr); // pre-fill hours if defaults or saved data applied
+  });
+  // Build OT table with same rows, then restore any saved OT entries onto it
+  buildOTTable();
+  restoreOTRows(existing?.otRows||[]);
+
+  // Editable only while there's nothing yet, or it's still a draft/rejected
+  // (rejected gets the same treatment as draft — fix it, resubmit it).
+  // submitted/approved/lapsed are all locked: submitted is out for review,
+  // approved and lapsed are both dead ends. Download Excel always stays
+  // available regardless — exporting a locked record is still legitimate.
+  const editable = !existing || existing.status==='draft' || existing.status==='rejected';
+  document.querySelectorAll('#tkBody input, #otBody input, #otBody select').forEach(el=>el.disabled=!editable);
+  const saveBtn=document.getElementById('tkSaveDraftBtn'), submitBtn=document.getElementById('tkSubmitBtn'), discardBtn=document.getElementById('tkDiscardBtn');
+  if(saveBtn) saveBtn.style.display = editable ? '' : 'none';
+  if(submitBtn) submitBtn.style.display = editable ? '' : 'none';
+  if(discardBtn) discardBtn.style.display = (existing && (existing.status==='draft'||existing.status==='rejected')) ? '' : 'none';
+  positionPreviewCollapseBtn();
+}
+
+// Overlays previously-saved Overtime entries onto the freshly-built (blank)
+// OT table — same reload problem as the Attendance grid above: without this,
+// a draft's OT data would appear to vanish on reopen and the next save would
+// wipe it out for real.
+function restoreOTRows(savedOtRows){
+  if(!savedOtRows||!savedOtRows.length)return;
+  const otMap={}; savedOtRows.forEach(r=>{ if(r.date)otMap[r.date]=r; });
+  document.querySelectorAll('#otBody tr').forEach(tr=>{
+    const saved=otMap[tr.dataset.date];
+    if(!saved)return;
+    const typeIdx=OT_TYPES.findIndex(t=>t.label===saved.type);
+    if(saved.from) tr.querySelector('.ot-from').value=saved.from;
+    if(saved.to) tr.querySelector('.ot-to').value=saved.to;
+    if(typeIdx>=0) tr.querySelector('.ot-type').value=typeIdx;
+    computeOT(tr);
+  });
+}
+
+function computeHours(tr){
+  const get=col=>{const i=tr.querySelector(`[data-col="${col}"]`);return i?i.value:'';};
+  const toMins=t=>{if(!t)return 0;const[h,m]=t.split(':').map(Number);return h*60+m;};
+  const inT=toMins(get('in')), outT=toMins(get('out'));
+  let total=0;
+  if(inT&&outT&&outT>inT) total=outT-inT;
+  // Break deduction: <4h=none; 4h–5h=deduct excess over 4h (cap at 4h); >=5h=deduct 60min
+  if(total>=240&&total<300) total=240;
+  else if(total>=300) total-=60;
+  const cell=tr.querySelector('.hrs-cell');
+  if(cell) cell.textContent=total>0?`${Math.floor(total/60)}h ${total%60}m`:'—';
+  // Attendance and OT are separate tables — editing this day's Time In/Out
+  // can flip whether that day's OT row still counts as "no matching attendance".
+  refreshOTFlag(document.querySelector(`#otBody tr[data-date="${tr.dataset.date}"]`));
+}
+
+const OT_TYPES=[
+  {label:'— None —',rate:0},
+  {label:'Night Differential  (+10%) — 10:00 PM–6:00 AM',rate:0.10},
+  {label:'Special Holiday Duty  (+30%)',rate:0.30},
+  // Fixed against the reference template's own legend, which reads "130% Rest Day
+  // Duty" — this was wrongly set to 0.30 (colliding with Special Holiday Duty's
+  // column instead of landing in its own).
+  {label:'Rest Day Duty  (+130%)',rate:1.30},
+  // Same class of fix — the reference legend reads "150% Special Holiday on Rest
+  // Day", this was wrongly set to 0.50.
+  {label:'Special Holiday on Rest Day  (+150%)',rate:1.50},
+  {label:'Regular Holiday Duty  (+100%)',rate:1.00},
+  {label:'Regular Overtime  (+125%)',rate:1.25},
+  {label:'Rest Day OT  (+169%)',rate:1.69},
+  {label:'Special Holiday OT  (+169%)',rate:1.69},
+  {label:'Special Holiday + Rest Day OT  (+195%)',rate:1.95},
+  {label:'Regular Holiday OT  (+260%)',rate:2.60},
+  {label:'Regular Holiday on Rest Day Duty  (+260%)',rate:2.60},
+  {label:'Regular Holiday + Rest Day OT  (+338%)',rate:3.38},
+  // These 4 rate columns exist as headers in the reference template but aren't
+  // explained anywhere in its own legend either — labels here are a reasonable
+  // best-effort based on standard PH OT/holiday-pay conventions, not confirmed
+  // against any definition in the source file. Verify with payroll/HR before
+  // relying on these four specifically.
+  {label:'Additional Premium  (+5%)',rate:0.05},
+  {label:'Overtime Premium Only  (+25%)',rate:0.25},
+  {label:'Additional Premium  (+160%)',rate:1.60},
+  {label:'Regular Holiday Worked — Total Pay  (+200%)',rate:2.00},
+];
+
+function buildOTTable(){
+  const otBody=document.getElementById('otBody');
+  if(!otBody) return;
+  // Collect same dates as attendance table
+  const rows=document.querySelectorAll('#tkBody tr');
+  otBody.innerHTML='';
+  rows.forEach(tr=>{
+    const dateKey=tr.dataset.date;
+    const isWE=tr.classList.contains('weekend');
+    const dateCell=tr.querySelector('td:first-child');
+    const dayCell=tr.querySelector('td:nth-child(2)');
+    const dateTxt=dateCell?dateCell.textContent.replace('(WE)','').trim():'';
+    const dayTxt=dayCell?dayCell.textContent:'';
+    // OT_TYPES labels already include their own "(+N%)" text — don't append
+    // the percentage again here, or every real type shows it twice.
+    const typeOpts=OT_TYPES.map((t,i)=>`<option value="${i}">${t.label}</option>`).join('');
+    otBody.insertAdjacentHTML('beforeend',`
+      <tr class="${isWE?'weekend':''}" data-date="${dateKey}">
+        <td style="font-size:11.5px">${dateTxt}</td>
+        <td style="font-size:11px;color:var(--muted)">${dayTxt}</td>
+        <td><input type="time" class="ot-from"/></td>
+        <td><input type="time" class="ot-to"/></td>
+        <td><select class="ot-type">${typeOpts}</select></td>
+        <td class="ot-hrs">—</td>
+        <td class="ot-val">—</td>
+      </tr>`);
+  });
+  // Wire change events
+  otBody.querySelectorAll('tr').forEach(tr=>{
+    tr.querySelector('.ot-from').addEventListener('change',()=>computeOT(tr));
+    tr.querySelector('.ot-to').addEventListener('change',()=>computeOT(tr));
+    tr.querySelector('.ot-type').addEventListener('change',()=>computeOT(tr));
+  });
+  updateOTTotal();
+}
+
+function computeOT(tr){
+  const from=tr.querySelector('.ot-from').value;
+  const to=tr.querySelector('.ot-to').value;
+  const typeIdx=parseInt(tr.querySelector('.ot-type').value)||0;
+  const toMins=t=>{if(!t)return 0;const[h,m]=t.split(':').map(Number);return h*60+m;};
+  let mins=0;
+  if(from&&to){
+    let diff=toMins(to)-toMins(from);
+    if(diff<0) diff+=24*60; // overnight
+    mins=diff;
+  }
+  const cell=tr.querySelector('.ot-hrs');
+  const valCell=tr.querySelector('.ot-val');
+  const t=OT_TYPES[typeIdx];
+  if(mins>0){
+    const hrs=mins/60;
+    cell.textContent=`${Math.floor(mins/60)}h ${mins%60}m`;
+    if(valCell) valCell.textContent=t.rate>0?(hrs*t.rate).toFixed(2)+' hrs':'—';
+  } else {
+    cell.textContent='—';
+    if(valCell) valCell.textContent='—';
+  }
+  tr.dataset.otMins=mins;
+  tr.dataset.otRate=t.rate;
+  refreshOTFlag(tr);
+  updateOTTotal();
+}
+
+// OT is allowed on a day with no regular attendance (e.g. weekend/holiday
+// call-in) — this never blocks save or submit. It only marks the row so HR
+// can see, during review, which OT entries have no matching Time In/Out
+// that day and decide case-by-case whether that's expected.
+function hasAttendanceForDate(date){
+  const tr=document.querySelector(`#tkBody tr[data-date="${date}"]`);
+  if(!tr) return false;
+  return !!(tr.querySelector('[data-col="in"]')?.value && tr.querySelector('[data-col="out"]')?.value);
+}
+function refreshOTFlag(tr){
+  if(!tr) return;
+  const isRealOT = parseInt(tr.dataset.otMins||0)>0 && parseFloat(tr.dataset.otRate||0)>0;
+  const flagged = isRealOT && !hasAttendanceForDate(tr.dataset.date);
+  tr.classList.toggle('ot-flag', flagged);
+  tr.dataset.otFlag = flagged ? '1' : '';
+  const hrsCell=tr.querySelector('.ot-hrs');
+  if(hrsCell) hrsCell.title = flagged ? 'No attendance logged for this day — flagged for HR review, not blocked' : '';
+}
+
+function updateOTTotal(){
+  // Only rows with an actual paid OT type selected count toward the total —
+  // From/To filled in with Type still at "— None —" is an unfinished entry,
+  // not real overtime, even though it shows a duration in its own row.
+  let total=0;
+  document.querySelectorAll('#otBody tr').forEach(tr=>{
+    if(parseFloat(tr.dataset.otRate||0)>0) total+=parseInt(tr.dataset.otMins||0);
+  });
+  const el=document.getElementById('otTotalHrs');
+  if(el) el.textContent=`${Math.floor(total/60)}h ${total%60}m`;
+}
+
+function collectOTRows(){
+  const rows=[];
+  document.querySelectorAll('#otBody tr').forEach(tr=>{
+    const from=tr.querySelector('.ot-from')?.value;
+    const to=tr.querySelector('.ot-to')?.value;
+    const typeIdx=parseInt(tr.querySelector('.ot-type')?.value||0);
+    const mins=parseInt(tr.dataset.otMins||0);
+    // Same rule as updateOTTotal(): a real rate must be selected, not just a
+    // filled time range, or this becomes phantom overtime with no rate column
+    // to land in (RATE_COLS has no 0 entry) yet still inflating the total.
+    if(mins>0 && OT_TYPES[typeIdx].rate>0){
+      rows.push({date:tr.dataset.date,from,to,type:OT_TYPES[typeIdx].label,rate:OT_TYPES[typeIdx].rate,mins,flagged:tr.dataset.otFlag==='1'});
+    }
+  });
+  return rows;
+}
+
+/* ============================================================
+   ATTACHMENTS
+   ============================================================ */
+function addAttachments(files){
+  [...files].forEach(f=>{
+    attachFiles.push(f);
+    const chip=document.createElement('span');
+    chip.className='attach-chip';chip.dataset.name=f.name;
+    chip.style.cssText='display:inline-flex;align-items:center;gap:4px;padding:2px 9px;border-radius:12px;font-size:10.5px;font-weight:600;border:1px solid var(--border);background:var(--panel);cursor:pointer;white-space:nowrap;color:var(--text)';
+    chip.innerHTML=`<span>${esc(f.name)}</span><span style="cursor:pointer;color:var(--muted);margin-left:2px" onclick="removeAttachment('${esc(f.name)}')">✕</span>`;
+    chip.querySelector('span').addEventListener('click',()=>setActiveChip(f.name));
+    document.getElementById('attachChips').appendChild(chip);
+    if(attachFiles.length===1)setActiveChip(f.name);
+  });
+  document.getElementById('attachInput').value='';
+}
+function removeAttachment(name){
+  attachFiles=attachFiles.filter(f=>f.name!==name);
+  const chip=document.querySelector(`.attach-chip[data-name="${name}"]`);
+  if(chip)chip.remove();
+  // Show placeholder if no files left
+  if(attachFiles.length===0){
+    const ph=document.getElementById('filePreviewPlaceholder');
+    const img=document.getElementById('filePreviewImg');
+    const frame=document.getElementById('filePreviewFrame');
+    if(ph){ph.innerHTML='<div style="font-size:40px;opacity:.4">📎</div><div id="attachArea" onclick="document.getElementById(\'attachInput\').click()" style="border:2px dashed color-mix(in srgb,var(--accent) 40%,var(--border));border-radius:12px;padding:20px 28px;cursor:pointer"><p style="font-size:12px;color:var(--muted)">Click or drag &amp; drop<br><span style="font-size:11px;opacity:.7">JPG, PNG, PDF, DOCX, XLSX</span></p></div>';ph.style.display='flex';}
+    if(img)img.style.display='none';
+    if(frame)frame.style.display='none';
+  } else {
+    setActiveChip(attachFiles[0].name);
+  }
+}
+function handleDrop(e){
+  e.preventDefault();
+  addAttachments(e.dataTransfer.files);
+}
+
+/* ============================================================
+   SUBMIT / DOWNLOAD
+   ============================================================ */
+function collectRows(){
+  const rows=[];
+  document.querySelectorAll('#tkBody tr').forEach(tr=>{
+    const date=tr.dataset.date;
+    if(!date)return;
+    const get=col=>{const i=tr.querySelector(`[data-col="${col}"]`);return i?i.value:'';};
+    rows.push({date,in:get('in'),out:get('out'),hrs:tr.querySelector('.hrs-cell')?.textContent||'—',remarks:get('rmk')});
+  });
+  return rows;
+}
+
+// Finds the current employee's existing draft/submission for the selected
+// cutoff+month+year, so Save Draft / Submit update it in place rather than
+// piling up duplicate rows each time either is clicked.
+function findExistingSubmission(){
+  const month=MONTH_NAMES[currentMonth];
+  const year=currentYear;
+  return SUBMISSIONS.find(s=>s.empId===currentUser.id&&s.cutoff===currentCutoff&&s.month===month&&s.year===year);
+}
+
+// Returns true on success, false if blocked (and shows why) — approved and
+// lapsed are dead ends, submitted is out for review; none of those accept a
+// new save through this path. This is defense-in-depth: buildTimeTable()
+// already hides Save/Submit for those statuses, but this is what actually
+// stops a stale open tab (or the auto-detect window shifting mid-session)
+// from silently overwriting a resolved record.
+function upsertSubmission(status){
+  const existing=findExistingSubmission();
+  if(existing && existing.status!=='draft' && existing.status!=='rejected'){
+    toast(`❌ This cutoff is already ${existing.status} and can't be modified.`,'error');
+    return false;
+  }
+  const info=getCutoffInfo();
+  const rows=collectRows();
+  const otRows=collectOTRows();
+  const sub={
+    id: existing?existing.id:'sub'+Date.now(),
+    empId:currentUser.id,empName:currentUser.name,dept:currentUser.dept,
+    cutoff:currentCutoff,month:MONTH_NAMES[currentMonth],year:currentYear,
+    period:info.period,payDate:info.payDate,
+    submittedOn:new Date().toLocaleString('en-US'),status,rows,otRows
+  };
+  if(existing) Object.assign(existing,sub);
+  else SUBMISSIONS.unshift(sub);
+  saveSubmissionsToBackend();
+  renderHistory();
+  renderRecords();
+  return true;
+}
+
+function saveDraft(){
+  if(!upsertSubmission('draft')) return;
+  addAudit('draft_save',`Saved draft — Cutoff ${currentCutoff}, ${MONTH_NAMES[currentMonth]} ${currentYear}`);
+  toast('💾 Draft saved.','success');
+  buildTimeTable(); // refresh Discard button visibility and status badge now that a draft exists
+}
+
+// There's no separate absent/leave marker anywhere in this app — a blank day
+// is the only way a genuinely-absent cutoff ever gets represented, so a
+// completely empty sheet isn't necessarily wrong (someone out the whole
+// period is real). What it can't be is silent: an untouched fresh sheet
+// going through with one accidental click is the actual bug. So this asks
+// instead of blocking — a deliberate "yes, submit it empty" still goes
+// through. Save Draft stays untouched either way (a draft is allowed to be
+// work-in-progress, no prompt needed there).
+function hasAnyTimeEntry(){
+  const hasAttendance = collectRows().some(r=>r.in && r.out);
+  const hasOT = collectOTRows().length>0;
+  return hasAttendance || hasOT;
+}
+
+// Attachments aren't persisted anywhere yet (session memory only — see the
+// Attachments panel), so this only guarantees "a file was attached in this
+// browser session before clicking Submit," not that HR can see it later.
+// That gap closes once attachments move to real backend storage.
+function submitCutoff(){
+  if(attachFiles.length===0){
+    toast('❌ Attach at least one supporting file before submitting.','error');
+    return;
+  }
+  if(!hasAnyTimeEntry() && !confirm('This timesheet has no time entries logged. Submit anyway?')) return;
+  if(!upsertSubmission('submitted')) return;
+  addAudit('submission_submit',`Submitted timesheet — Cutoff ${currentCutoff}, ${MONTH_NAMES[currentMonth]} ${currentYear}`);
+  toast('✅ Timesheet submitted successfully!','success');
+  buildTimeTable(); // now locked/read-only — refresh the screen to reflect that
+}
+
+function discardDraft(){
+  const existing=findExistingSubmission();
+  if(!existing || (existing.status!=='draft' && existing.status!=='rejected')) return;
+  if(!confirm(`Discard this ${existing.status} timesheet for Cutoff ${existing.cutoff}, ${existing.period}? This can't be undone.`)) return;
+  SUBMISSIONS=SUBMISSIONS.filter(s=>s.id!==existing.id);
+  saveSubmissionsToBackend();
+  addAudit('draft_discard',`Discarded ${existing.status} — Cutoff ${existing.cutoff}, ${existing.period}`);
+  toast('🗑 Discarded.','success');
+  renderHistory();
+  renderRecords();
+  buildTimeTable();
+}
+
+// Parses hour-cell text like "8h 30m" back into minutes (0 for "—"/blank),
+// used to compute the totals row on timesheet exports.
+function parseHrsToMinutes(hrs){
+  const m = hrs && hrs.match(/(\d+)h\s*(\d+)m/);
+  return m ? parseInt(m[1])*60+parseInt(m[2]) : 0;
+}
+function formatMinutes(total){
+  return `${Math.floor(total/60)}h ${total%60}m`;
+}
+
+// Generate all calendar dates for a cutoff period.
+// Returns array of ISO date strings (YYYY-MM-DD) in order.
+// Use local date string to avoid timezone off-by-one (toISOString() returns UTC which
+// can land on the previous calendar day in UTC+8 and similar timezones).
+function localDateStr(y,m,d){return `${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;}
+
+function getCutoffDates(cutoff, month, year){
+  const mi = MONTH_NAMES.indexOf(month);
+  const yr = parseInt(year);
+  const dates = [];
+  if(cutoff==='A'){
+    const pm=(mi-1+12)%12, py=mi===0?yr-1:yr;
+    const lastPrev=new Date(py,pm+1,0).getDate();
+    for(let d=25;d<=lastPrev;d++) dates.push(localDateStr(py,pm,d));
+    for(let d=1;d<=9;d++) dates.push(localDateStr(yr,mi,d));
+  } else {
+    for(let d=10;d<=24;d++) dates.push(localDateStr(yr,mi,d));
+  }
+  return dates;
+}
+
+// Rate multiplier columns, in this exact order, matching the reference
+// "AVASIA INFORMATION SYSTEMS" attendance sheet template. Each app-side OT_TYPES
+// entry (see OT_TYPES above) maps into whichever of these its `rate` matches
+// exactly; a handful of these columns (0.05, 0.25, 1.3, 1.5, 1.6, 2) don't have
+// a corresponding selectable OT type in this app yet, so they always read 0 —
+// that's a real gap in OT_TYPES, not a bug in this export.
+const RATE_COLS=[0.05,0.1,0.25,0.3,0.5,1,1.25,1.3,1.5,1.6,1.69,1.95,2,2.6,3.38];
+const RATE_COL_OFFSET=9; // column I is the first rate column (A is a thin margin, B-H are Date/Day/In/Out/From/To/Remarks)
+const DAY_FULL_NAMES=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+
+// "17:00" -> "5:00 PM" — the reference template shows all times in 12-hour
+// format; the app's <input type=time> values are always 24-hour "HH:MM".
+function to12Hour(t){
+  if(!t) return '';
+  const [h,m]=t.split(':').map(Number);
+  if(Number.isNaN(h)) return t;
+  const period=h>=12?'PM':'AM';
+  const h12=h%12||12;
+  return `${h12}:${String(m).padStart(2,'0')} ${period}`;
+}
+
+// "Juan P. Cruz" -> "Cruz, Juan P." (best-effort: last whitespace-
+// separated token is treated as the surname). The app only stores one name
+// field, so this can't be exact for every name shape, but matches the
+// reference template's format for the common "First [Middle] Last" case.
+function formatLastFirst(fullName){
+  const parts=(fullName||'').trim().split(/\s+/).filter(Boolean);
+  if(parts.length<2) return fullName||'';
+  const last=parts[parts.length-1];
+  return `${last}, ${parts.slice(0,-1).join(' ')}`;
+}
+
+// Key printed beside the summary block, in the same order and wording as the
+// company's own attendance-sheet template. The template does not list the
+// 5%/25%/160%/200% columns, so neither does this (the columns themselves stay).
+const OT_LEGEND_LINES=[
+  '10% Night Differential (10pm-6am)','30% Special Holiday Duty','100% Regular Holiday Duty',
+  '125% Regular Overtime (OT)','130% Rest Day Duty','150% Special Holiday on Rest Day',
+  '169% Rest Day  (OT)','169% Special Holiday (OT)','195% Special Holiday + Rest Day (OT)',
+  '260% Regular Holiday (OT)','260% Regular Holiday on Rest Day Duty','338% Regular Holiday + Rest Day (OT)'
+];
+
+// Shared layout for both the employee's own download and HR's per-record download.
+// allDates: array of YYYY-MM-DD strings for every day in the cutoff (from getCutoffDates).
+// rowsData: array of {date,in,out,hrs,remarks} (from collectRows or submission.rows).
+// otRowsData: array of {date,from,to,type,rate,mins} (from collectOTRows or submission.otRows).
+// empInfo additionally carries `schedule` ({inAM,outPM}, the employee's Default
+// Schedule) so LATE/UNDERTIME can be computed — omitted/blank if never set.
+//
+// Follows the company's own "ATTENDANCE SHEET" file (TK Sept 25 - Oct 9 sample),
+// cell for cell: A is a thin margin, B-X hold the sheet. Rows: 1-4 title block,
+// 5 Employee ID, 6 Basic salary, 7-8 section/column headers (position banner over
+// the OT-rate columns), 9-28 twenty day rows (blank ones keep their borders and
+// green cells), 29 Grand Total, 30-35 stacked summary + OT legend, 43-47 signatures.
+async function buildTimesheetWorkbook(empInfo, periodInfo, allDates, rowsData, otRowsData){
+  const wb = new ExcelJS.Workbook();
+  const ws = wb.addWorksheet('TK');
+  const C_DATE=2, C_REMARKS=8, C_RATE0=RATE_COL_OFFSET;
+  const C_RATE_LAST=C_RATE0+RATE_COLS.length-1; // W
+  const C_TOTAL=C_RATE_LAST+1;                  // X
+  const R_HDR=8, R_FIRST=9, DAY_ROWS=20, R_LAST=R_FIRST+DAY_ROWS-1, R_GRAND=R_LAST+1; // 8, 9, 20, 28, 29
+  ws.columns = [
+    {width:1.7},{width:19},{width:12.4},{width:11.1},{width:11.1},{width:11.1},{width:11.1},{width:27.7},
+    ...RATE_COLS.map(()=>({width:7.3})),
+    {width:10.9}
+  ];
+
+  const GREEN='FFC4D79B', BLUE='FF9CC2E5', BANNER='FF548135', YELLOW='FFFFFF00', TOTAL_BLUE='FF0070C0';
+  const ACCT='_(* #,##0.00_);_(* (#,##0.00);_(* "-"??_);_(@_)';
+  const cell   = (r,c) => ws.getCell(r,c);
+  const fill   = (c,rgb) => { c.fill={type:'pattern',pattern:'solid',fgColor:{argb:rgb}}; };
+  const center = c => { c.alignment={horizontal:'center',vertical:'middle',wrapText:true}; };
+  const thin={style:'thin',color:{argb:'FF000000'}};
+  const border = c => { c.border={top:thin,left:thin,bottom:thin,right:thin}; };
+  const bi     = (c,size) => { c.font={name:'Calibri',size:size||11,bold:true,italic:true}; center(c); };
+  const merged = (r,c1,c2,value,size) => { ws.mergeCells(r,c1,r,c2); const c=cell(r,c1); c.value=value; bi(c,size); return c; };
+
+  // --- Rows 1-4: title / company / period / employee name (all centred across B:X) ---
+  merged(1,2,C_TOTAL,'ATTENDANCE SHEET');
+  merged(2,2,C_TOTAL,COMPANY.name||'Company Name');
+  merged(3,2,C_TOTAL,(periodInfo.period||'').toUpperCase().replace(/\s*[–-]\s*/,'- '));
+  merged(4,2,C_TOTAL,formatLastFirst(empInfo.name),14);
+
+  // --- Row 5: Employee ID; row 6: Basic salary (the green cell is where payroll types the amount) ---
+  const idLbl=cell(5,2); idLbl.value='Employee ID No.:'; idLbl.font={name:'Calibri',size:11,italic:true}; center(idLbl);
+  const idVal=cell(5,3); idVal.value=empInfo.id; bi(idVal);
+  const salAmt=cell(6,2); bi(salAmt); fill(salAmt,GREEN); salAmt.numFmt=ACCT;
+  const salLbl=cell(6,3); salLbl.value='Basic salary'; bi(salLbl);
+
+  // --- Rows 7-8: section headers over column headers ---
+  ws.getRow(7).height=19.5; ws.getRow(8).height=18;
+  const att=merged(7,2,5,'ATTENDANCE'); const ovt=merged(7,6,7,'OVERTIME');
+  ws.mergeCells(7,C_REMARKS,8,C_REMARKS); const rmk=cell(7,C_REMARKS); rmk.value='REMARKS'; bi(rmk); fill(rmk,BLUE);
+  const banner=merged(7,C_RATE0,C_TOTAL,(empInfo.pos||'').toUpperCase(),14); banner.font={name:'Calibri',size:14,bold:true,italic:true,color:{argb:'FFFFFFFF'}}; fill(banner,BANNER);
+  ['DATE','DAY','IN','OUT','FROM','TO'].forEach((t,i)=>{ const c=cell(R_HDR,C_DATE+i); c.value=t; bi(c); });
+  RATE_COLS.forEach((r,i)=>{ const c=cell(R_HDR,C_RATE0+i); c.value=Math.round(r*100)+'%'; c.font={name:'Arial',size:11}; center(c); fill(c,GREEN); });
+  const totHdr=cell(R_HDR,C_TOTAL); totHdr.value='TOTAL'; totHdr.font={name:'Arial',size:11,bold:true,color:{argb:TOTAL_BLUE}}; center(totHdr); fill(totHdr,GREEN);
+  for(let r=7;r<=8;r++) for(let c=2;c<=C_TOTAL;c++) border(cell(r,c));
+
+  // --- Rows 9-28: one row per cutoff date, padded with blank bordered rows up to 20 ---
+  const rowMap={}; (rowsData||[]).forEach(r=>{ if(r.date) rowMap[r.date]=r; });
+  const otMap={}; (otRowsData||[]).forEach(r=>{ if(r.date) otMap[r.date]=r; });
+  const sched=empInfo.schedule||{};
+  let present=0, absent=0, late=0, undertime=0, grandOtMin=0;
+
+  for(let i=0;i<DAY_ROWS;i++){
+    const r=R_FIRST+i;
+    const dateKey=(allDates||[])[i];
+    if(dateKey){
+      const [yy,mm,dd]=dateKey.split('-').map(Number);
+      const dt=new Date(yy,mm-1,dd);
+      const dow=dt.getDay();
+      const isWE=(dow===0||dow===6);
+      const a=rowMap[dateKey]||{};
+      const ot=otMap[dateKey];
+      const hasTime=!!(a.in&&a.out);
+      cell(r,2).value=dt.toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'});
+      cell(r,3).value=DAY_FULL_NAMES[dow];
+      cell(r,4).value=to12Hour(a.in); cell(r,5).value=to12Hour(a.out);
+      cell(r,6).value=to12Hour(ot?.from); cell(r,7).value=to12Hour(ot?.to);
+      cell(r,C_REMARKS).value=a.remarks||'';
+      if(ot&&ot.mins>0){
+        const idx=RATE_COLS.indexOf(ot.rate);
+        if(idx>=0) cell(r,C_RATE0+idx).value=+(ot.mins/60).toFixed(2);
+        grandOtMin+=ot.mins;
+      }
+      if(!isWE){
+        if(hasTime){
+          present++;
+          if(sched.inAM&&a.in>sched.inAM) late++;
+          if(sched.outPM&&a.out<sched.outPM) undertime++;
+        } else absent++;
+      }
+    }
+    for(let c=2;c<=C_REMARKS;c++){ const x=cell(r,c); x.font={name:'Calibri',size:11,italic:true,bold:c===C_REMARKS}; center(x); border(x); }
+    for(let c=C_RATE0;c<=C_RATE_LAST;c++){ const x=cell(r,c); x.font={name:'Arial',size:11}; center(x); fill(x,GREEN); border(x); }
+    // TOTAL is a live formula over this row's own rate cells, so opening the file
+    // in Excel shows how it was derived; zero displays as "-" through the number format.
+    const t=cell(r,C_TOTAL);
+    t.value={formula:`SUM(${cell(r,C_RATE0).address}:${cell(r,C_RATE_LAST).address})`};
+    t.numFmt=ACCT; t.font={name:'Arial',size:11,bold:true,color:{argb:TOTAL_BLUE}}; fill(t,GREEN); border(t);
+  }
+
+  // --- Row 29: Grand Total (column sums, yellow total) ---
+  ws.getRow(R_GRAND).height=18.8; ws.getRow(R_GRAND+1).height=18.8;
+  for(let c=2;c<=C_RATE_LAST;c++){ const x=cell(R_GRAND,c); fill(x,GREEN); border(x); }
+  const gl=cell(R_GRAND,2); gl.value=' Grand Total '; gl.font={name:'Arial',size:9,bold:true};
+  for(let c=C_RATE0;c<=C_RATE_LAST;c++){
+    const x=cell(R_GRAND,c);
+    x.value={formula:`SUM(${cell(R_FIRST,c).address}:${cell(R_LAST,c).address})`};
+    x.font={name:'Arial',size:11,bold:true}; center(x);
+  }
+  const gt=cell(R_GRAND,C_TOTAL);
+  gt.value={formula:`SUM(${cell(R_GRAND,C_RATE0).address}:${cell(R_GRAND,C_RATE_LAST).address})`};
+  gt.numFmt=ACCT; gt.font={name:'Arial',size:12,bold:true}; fill(gt,YELLOW); border(gt);
+
+  // --- Rows 30-35: stacked summary. LEAVE has no source of truth in this app
+  // (no leave tracking), so it always reads 0 rather than being invented. ---
+  [['PRESENT',present],['LEAVE',0],['ABSENT',absent],['LATE',late],['UNDERTIME',undertime],['TOTAL OVERTIME',+(grandOtMin/60).toFixed(2)]]
+    .forEach(([label,val],i)=>{
+      const r=R_GRAND+1+i;
+      const l=cell(r,2); l.value=label; l.font={name:'Calibri',size:11}; border(l);
+      const v=cell(r,3); v.value=val; v.font={name:'Calibri',size:11}; v.alignment={horizontal:'center'}; border(v);
+      if(label==='TOTAL OVERTIME') v.numFmt='#,##0.00;-#,##0.00';
+    });
+
+  // --- OT rate legend, beside the summary (the template keeps it in a text box;
+  // plain cells here, since the Excel library used can't draw text boxes) ---
+  OT_LEGEND_LINES.forEach((t,i)=>{ const x=cell(R_GRAND+1+i,14); x.value=t; x.font={name:'Arial',size:9}; });
+
+  // --- Rows 43-47: signatures. CHECKED BY / VERIFIED BY names come from Settings →
+  // Company Information (stored in the private Sheet, never in this file); blank if unset. ---
+  [[3,'PREPARED BY:'],[8,'CHECKED BY:'],[11,'VERIFIED BY:']].forEach(([c,t])=>{ const x=cell(43,c); x.value=t; x.font={name:'Calibri',size:11,italic:true}; });
+  const sigName=cell(46,3); sigName.value=formatLastFirst(empInfo.name); sigName.font={name:'Calibri',size:11,bold:true,italic:true};
+  [[8,COMPANY.checkedBy],[11,COMPANY.verifiedBy]].forEach(([c,n])=>{ const x=cell(46,c); x.value=(n||'').toUpperCase(); x.font={name:'Calibri',size:11,bold:true,italic:true}; });
+  [[8,'HR ADMIN'],[11,'HR DIRECTOR']].forEach(([c,t])=>{ const x=cell(47,c); x.value=t; x.font={name:'Calibri',size:9}; });
+
+  const COLS=C_TOTAL; // the logo block below anchors relative to the last column
+
+  // --- Embed company logo (PNG/JPEG/GIF only) ---
+  if(COMPANY.logo){
+    try{
+      // COMPANY.logo is a data: URL only in the no-backend fallback case;
+      // once uploaded through the backend it's a Drive URL instead, which
+      // ExcelJS can't embed directly — fetch it and convert back to base64.
+      const logoDataUrl = COMPANY.logo.startsWith('data:') ? COMPANY.logo : await urlToDataUrl(COMPANY.logo);
+      const m=logoDataUrl.match(/^data:image\/(png|jpe?g|gif);base64,(.+)$/i);
+      if(m){
+        const ext=m[1].toLowerCase()==='jpg'?'jpeg':m[1].toLowerCase();
+        const imgId=wb.addImage({base64:logoDataUrl,extension:ext});
+        ws.addImage(imgId,{tl:{col:COLS-4,row:0},ext:{width:120,height:45}});
+      } else {
+        toast('⚠️ Logo format not supported in Excel (PNG/JPEG/GIF only) — omitted.','error');
+      }
+    }catch(e){
+      console.error(e);
+      toast('⚠️ Could not load company logo for this export — omitted.','error');
+    }
+  }
+  return wb;
+}
+
+async function downloadWorkbook(wb, filename){
+  const buf = await wb.xlsx.writeBuffer();
+  const blob = new Blob([buf], {type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
+  const url = URL.createObjectURL(blob);
+  try{
+    const a = document.createElement('a');
+    a.href = url; a.download = filename;
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  } finally {
+    URL.revokeObjectURL(url);
+  }
+}
+
+async function downloadExcel(){
+  const info=getCutoffInfo();
+  const month=MONTH_NAMES[currentMonth];
+  const allDates=getCutoffDates(currentCutoff,month,currentYear);
+  const rows=collectRows();
+  const otRows=collectOTRows();
+  const wb = await buildTimesheetWorkbook(
+    {name:currentUser.name,id:currentUser.id,dept:currentUser.dept,pos:currentUser.pos,schedule:currentUser.defaultSchedule},
+    {cutoff:currentCutoff,period:info.period,payDate:info.payDate},
+    allDates, rows, otRows
+  );
+  const fn=`${currentUser.name.replace(/\s/g,'_')}_TK_Cutoff${currentCutoff}_${info.period.replace(/[^a-zA-Z0-9]/g,'_')}.xlsx`;
+  await downloadWorkbook(wb, fn);
+  toast('⬇ Excel downloaded!');
+}
+
+async function downloadRecordExcel(){
+  if(!viewRecord) return;
+  const r=viewRecord;
+  const empUser=USERS[r.empId]||{};
+  // Generate all calendar days for this record's cutoff so the Excel is never empty
+  const allDates=getCutoffDates(r.cutoff, r.month||MONTH_NAMES[new Date().getMonth()], r.year||new Date().getFullYear());
+  const wb = await buildTimesheetWorkbook(
+    {name:r.empName,id:r.empId,dept:r.dept,pos:empUser.pos,schedule:empUser.defaultSchedule},
+    {cutoff:r.cutoff,period:r.period,payDate:r.payDate},
+    allDates, r.rows||[], r.otRows||[]
+  );
+  await downloadWorkbook(wb, `${r.empName.replace(/\s/g,'_')}_TK_Cutoff${r.cutoff}.xlsx`);
+}
+
+function exportAllExcel(){
+  const rows=[['Employee','ID','Department','Cutoff','Period','Pay Date','Submitted On','Status']];
+  SUBMISSIONS.forEach(s=>rows.push([s.empName,s.empId,s.dept,'Cutoff '+s.cutoff,s.period,s.payDate,s.submittedOn,s.status]));
+  const ws=XLSX.utils.aoa_to_sheet(rows);
+  const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'Records');
+  XLSX.writeFile(wb,'TK_All_Records_'+new Date().toISOString().slice(0,10)+'.xlsx');
+  toast('⬇ All records exported!');
+}
+
+/* ============================================================
+   HR DASHBOARD
+   ============================================================ */
+// setView('hr-records') always resets Month/Cutoff to the current period
+// (see presetRecordsToCurrentCutoff below) — a status shortcut like "show me
+// every Lapsed record" is meant to search across all periods, not just the
+// current one, so this explicitly clears that preset back to "All" right
+// after landing on the view.
+function goToRecordsFilteredByStatus(status){
+  setView('hr-records');
+  const monthSel=document.getElementById('recFltMonth');
+  const cutoffSel=document.getElementById('recFltCutoff');
+  if(monthSel) monthSel.value='';
+  if(cutoffSel) cutoffSel.value='';
+  const sel=document.getElementById('recFltStatus');
+  if(sel) sel.value=status;
+  renderRecords();
+}
+
+// All Records defaults to the currently active cutoff period every time HR
+// navigates in fresh (matching the auto-detect already used on the employee
+// side), rather than dumping the full all-time history by default. Only sets
+// Month, since Cutoff A/B alone is ambiguous without it (e.g. "Cutoff A" could
+// mean this month's or last month's) — the Month select's own options are
+// only ever populated from months that already have a submission (see
+// renderRecords() below), so this silently no-ops if the current month has
+// none yet, rather than pointing the filter at a dead option.
+function presetRecordsToCurrentCutoff(){
+  const auto=getAutoCutoff();
+  const monthName=MONTH_NAMES[auto.month];
+  const monthSel=document.getElementById('recFltMonth');
+  const cutoffSel=document.getElementById('recFltCutoff');
+  if(monthSel){
+    // renderRecords() only adds a month option once it's seen a submission
+    // for it — the current month may have none yet, so add it here rather
+    // than silently failing to select a not-yet-existent option.
+    if(![...monthSel.options].some(o=>o.value===monthName)){
+      const o=document.createElement('option'); o.value=monthName; o.textContent=monthName;
+      monthSel.appendChild(o);
+    }
+    monthSel.value=monthName;
+  }
+  if(cutoffSel) cutoffSel.value=auto.cutoff;
+}
+
+// Groups submissions into their cutoff period (year+month+cutoff) so the
+// trend chart can show real chronological periods, not just an A-vs-B split.
+function getSubmissionTrend(){
+  const counts={};
+  SUBMISSIONS.forEach(s=>{
+    const mi=MONTH_NAMES.indexOf(s.month);
+    if(mi<0||!s.year)return;
+    const key=`${s.year}-${String(mi).padStart(2,'0')}-${s.cutoff}`;
+    counts[key]=(counts[key]||0)+1;
+  });
+  const last=Object.keys(counts).sort().slice(-6);
+  return {
+    labels: last.map(k=>{ const [yr,mi,cut]=k.split('-'); return MONTH_NAMES[parseInt(mi)].slice(0,3)+' '+cut; }),
+    data: last.map(k=>counts[k])
+  };
+}
+
+function renderHRDashboard(){
+  const empCount=Object.values(USERS).filter(u=>u.role==='emp').length;
+  const activeEmp=Object.values(USERS).filter(u=>u.role==='emp'&&u.active).length;
+  const totalSubs=SUBMISSIONS.length;
+  const thisMonth=new Date().toLocaleString('en-US',{month:'long'});
+  const thisMonthSubs=SUBMISSIONS.filter(s=>s.month===thisMonth).length;
+  const pendingCount=SUBMISSIONS.filter(s=>s.status==='submitted').length;
+  const lapsedCount=SUBMISSIONS.filter(s=>s.status==='lapsed').length;
+  // [label, value, subtext, icon, status-to-filter-by-on-click (null = not clickable)]
+  const cards=[
+    ['Total Employees',activeEmp,'Active accounts','👥',null],
+    ['Total Submissions',totalSubs,'All time','📋',null],
+    ['This Month',thisMonthSubs,'Submissions','📅',null],
+    ['Pending Review',pendingCount,'Click to view →','⏳','submitted'],
+    ['Approved',SUBMISSIONS.filter(s=>s.status==='approved').length,'This period','✅',null],
+    ['Lapsed',lapsedCount,'Click to view →','⚠️','lapsed'],
+  ];
+  document.getElementById('hrDashCards').innerHTML=cards.map(([k,v,d,ic,st])=>`
+    <div class="card${st?' clickable':''}"${st?` onclick="goToRecordsFilteredByStatus('${st}')"`:''}><div class="chip">${ic}</div><div class="k">${k}</div><div class="v">${v}</div><div class="d">${d}</div></div>`).join('');
+
+  const mut=getComputedStyle(document.documentElement).getPropertyValue('--muted').trim();
+  const brd=getComputedStyle(document.documentElement).getPropertyValue('--border').trim();
+  const acc=getComputedStyle(document.documentElement).getPropertyValue('--accent').trim();
+
+  // Chart: submissions over the last several cutoff periods
+  destroyChart('cc');
+  const trend=getSubmissionTrend();
+  charts.cc=new Chart(document.getElementById('chartTrend'),{
+    type:'line',
+    data:{labels:trend.labels,datasets:[{label:'Submissions',data:trend.data,borderColor:acc,backgroundColor:acc+'22',fill:true,tension:.3,pointRadius:3,pointBackgroundColor:acc}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:mut},grid:{display:false}},y:{ticks:{color:mut},grid:{color:brd},beginAtZero:true}}}});
+
+  // Chart: every submission by current status
+  destroyChart('es');
+  const statusCounts={
+    draft:SUBMISSIONS.filter(s=>s.status==='draft').length,
+    submitted:pendingCount,
+    approved:SUBMISSIONS.filter(s=>s.status==='approved').length,
+    rejected:SUBMISSIONS.filter(s=>s.status==='rejected').length,
+    lapsed:lapsedCount,
+  };
+  charts.es=new Chart(document.getElementById('chartStatus'),{
+    type:'doughnut',
+    data:{labels:['Draft','Pending Review','Approved','Rejected','Lapsed'],
+      datasets:[{data:[statusCounts.draft,statusCounts.submitted,statusCounts.approved,statusCounts.rejected,statusCounts.lapsed],
+        backgroundColor:['#fcd34d','#818cf8','#34d399','#f87171','#94a3b8'],borderWidth:0}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:mut}}}}});
+
+  renderAttentionList();
+}
+
+// "Needs Your Attention" — the actual pending-review submissions, oldest
+// first, click straight into the same View modal HR uses from All Records.
+function renderAttentionList(){
+  const el=document.getElementById('attentionList');
+  if(!el)return;
+  const pending=SUBMISSIONS.filter(s=>s.status==='submitted')
+    .map(s=>({...s,_submittedDate:new Date(s.submittedOn)}))
+    .filter(s=>!isNaN(s._submittedDate.getTime()))
+    .sort((a,b)=>a._submittedDate-b._submittedDate);
+  if(pending.length===0){
+    el.innerHTML=`<div class="attention-empty">Nothing waiting on review right now.</div>`;
+    return;
+  }
+  const now=new Date();
+  el.innerHTML=pending.map(s=>{
+    const days=Math.max(0,Math.floor((now-s._submittedDate)/86400000));
+    return `<div class="attention-row" onclick="hrPreviewRecord('${esc(s.id)}')">
+      <div><span style="font-weight:600">${esc(s.empName)}</span><span style="color:var(--muted);font-size:12.5px;margin-left:8px">Cutoff ${esc(s.cutoff)} · ${esc(s.period)}</span></div>
+      <div style="font-size:12.5px;color:#818cf8;white-space:nowrap">${days===0?'Today':days+' day'+(days!==1?'s':'')+' waiting'}</div>
+    </div>`;
+  }).join('');
+}
+
+function destroyChart(k){if(charts[k]){charts[k].destroy();delete charts[k];}}
+
+/* ============================================================
+   HR RECORDS
+   ============================================================ */
+function renderRecords(){
+  const search=(document.getElementById('recSearch')?.value||'').toLowerCase();
+  const fltCutoff=document.getElementById('recFltCutoff')?.value||'';
+  const fltMonth=document.getElementById('recFltMonth')?.value||'';
+  const fltDept=document.getElementById('recFltDept')?.value||'';
+  const fltStatus=document.getElementById('recFltStatus')?.value||'';
+
+  let list=SUBMISSIONS.filter(s=>{
+    if(fltCutoff&&s.cutoff!==fltCutoff)return false;
+    if(fltMonth&&s.month!==fltMonth)return false;
+    if(fltDept&&s.dept!==fltDept)return false;
+    if(fltStatus&&s.status!==fltStatus)return false;
+    if(search&&!s.empName.toLowerCase().includes(search)&&!s.empId.toLowerCase().includes(search))return false;
+    return true;
+  });
+
+  const tbody=document.getElementById('recBody');
+  if(!tbody)return;
+  tbody.innerHTML=list.length===0?`<tr><td colspan="10"><div class="empty"><div class="big">📂</div>No records found</div></td></tr>`
+    :list.map(s=>{
+      const totalOTMins=(s.otRows||[]).reduce((sum,r)=>sum+(r.rate>0?(r.mins||0):0),0);
+      return `<tr class="clickable" onclick="hrPreviewRecord('${esc(s.id)}')">
+      <td>${esc(s.empName)}</td><td>${esc(s.empId)}</td><td>${esc(s.dept)}</td>
+      <td>Cutoff ${esc(s.cutoff)}</td><td>${esc(s.period)}</td><td>${esc(s.payDate)}</td>
+      <td>${esc(s.submittedOn)}</td>
+      <td>${totalOTMins>0?formatMinutes(totalOTMins):'—'}</td>
+      <td><span class="tag ${esc(s.status)}">${esc(s.status)}</span></td>
+      <td><button class="btn sm" onclick="event.stopPropagation();hrPreviewRecord('${esc(s.id)}')">View</button></td>
+    </tr>`;
+    }).join('');
+  const info=document.getElementById('recInfo');
+  if(info)info.textContent=list.length+' record'+(list.length!==1?'s':'');
+
+  // Populate filter dropdowns
+  const months=[...new Set(SUBMISSIONS.map(s=>s.month))].sort();
+  const depts=[...new Set(SUBMISSIONS.map(s=>s.dept))].sort();
+  const mEl=document.getElementById('recFltMonth');
+  const dEl=document.getElementById('recFltDept');
+  if(mEl&&mEl.options.length<=1) months.forEach(m=>{const o=document.createElement('option');o.textContent=m;o.value=m;mEl.appendChild(o);});
+  if(dEl&&dEl.options.length<=1) depts.forEach(d=>{const o=document.createElement('option');o.textContent=d;o.value=d;dEl.appendChild(o);});
+
+  updateNavBadge();
+}
+
+// Badge on "All Records" showing how many submissions are awaiting HR review.
+function updateNavBadge(){
+  const badge=document.getElementById('recBadge');
+  if(!badge)return;
+  const pending=SUBMISSIONS.filter(s=>s.status==='submitted').length;
+  badge.textContent=pending;
+  badge.style.display=pending>0?'inline-block':'none';
+}
+
+/* ============================================================
+   HR REPORTS
+   ============================================================ */
+let _reportData=[];
+function fmtLocalDate(d){
+  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+}
+
+function renderReports(){
+  const from=document.getElementById('repFrom')?.value||'';
+  const to=document.getElementById('repTo')?.value||'';
+  const dept=document.getElementById('repDept')?.value||'';
+
+  // Only submitted/approved/lapsed rows count toward an official report — a
+  // draft is unconfirmed and a rejected submission was explicitly disputed by
+  // HR, so neither should be presented as real attendance. Lapsed counts
+  // because the employee's hours are still real; HR simply never got to it —
+  // that's a review-process failure, not a reason to erase the employee's data.
+  const presentByEmp={}; // empId -> {date: minutes}
+  SUBMISSIONS.forEach(s=>{
+    if(!['submitted','approved','lapsed'].includes(s.status)) return;
+    if(dept && s.dept!==dept) return;
+    (s.rows||[]).forEach(r=>{
+      if(from && r.date<from) return;
+      if(to && r.date>to) return;
+      const mins=parseHrsToMinutes(r.hrs);
+      if(mins<=0) return;
+      (presentByEmp[s.empId]=presentByEmp[s.empId]||{})[r.date]=mins;
+    });
+  });
+
+  // Drive the row list from the active roster, not from who happened to
+  // submit something — otherwise an employee who never opens a cutoff at all
+  // is invisible to the report instead of showing up as fully absent.
+  const roster=Object.entries(USERS).filter(([id,u])=>u.role==='emp'&&u.active&&(!dept||u.dept===dept));
+
+  if(from && to){
+    const end=new Date(to+'T12:00:00');
+    _reportData=roster.map(([id,u])=>{
+      const present=presentByEmp[id]||{};
+      let totalMin=0,presentDays=0,absentDays=0;
+      for(let d=new Date(from+'T12:00:00'); d<=end; d.setDate(d.getDate()+1)){
+        if(d.getDay()===0||d.getDay()===6) continue; // weekends aren't counted either way
+        const key=fmtLocalDate(d);
+        if(present[key]){totalMin+=present[key];presentDays++;}
+        else absentDays++;
+      }
+      return {name:u.name,dept:u.dept,totalMin,present:presentDays,absent:absentDays};
+    });
+  } else {
+    // No bounded range — can't enumerate weekdays to find absences, so just
+    // sum whatever's logged and leave Days Absent blank rather than a fake 0.
+    _reportData=roster.map(([id,u])=>{
+      const present=presentByEmp[id]||{};
+      const totalMin=Object.values(present).reduce((a,b)=>a+b,0);
+      return {name:u.name,dept:u.dept,totalMin,present:Object.keys(present).length,absent:null};
+    }).filter(a=>a.present>0);
+  }
+  _reportData.sort((a,b)=>a.name.localeCompare(b.name));
+
+  const tbody=document.getElementById('repBody');
+  if(tbody) tbody.innerHTML=_reportData.length===0
+    ? `<tr><td colspan="5"><div class="empty"><div class="big">📊</div>No data for this range</div></td></tr>`
+    : _reportData.map(a=>`<tr>
+        <td>${esc(a.name)}</td><td>${esc(a.dept)}</td>
+        <td>${formatMinutes(a.totalMin)}</td><td>${a.present}</td><td>${a.absent===null?'—':a.absent}</td>
+      </tr>`).join('');
+
+  const depts=[...new Set(Object.values(USERS).filter(u=>u.role==='emp').map(u=>u.dept))].sort();
+  const dEl=document.getElementById('repDept');
+  if(dEl&&dEl.options.length<=1) depts.forEach(d=>{const o=document.createElement('option');o.textContent=d;o.value=d;dEl.appendChild(o);});
+}
+
+function printReport(){ window.print(); }
+
+function exportReportExcel(){
+  const rows=[['Employee','Department','Total Hours','Days Present','Days Absent']];
+  _reportData.forEach(a=>rows.push([a.name,a.dept,formatMinutes(a.totalMin),a.present,a.absent===null?'—':a.absent]));
+  const ws=XLSX.utils.aoa_to_sheet(rows);
+  const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'Report');
+  XLSX.writeFile(wb,'TK_Report_'+new Date().toISOString().slice(0,10)+'.xlsx');
+  toast('⬇ Report exported!');
+}
+
+/* ============================================================
+   AUDIT LOG
+   ============================================================ */
+function renderAudit(){
+  const search=(document.getElementById('auditSearch')?.value||'').toLowerCase();
+  const list=AUDIT_LOG.filter(e=>!search||e.actor.toLowerCase().includes(search)||e.action.toLowerCase().includes(search)||(e.detail||'').toLowerCase().includes(search));
+  const tbody=document.getElementById('auditBody');
+  if(!tbody)return;
+  tbody.innerHTML=list.length===0?`<tr><td colspan="4"><div class="empty"><div class="big">📜</div>No audit entries</div></td></tr>`
+    :list.map(e=>`<tr>
+      <td style="white-space:nowrap">${esc(new Date(e.timestamp||e.ts).toLocaleString('en-US'))}</td>
+      <td>${esc(e.actor)}</td><td>${esc(e.action)}</td><td>${esc(e.detail)}</td>
+    </tr>`).join('');
+  const info=document.getElementById('auditInfo');
+  if(info) info.textContent=list.length+' entr'+(list.length!==1?'ies':'y');
+}
+
+['recSearch','recFltCutoff','recFltMonth','recFltDept'].forEach(id=>{
+  document.getElementById(id)?.addEventListener('input',renderRecords);
+  document.getElementById(id)?.addEventListener('change',renderRecords);
+});
+
+// Full-page, read-only review of any employee's submission — replaces the
+// old small centered modal, which was too cramped to actually review a
+// filled-in timesheet. Reuses the same viewRecord global downloadRecordExcel()
+// already reads from.
+function hrPreviewRecord(id){
+  const s=SUBMISSIONS.find(r=>r.id===id);
+  if(!s)return;
+  viewRecord=s;
+
+  document.getElementById('hrPrevBadge').textContent = s.cutoff==='A' ? 'Cutoff A  25–9' : 'Cutoff B  10–24';
+  document.getElementById('hrPrevMonthLabel').textContent = `${s.month} ${s.year}`;
+  document.getElementById('hrPrevPayLabel').textContent = `Pay: ${s.payDate}`;
+  document.getElementById('hrPrevEmpLabel').textContent = `${s.empName} · ${s.empId} · ${s.dept}`;
+  const statusLabel={draft:'Draft',submitted:'Pending Review',approved:'Approved',rejected:'Rejected',lapsed:'Lapsed'}[s.status]||s.status;
+  const statusClass=s.status==='submitted'?'pending':s.status;
+  const tagEl=document.getElementById('hrPrevStatusTag');
+  tagEl.className='tag '+statusClass;
+  tagEl.textContent=statusLabel;
+
+  // Rendered with the same disabled inputs/select the real editable screen
+  // uses (same classes, so the same .tk-table/.ot-table CSS applies) instead
+  // of plain text cells — this is meant to visually read as "My Timesheet,
+  // read-only," not a different, plainer table.
+  const body=document.getElementById('hrPrevBody');
+  if(s.rows&&s.rows.length){
+    body.innerHTML=s.rows.map(r=>{
+      const dt=new Date(r.date+'T12:00:00');
+      const dow=dt.getDay();
+      const isWE=(dow===0||dow===6);
+      const dateStr=dt.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+      return `<tr class="${isWE?'weekend':''}">
+        <td>${dateStr}${isWE?` <span style="font-size:10px;color:var(--accent);opacity:.7">(WE)</span>`:''}</td>
+        <td>${DAY_NAMES[dow]}</td>
+        <td><input type="time" class="tk-in" disabled ${r['in']?`value="${r['in']}"`:''}/></td>
+        <td><input type="time" class="tk-in" disabled ${r.out?`value="${r.out}"`:''}/></td>
+        <td class="hrs-cell">${esc(r.hrs)||'—'}</td>
+        <td><input type="text" class="tk-rmk" disabled placeholder="—" value="${esc(r.remarks)||''}" style="background:var(--panel);border:1px solid var(--border);border-radius:6px;padding:3px 6px;font-size:11px;color:var(--text);outline:none;width:100%;min-width:70px"/></td>
+      </tr>`;
+    }).join('');
+  } else {
+    body.innerHTML=`<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:20px">No time entries in this record.</td></tr>`;
+  }
+
+  const otBody=document.getElementById('hrPrevOtBody');
+  let otTotalMins=0;
+  if(s.otRows&&s.otRows.length){
+    otBody.innerHTML=s.otRows.map(r=>{
+      const dt=new Date(r.date+'T12:00:00');
+      const dow=dt.getDay();
+      const isWE=(dow===0||dow===6);
+      const dateStr=dt.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+      const typeIdx=OT_TYPES.findIndex(t=>t.label===r.type);
+      const typeOpts=OT_TYPES.map((t,i)=>`<option value="${i}" ${i===typeIdx?'selected':''}>${t.label}</option>`).join('');
+      const rate=r.rate||0;
+      if(rate>0) otTotalMins+=(r.mins||0);
+      return `<tr class="${isWE?'weekend':''}${r.flagged?' ot-flag':''}">
+        <td style="font-size:11.5px">${dateStr}</td>
+        <td style="font-size:11px;color:var(--muted)">${DAY_NAMES[dow]}</td>
+        <td><input type="time" class="ot-from" disabled ${r.from?`value="${r.from}"`:''}/></td>
+        <td><input type="time" class="ot-to" disabled ${r.to?`value="${r.to}"`:''}/></td>
+        <td><select class="ot-type" disabled>${typeOpts}</select></td>
+        <td class="ot-hrs" title="${r.flagged?'No attendance logged for this day':''}">${formatMinutes(r.mins||0)}</td>
+        <td class="ot-val">${rate>0?((r.mins||0)/60*rate).toFixed(2)+' hrs':'—'}</td>
+      </tr>`;
+    }).join('');
+  } else {
+    otBody.innerHTML=`<tr><td colspan="7" style="text-align:center;color:var(--muted);padding:16px">No overtime logged.</td></tr>`;
+  }
+  const otTotalEl=document.getElementById('hrPrevOtTotal');
+  if(otTotalEl) otTotalEl.textContent=formatMinutes(otTotalMins);
+
+  const canReview = s.status==='submitted';
+  document.getElementById('hrPrevApproveBtn').style.display=canReview?'':'none';
+  document.getElementById('hrPrevRejectBtn').style.display=canReview?'':'none';
+
+  setView('hr-tk-preview');
+  positionHrPrevCollapseBtn();
+}
+
+function approveSubmission(id){
+  const s=SUBMISSIONS.find(r=>r.id===id);
+  if(!s)return;
+  // Defense-in-depth, same reasoning as upsertSubmission's guard: a stale tab
+  // left open past this record's deadline could still show the Approve button
+  // after another session's sweep already flipped it to 'lapsed' — without
+  // this, clicking it would silently resurrect a lapsed record as approved.
+  if(s.status!=='submitted'){
+    toast(`❌ This timesheet is ${s.status}, not pending review — can't approve it.`,'error');
+    renderRecords(); renderHRDashboard();
+    return;
+  }
+  s.status='approved';
+  saveSubmissionsToBackend();
+  addAudit('submission_approve',`Approved ${s.empName} (${s.empId}) — Cutoff ${s.cutoff}, ${s.period}`);
+  renderRecords(); renderHRDashboard();
+  toast(`✅ ${s.empName}'s timesheet approved.`,'success');
+}
+
+function rejectSubmission(id){
+  const s=SUBMISSIONS.find(r=>r.id===id);
+  if(!s)return;
+  if(s.status!=='submitted'){
+    toast(`❌ This timesheet is ${s.status}, not pending review — can't reject it.`,'error');
+    renderRecords(); renderHRDashboard();
+    return;
+  }
+  s.status='rejected';
+  saveSubmissionsToBackend();
+  addAudit('submission_reject',`Rejected ${s.empName} (${s.empId}) — Cutoff ${s.cutoff}, ${s.period}`);
+  renderRecords(); renderHRDashboard();
+  toast(`❌ ${s.empName}'s timesheet rejected.`,'error');
+}
+
+/* ============================================================
+   EMPLOYEES
+   ============================================================ */
+function renderEmployees(){
+  const search=(document.getElementById('empSearch')?.value||'').toLowerCase();
+  const list=Object.entries(USERS).filter(([id,u])=>{
+    if(u.role!=='emp')return false;
+    if(search&&!u.name.toLowerCase().includes(search)&&!id.toLowerCase().includes(search))return false;
+    return true;
+  });
+  const tbody=document.getElementById('empBody');
+  if(!tbody)return;
+  tbody.innerHTML=list.length===0
+    ?`<tr><td colspan="7"><div class="empty"><div class="big">👤</div>No employees found</div></td></tr>`
+    :list.map(([id,u])=>`<tr>
+      <td>${esc(u.name)}</td><td>${esc(id)}</td><td>${esc(u.dept)||'—'}</td><td>${esc(u.pos)||'—'}</td>
+      <td>${esc(u.dateHired)||'—'}</td>
+      <td><span class="tag ${u.active?'submitted':'draft'}">${u.active?'Active':'Inactive'}</span></td>
+      <td style="display:flex;gap:6px">
+        <button class="btn sm" onclick="openEditEmployee('${esc(id)}')">✏️ Edit</button>
+        <button class="btn sm" onclick="toggleActive('${esc(id)}')" style="min-width:0">${u.active?'Deactivate':'Activate'}</button>
+      </td>
+    </tr>`).join('');
+}
+
+function toggleActive(id){
+  if(!USERS[id])return;
+  USERS[id].active=!USERS[id].active;
+  renderEmployees();
+  saveUsersToBackend();
+  addAudit('employee_'+(USERS[id].active?'activate':'deactivate'),`${USERS[id].name} (${id})`);
+  toast(USERS[id].active?'Employee activated.':'Employee deactivated.');
+}
+
+let editingEmpId=null;
+function openEditEmployee(id){
+  const u=USERS[id];
+  if(!u)return;
+  editingEmpId=id;
+  document.getElementById('editEmpName').value=u.name||'';
+  document.getElementById('editEmpId').value=id;
+  document.getElementById('editEmpDept').value=u.dept||'';
+  document.getElementById('editEmpPos').value=u.pos||'';
+  document.getElementById('editEmpHired').value=u.dateHired||'';
+  document.getElementById('editEmpEmail').value=u.email||'';
+  document.getElementById('editEmpPw').value='';
+  document.getElementById('editEmpSub').textContent=`Editing: ${u.name} (${id})`;
+  document.getElementById('editPwReveal').style.display='none';
+  document.getElementById('saveEditEmpBtn').style.display='';
+  document.getElementById('editEmpOverlay').classList.add('show');
+}
+
+function saveEditEmployee(){
+  const id=editingEmpId;
+  if(!id||!USERS[id])return;
+  const name=document.getElementById('editEmpName').value.trim();
+  if(!name){toast('Name is required.','error');return;}
+  const newPw=document.getElementById('editEmpPw').value.trim();
+  if(newPw.length>0&&newPw.length<6){
+    toast('New password must be at least 6 characters.','error');return;
+  }
+  // Validate everything above before touching USERS[id] — an early return must
+  // never leave a half-applied edit sitting in memory ready to be pushed to
+  // GitHub by some later, unrelated save.
+  USERS[id].name=name;
+  USERS[id].dept=document.getElementById('editEmpDept').value.trim();
+  USERS[id].pos=document.getElementById('editEmpPos').value.trim();
+  USERS[id].dateHired=document.getElementById('editEmpHired').value;
+  USERS[id].email=document.getElementById('editEmpEmail').value.trim();
+  let pwReset=false;
+  if(newPw.length>=6){
+    USERS[id].pw=newPw;
+    USERS[id].firstLogin=true; // force the employee to change it on next login
+    pwReset=true;
+  }
+  renderEmployees();
+  saveUsersToBackend();
+  addAudit('employee_update',`Updated ${name} (${id})`+(pwReset?' and reset password':''));
+  if(pwReset){
+    document.getElementById('editRevealId').textContent=id;
+    document.getElementById('editRevealPw').textContent=newPw;
+    document.getElementById('editPwReveal').style.display='block';
+    document.getElementById('saveEditEmpBtn').style.display='none';
+    toast('✅ Employee updated — share the new temp password shown below.','success');
+  }else{
+    closeModal('editEmpOverlay');
+    toast('✅ Employee updated!','success');
+  }
+}
+
+/* ============================================================
+   ADD EMPLOYEE
+   ============================================================ */
+function openAddEmployee(){
+  document.getElementById('newEmpName').value='';
+  document.getElementById('newEmpId').value='';
+  document.getElementById('newEmpDept').value='';
+  document.getElementById('newEmpPos').value='';
+  document.getElementById('newEmpHired').value='';
+  document.getElementById('newEmpEmail').value='';
+  document.getElementById('newEmpPw').value=genTempPw();
+  document.getElementById('newCredsReveal').style.display='none';
+  document.getElementById('saveEmpBtn').style.display='';
+  document.getElementById('addEmpOverlay').classList.add('show');
+}
+
+function genTempPw(){
+  const chars='abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  return [...Array(8)].map(()=>chars[Math.floor(Math.random()*chars.length)]).join('');
+}
+
+function saveNewEmployee(){
+  const name=document.getElementById('newEmpName').value.trim();
+  const id=document.getElementById('newEmpId').value.trim().toUpperCase();
+  const dept=document.getElementById('newEmpDept').value.trim();
+  const pos=document.getElementById('newEmpPos').value.trim();
+  const hired=document.getElementById('newEmpHired').value;
+  const email=document.getElementById('newEmpEmail').value.trim();
+  const pw=document.getElementById('newEmpPw').value.trim();
+  if(!name||!id||!pw){toast('Name, Employee ID and password are required.','error');return;}
+  if(USERS[id]){toast('Employee ID already exists.','error');return;}
+  USERS[id]={pw,role:'emp',name,dept,pos,email,dateHired:hired,firstLogin:true,active:true};
+  document.getElementById('revealId').textContent=id;
+  document.getElementById('revealPw').textContent=pw;
+  document.getElementById('newCredsReveal').style.display='block';
+  document.getElementById('saveEmpBtn').style.display='none';
+  renderEmployees();
+  saveUsersToBackend();
+  addAudit('employee_create',`Created ${name} (${id})`);
+  toast('✅ Employee created!','success');
+}
+
+/* ============================================================
+   HISTORY
+   ============================================================ */
+function renderHistory(){
+  if(!currentUser)return;
+  const list=SUBMISSIONS.filter(s=>s.empId===currentUser.id);
+  const tbody=document.getElementById('histBody');
+  const empty=document.getElementById('histEmpty');
+  if(!tbody)return;
+  if(list.length===0){tbody.innerHTML='';empty.style.display='block';return;}
+  empty.style.display='none';
+  tbody.innerHTML=list.map(s=>`<tr class="clickable" onclick="viewHistoryInTimesheet('${esc(s.id)}')">
+    <td>Cutoff ${esc(s.cutoff)}</td><td>${esc(s.period)}</td><td>${esc(s.payDate)}</td>
+    <td>${esc(s.submittedOn)}</td>
+    <td><span class="tag ${esc(s.status)}">${esc(s.status)}</span></td>
+    <td><button class="btn sm" onclick="event.stopPropagation();viewHistoryInTimesheet('${esc(s.id)}')">View</button></td>
+  </tr>`).join('');
+}
+
+function viewHistoryInTimesheet(id){
+  const s=SUBMISSIONS.find(r=>r.id===id);
+  if(!s)return;
+
+  // Navigate to emp-tk view
+  setView('emp-tk');
+
+  // Update the cutoff badge, month label and pay label to match the submission
+  const badgeCutoffEl=document.getElementById('cutoffBadge');
+  if(badgeCutoffEl) badgeCutoffEl.textContent = s.cutoff==='A' ? 'Cutoff A  25–9' : 'Cutoff B  10–24';
+  const mlEl=document.getElementById('cutoffMonthLabel');
+  if(mlEl) mlEl.textContent=s.month+' '+s.year;
+  const payEl=document.getElementById('cutoffPayLabel');
+  if(payEl) payEl.textContent='Pay: '+s.payDate;
+
+  // Status badge
+  const badgeEl=document.getElementById('tkStatusBadge');
+  if(badgeEl){
+    const statusLabel={draft:'Draft',submitted:'Pending Review',approved:'Approved',rejected:'Rejected',lapsed:'Lapsed'}[s.status]||s.status;
+    const statusClass=s.status==='submitted'?'pending':s.status;
+    badgeEl.className='tag '+statusClass;
+    badgeEl.textContent=statusLabel;
+  }
+
+  // Point at the submission's own cutoff+month+year so buildTimeTable()'s
+  // findExistingSubmission() resolves to this exact record and restores its
+  // rows/otRows — this is what actually loads the data, not a separate copy step.
+  const monthIdx=MONTH_NAMES.indexOf(s.month);
+  currentCutoff=s.cutoff;
+  currentMonth=monthIdx>=0?monthIdx:currentMonth;
+  currentYear=s.year||currentYear;
+  window._histViewActive=true; // set before buildTimeTable() so its auto-detect guard skips
+  buildTimeTable();
+
+  // Read-only regardless of status — History is always just a preview, never
+  // an editing surface, even for a draft/rejected item buildTimeTable() would
+  // otherwise have left editable. Download Excel is the only action left available.
+  document.querySelectorAll('#tkBody input, #otBody input, #otBody select').forEach(el=>el.disabled=true);
+  ['tkSaveDraftBtn','tkSubmitBtn','tkDiscardBtn'].forEach(id=>{
+    const btn=document.getElementById(id);
+    if(btn) btn.style.display='none';
+  });
+
+  // Show yellow banner
+  const banner=document.getElementById('histBanner');
+  const bannerText=document.getElementById('histBannerText');
+  const statusLabel={draft:'Draft',submitted:'Pending Review',approved:'Approved',rejected:'Rejected',lapsed:'Lapsed'}[s.status]||s.status;
+  if(bannerText) bannerText.textContent=`Viewing: Cutoff ${s.cutoff} · ${s.period} (${statusLabel})`;
+  if(banner) banner.style.display='flex';
+}
+
+function exitHistoryView(){
+  if(!window._histViewActive)return;
+  window._histViewActive=false;
+
+  // Hide banner
+  const banner=document.getElementById('histBanner');
+  if(banner) banner.style.display='none';
+
+  // buildTimeTable() re-syncs currentCutoff/month/year to today's real
+  // auto-detected period itself now that _histViewActive is false, and
+  // correctly re-shows/re-enables whichever buttons and inputs actually
+  // apply to that real current record — nothing else needs restoring by hand.
+  buildTimeTable();
+}
+
+function togglePw(id,btn){
+  const inp=document.getElementById(id);
+  inp.type=inp.type==='password'?'text':'password';
+  btn.textContent=inp.type==='password'?'👁':'🙈';
+}
+
+/* ============================================================
+   SETTINGS — EMPLOYEE PROFILE EDIT
+   ============================================================ */
+function loadProfileUI(){
+  if(!currentUser||currentUser.role!=='emp') return;
+  const u = USERS[currentUser.id]||currentUser;
+  const n=document.getElementById('profName');
+  if(!n) return; // settings panel not yet in DOM
+  n.value = u.name||'';
+  document.getElementById('profEmail').value = u.email||'';
+  document.getElementById('profDept').value = u.dept||'';
+  document.getElementById('profPos').value = u.pos||'';
+  document.getElementById('profHired').value = u.dateHired||'';
+}
+
+function saveMyProfile(){
+  if(!currentUser) return;
+  const name  = document.getElementById('profName').value.trim();
+  const email = document.getElementById('profEmail').value.trim();
+  const dept  = document.getElementById('profDept').value.trim();
+  const pos   = document.getElementById('profPos').value.trim();
+  const hired = document.getElementById('profHired').value;
+  if(!name){ toast('Name is required.','error'); return; }
+  USERS[currentUser.id] = {...USERS[currentUser.id], name, email, dept, pos, dateHired:hired};
+  currentUser = {...currentUser, name, email, dept, pos, dateHired:hired};
+  renderAvatar();
+  document.getElementById('uName').textContent = currentUser.name;
+  saveUsersToBackend();
+  addAudit('profile_update','Updated own profile details');
+  toast('✅ Profile saved!','success');
+}
+
+/* ============================================================
+   SETTINGS — DEFAULT SCHEDULE (employee)
+   ============================================================ */
+function loadDefaultScheduleUI(){
+  if(!currentUser||currentUser.role!=='emp') return;
+  const s=(USERS[currentUser.id]||{}).defaultSchedule||{};
+  const set=id=>v=>{ const el=document.getElementById(id); if(el) el.value=v||''; };
+  set('schedInAM')(s.inAM); set('schedOutPM')(s.outPM);
+}
+
+function saveDefaultSchedule(){
+  if(!currentUser) return;
+  const g=id=>(document.getElementById(id)||{}).value||'';
+  const sched={inAM:g('schedInAM'),outPM:g('schedOutPM')};
+  USERS[currentUser.id]={...USERS[currentUser.id],defaultSchedule:sched};
+  saveUsersToBackend();
+  addAudit('schedule_save','Saved default schedule');
+  toast('✅ Default schedule saved! Timesheet will auto-fill on next open.','success');
+}
+
+function clearDefaultSchedule(){
+  if(!currentUser) return;
+  USERS[currentUser.id]={...USERS[currentUser.id],defaultSchedule:{}};
+  ['schedInAM','schedOutAM','schedInPM','schedOutPM'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
+  saveUsersToBackend();
+  toast('🗑 Default schedule cleared.','success');
+}
+
+/* ============================================================
+   SETTINGS — COMPANY + PASSWORD
+   ============================================================ */
+function loadCompanyUI(){
+  document.getElementById('compName').value=COMPANY.name||'';
+  document.getElementById('compDept').value=COMPANY.dept||'';
+  document.getElementById('compAddress').value=COMPANY.address||'';
+  document.getElementById('compCheckedBy').value=COMPANY.checkedBy||'';
+  document.getElementById('compVerifiedBy').value=COMPANY.verifiedBy||'';
+  const prev=document.getElementById('compLogoPreview');
+  if(COMPANY.logo){prev.src=COMPANY.logo;prev.style.display='inline-block';}
+  else prev.style.display='none';
+}
+
+async function companyLogoSelected(input){
+  const file=input.files&&input.files[0];
+  if(!file)return;
+  // The `accept` attribute is only a picker hint, not enforcement — validate
+  // for real, since an unsupported format would otherwise preview fine here
+  // but silently vanish from Excel exports (ExcelJS can only embed png/jpeg/gif).
+  if(!/^image\/(png|jpe?g|gif)$/i.test(file.type)){
+    toast('⚠️ Logo must be PNG, JPEG, or GIF to appear in Excel exports.','error');
+    input.value='';
+    return;
+  }
+  try{
+    const url = await uploadPhoto(file, 'logo', null);
+    COMPANY.logo=url;
+    const prev=document.getElementById('compLogoPreview');
+    prev.src=url; prev.style.display='inline-block';
+  }catch(e){
+    console.error(e);
+    toast('⚠️ Failed to upload logo: '+e.message,'error');
+  }
+}
+
+function saveCompany(){
+  COMPANY={
+    name:document.getElementById('compName').value.trim(),
+    dept:document.getElementById('compDept').value.trim(),
+    address:document.getElementById('compAddress').value.trim(),
+    checkedBy:document.getElementById('compCheckedBy').value.trim(),
+    verifiedBy:document.getElementById('compVerifiedBy').value.trim(),
+    logo:COMPANY.logo||''
+  };
+  localStorage.setItem('tk_company',JSON.stringify(COMPANY));
+  saveSettingsToBackend();
+  addAudit('settings_update','Saved company information');
+  toast('✅ Company info saved!','success');
+}
+
+function changePassword(){
+  const cur=document.getElementById('pwCurrent').value;
+  const nw=document.getElementById('pwNew').value;
+  const cf=document.getElementById('pwConfirm').value;
+  if(cur!==currentUser.pw){toast('Current password is incorrect.','error');return;}
+  if(nw.length<6){toast('New password must be at least 6 characters.','error');return;}
+  if(nw!==cf){toast('Passwords do not match.','error');return;}
+  USERS[currentUser.id].pw=nw;
+  currentUser.pw=nw;
+  document.getElementById('pwCurrent').value='';
+  document.getElementById('pwNew').value='';
+  document.getElementById('pwConfirm').value='';
+  saveUsersToBackend();
+  addAudit('password_change','Changed own password');
+  toast('✅ Password updated!','success');
+}
+
+/* ============================================================
+   APPEARANCE
+   ============================================================ */
+const THEMES=[
+  {name:'Ocean',key:'ocean',c1:'#2f8fff',c2:'#00d4ff'},
+  {name:'Royal',key:'royal',c1:'#3a56ff',c2:'#6b8cff'},
+  {name:'Emerald',key:'emerald',c1:'#10b981',c2:'#34e0a1'},
+  {name:'Forest',key:'forest',c1:'#2f9e44',c2:'#94d82d'},
+  {name:'Purple',key:'purple',c1:'#8b5cf6',c2:'#c084fc'},
+  {name:'Crimson',key:'crimson',c1:'#ef4444',c2:'#ff7a7a'},
+  {name:'Amber',key:'amber',c1:'#f59e0b',c2:'#fcd34d'},
+  {name:'Rose',key:'rose',c1:'#f43f8e',c2:'#fda4d0'},
+  {name:'Teal',key:'teal',c1:'#14b8a6',c2:'#5eead4'},
+  {name:'Sunset',key:'sunset',c1:'#ff6b6b',c2:'#ffd166'},
+  {name:'Midnight',key:'midnight',c1:'#1e3a5f',c2:'#4a90d9'},
+  {name:'Violet',key:'violet',c1:'#7c3aed',c2:'#a855f7'},
+  {name:'Coral',key:'coral',c1:'#f97316',c2:'#fb923c'},
+  {name:'Mint',key:'mint',c1:'#059669',c2:'#6ee7b7'},
+  {name:'Sky',key:'sky',c1:'#0ea5e9',c2:'#67e8f9'},
+  {name:'Gold',key:'gold',c1:'#ca8a04',c2:'#fde047'},
+  {name:'Indigo',key:'indigo',c1:'#4338ca',c2:'#818cf8'},
+  {name:'Cherry',key:'cherry',c1:'#be123c',c2:'#fb7185'},
+  {name:'Sage',key:'sage',c1:'#4d7c5f',c2:'#86efac'},
+  {name:'Dusk',key:'dusk',c1:'#7e22ce',c2:'#f472b6'},
+];
+
+function renderSwatches(){
+  const cur=document.documentElement.dataset.theme||'ocean';
+  document.getElementById('swatches').innerHTML=THEMES.map(t=>`
+    <div class="sw ${t.key===cur?'active':''}" onclick="setTheme('${t.key}')" title="${t.name}"
+      style="background:linear-gradient(135deg,${t.c1},${t.c2})"></div>`).join('');
+}
+
+function setTheme(k){
+  document.documentElement.dataset.theme=k;
+  localStorage.setItem('tk_theme',k);
+  renderSwatches();
+}
+
+function buildModeToggle(){
+  const cur=document.documentElement.dataset.mode||'dark';
+  document.querySelectorAll('#modeToggle button').forEach(b=>{
+    b.classList.toggle('on',b.dataset.mode===cur);
+    b.onclick=()=>{
+      document.documentElement.dataset.mode=b.dataset.mode;
+      localStorage.setItem('tk_mode',b.dataset.mode);
+      document.querySelectorAll('#modeToggle button').forEach(x=>x.classList.remove('on'));
+      b.classList.add('on');
+    };
+  });
+}
+
+/* ============================================================
+   TOAST
+   ============================================================ */
+let toastTimer;
+function toast(msg,type){
+  const el=document.getElementById('toast');
+  el.textContent=msg;
+  el.style.borderColor=type==='success'?'color-mix(in srgb,#10b981 50%,var(--border))':type==='error'?'color-mix(in srgb,#ef4444 50%,var(--border))':'var(--border)';
+  el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer=setTimeout(()=>el.classList.remove('show'),3500);
+}
+
+/* ============================================================
+   MODALS
+   ============================================================ */
+function closeModal(id){document.getElementById(id).classList.remove('show');}
+document.querySelectorAll('.overlay').forEach(o=>{
+  o.addEventListener('click',e=>{if(e.target===o)o.classList.remove('show');});
+});
+
+/* ============================================================
+   BOOT
+   ============================================================ */
+(function boot(){
+  const theme=localStorage.getItem('tk_theme');
+  if(theme)document.documentElement.dataset.theme=theme;
+  const mode=localStorage.getItem('tk_mode');
+  if(mode)document.documentElement.dataset.mode=mode;
+
+  const msgEl=document.getElementById('loadMsg');
+  if(backendConfigured()&&msgEl) msgEl.textContent='Connecting to backend…';
+
+  let p=0;const bar=document.getElementById('loadBar');
+  const tick=setInterval(()=>{p=Math.min(p+Math.random()*10+4,90);bar.style.width=p+'%';},120);
+  const minWait=new Promise(res=>setTimeout(res,900));
+
+  Promise.all([bootLoad(),minWait]).finally(()=>{
+    clearInterval(tick);bar.style.width='100%';
+    setTimeout(()=>{
+      document.getElementById('loadOverlay').classList.remove('show');
+      // Resume a session left open across a page refresh (F5) — restores by
+      // employee ID only, never the password, and only against whatever
+      // USERS bootLoad() just fetched (so a since-deactivated/deleted
+      // account can't silently resume).
+      const sessionId = localStorage.getItem('tk_session_uid');
+      const su = sessionId ? USERS[sessionId] : null;
+      if(su){
+        currentUser = {...su, id: sessionId};
+        document.getElementById('loginOverlay').classList.remove('show');
+        if(su.firstLogin) openFirstLogin();
+        else initApp();
+      } else {
+        localStorage.removeItem('tk_session_uid');
+        document.getElementById('loginOverlay').classList.add('show');
+      }
+    },300);
+  });
+})();
+</script>
+</body>
+</html>
